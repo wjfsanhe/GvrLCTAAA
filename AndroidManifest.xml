@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.google.vr.vrcore"
+    coreApp="true"
+    android:sharedUserId="android.uid.system">
+
+    <uses-sdk android:minSdkVersion="16" android:targetSdkVersion="19"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <application
+        android:allowBackup="true">
+        <service
+            android:name=".controller.ControllerService"
+            android:enabled="true"
+            android:exported="true">
+            <!-- android:process="com.google.vr.vrcore.service" //commented for debug -->
+            <intent-filter>
+                <action android:name="com.google.vr.vrcore.controller.BIND" />
+            </intent-filter>
+        </service>
+        <receiver android:name=".controller.ControllerRec">
+            <intent-filter>
+                <action android:name="com.longcheer.net.test.daydream" />
+                <action android:name="android.bluetooth.device.action.ACL_CONNECTED"/>
+                <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED"/>
+            </intent-filter>
+        </receiver>
+
+    </application>
+
+</manifest>
