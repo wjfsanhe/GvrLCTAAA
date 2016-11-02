@@ -267,7 +267,7 @@ public class ControllerService extends Service {
                                                 (((int)buffer[3]<< 0) & 0x000000FF);
                                 float n = Float.intBitsToFloat(result);*/
                             }
-                            Log.d(TAG, "result: x= " + quans[0] + " y= " + quans[1] + " z= " + quans[2] + " w= " + quans[3]);
+                            debug_log("result: x= " + quans[0] + " y= " + quans[1] + " z= " + quans[2] + " w= " + quans[3]);
 
                             sendPhoneEventControllerOrientationEvent(quans[0], quans[1], quans[2], quans[3]);
                         }else if (temp_value == 2){
@@ -284,10 +284,8 @@ public class ControllerService extends Service {
                             byte keymask = buffer[17];
 //                            int  battery = (((int)buffer[18]) & 0x000000FF) + 100;
 
-                            if(DEBUG) {
-                                Log.d(TAG, "mshuai, get data:gyro.x:" + sensor[0] + ", gyro.y:" + sensor[1] + ", gyro.z:" + sensor[2] + ", acc.x" + sensor[3] + ", acc.y:" + sensor[4] + ", acc.z:" + sensor[5]);
-                                Log.d(TAG, "mshuai, get touchx:" + touchX + ", touchy:" + touchY);
-                            }
+                            debug_log("mshuai, get data:gyro.x:" + sensor[0] + ", gyro.y:" + sensor[1] + ", gyro.z:" + sensor[2] + ", acc.x" + sensor[3] + ", acc.y:" + sensor[4] + ", acc.z:" + sensor[5]);
+                            debug_log("mshuai, get touchx:" + touchX + ", touchy:" + touchY);
                             sendPhoneEventControllerAccAndGyroEvent(sensor);
                             sendPhoneEventControllerButtonEvent(keymask);
                            // sendPhoneEventControllerTouchPadEvent(touchX,touchY);
@@ -295,7 +293,7 @@ public class ControllerService extends Service {
 //                        Log.d(TAG, TAG + "socket buffer bytes start");
                         //System.out.println(TAG+"socket buffer bytes start");
                         //System.out.println(buffer.toString());
-                        Log.d(TAG, "hidraw data:" + toHexString(buffer, size));
+                        debug_log("hidraw data:" + toHexString(buffer, size));
 //                        Log.d(TAG, TAG + "socket buffer bytes end");
                         //System.out.println(TAG+"socket buffer bytes end");
                     }
