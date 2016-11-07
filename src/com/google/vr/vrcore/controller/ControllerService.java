@@ -56,7 +56,7 @@ public class ControllerService extends Service {
 
     private static int controllerId=0;
 
-    private Thread backThread = null;
+    private Thread getNodeDataThread = null;
     public static void debug_log(String log){
         if(DEBUG){
             Log.d(TAG,log);
@@ -191,137 +191,141 @@ public class ControllerService extends Service {
     }
 
     private void startGetNodeDataThread() {
-        backThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    FileInputStream mInputStream=null;
-                    for(int path_index=0; path_index< device_path.length; path_index++) {
-                        try {
-                            mInputStream = new FileInputStream(device_path[path_index]);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            Log.d(TAG, "ERR:Failed to open /dev/hidraw"+path_index+"!");
-                            continue;
-                        }
-                        //if not failed break
-                        Log.d(TAG,"open /dev/hidraw"+path_index+" successed!");
-                        break;
-                    }
-                    if(mInputStream == null){
-                        Log.e(TAG,"err to open hidraw node!");
-                        return;
-                    }
-                    boolean needSetControllerState = true;
-
-                    while (!isCancel) {
-                        if(controllerListener == null){
-                            needSetControllerState = true;
-                            Log.d(TAG,"controllerListener is null, sleep 2s");
-
+        if (getNodeDataThread == null) {
+            getNodeDataThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        FileInputStream mInputStream = null;
+                        for (int path_index = 0; path_index < device_path.length; path_index++) {
                             try {
-                                Thread.sleep(20000);
-                            } catch (InterruptedException e) {
+                                mInputStream = new FileInputStream(device_path[path_index]);
+                            } catch (Exception e) {
                                 e.printStackTrace();
-                            }finally {
+                                Log.e(TAG, "ERR:Failed to open /dev/hidraw" + path_index + "!");
                                 continue;
                             }
-                        }else{
-                            if(needSetControllerState) {
-                                debug_log("set Controller state CONNECTED!");
-                                try {
-                                    controllerListener.onControllerStateChanged(controllerId, ControllerStates.CONNECTED);
-                                    needSetControllerState = false;
-                                } catch (RemoteException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-//
-                        byte[] buffer = new byte[32];
-                        int size = mInputStream.read(buffer);
-                        if (size < 0)
+                            // if not failed break
+                            Log.i(TAG, "open /dev/hidraw" + path_index + " successed!");
                             break;
-                        Log.d(TAG,"read node data, count is :"+size);
+                        }
+                        if (mInputStream == null) {
+                            Log.e(TAG, "err to open hidraw node!");
+                            return;
+                        }
+                        // boolean needSetControllerState = true;
 
-                        buffer = deleteAt(buffer, 0);
-                        int temp_value = (int)buffer[2] & 0xff;
+                        while (!isCancel) {
+                            if (controllerListener == null) {
+                                // needSetControllerState = true;
+                                Log.i(TAG, "controllerListener is null, sleep 3s");
 
-                        if(temp_value == 1) {
-                            float[] quans = new float[4];
-                            int index = 2;
-//                            float[] quans_2 = new float[4];
-                            for (int i = 0; i < 4; i++) {
-                                int result = (((int) buffer[6 + i * 4] << 24) & 0xFF000000) |
-                                        (((int) buffer[5 + i * 4] << 16) & 0x00FF0000) |
-                                        (((int) buffer[4 + i * 4] << 8) & 0x0000FF00) |
-                                        (((int) buffer[3 + i * 4] << 0) & 0x000000FF);
-                                quans[3 - i] = Float.intBitsToFloat(result);
-
-//                                quans_2[3 - i] = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getFloat();
-
-                                /*int result =
-                                        (((int)buffer[6]<<24) & 0xFF000000) |
-                                                (((int)buffer[5]<<16) & 0x00FF0000) |
-                                                (((int)buffer[4]<< 8) & 0x0000FF00) |
-                                                (((int)buffer[3]<< 0) & 0x000000FF);
-                                float n = Float.intBitsToFloat(result);*/
-                            }
-                            debug_log("result: x= " + quans[0] + " y= " + quans[1] + " z= " + quans[2] + " w= " + quans[3]);
-
-                            sendPhoneEventControllerOrientationEvent(quans[0], quans[1], quans[2], quans[3]);
-                        }else if (temp_value == 2){
-                            int[] sensor = new int[6];
-                            for (int i = 0; i < 6; i++) {
-                                sensor[i] =    (((int) buffer[4 + i * 2] << 8) & 0x0000FF00) |
-                                               (((int) buffer[3 + i * 2] << 0) & 0x000000FF);
-                                if ((sensor[i] & 0x8000) != 0) {
-                                    sensor[i] |= 0xFFFF0000;
+                                try {
+                                    Thread.sleep(3000);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                } finally {
+                                    continue;
+                                }
+                            } else {
+                                if (true) {// needSetControllerState) {
+                                    debug_log("set Controller state CONNECTED!");
+                                    try {
+                                        controllerListener.onControllerStateChanged(controllerId,
+                                                ControllerStates.CONNECTED);
+                                        // needSetControllerState = false;
+                                    } catch (RemoteException e) {
+                                        e.printStackTrace();
+                                    }
                                 }
                             }
-                            int  touchX  = ((int)buffer[15]) & 0x000000FF;
-                            int  touchY  = ((int)buffer[16]) & 0x000000FF;
-                            byte keymask = buffer[17];
-//                            int  battery = (((int)buffer[18]) & 0x000000FF) + 100;
+                            //
+                            byte[] buffer = new byte[32];
+                            int size = mInputStream.read(buffer);
+                            if (size < 0)
+                                break;
+                            Log.i(TAG, "read node data, count is :" + size);
 
-                            debug_log("mshuai, get data:gyro.x:" + sensor[0] + ", gyro.y:" + sensor[1] + ", gyro.z:" + sensor[2] + ", acc.x" + sensor[3] + ", acc.y:" + sensor[4] + ", acc.z:" + sensor[5]);
-                            debug_log("mshuai, get touchx:" + touchX + ", touchy:" + touchY);
-                            sendPhoneEventControllerAccAndGyroEvent(sensor);
-                            sendPhoneEventControllerButtonEvent(keymask);
-                           // sendPhoneEventControllerTouchPadEvent(touchX,touchY);
+                            buffer = deleteAt(buffer, 0);
+                            int temp_value = (int) buffer[2] & 0xff;
+
+                            if (temp_value == 1) {
+                                float[] quans = new float[4];
+                                int index = 2;
+                                // float[] quans_2 = new float[4];
+                                for (int i = 0; i < 4; i++) {
+                                    int result = (((int) buffer[6 + i * 4] << 24) & 0xFF000000) |
+                                            (((int) buffer[5 + i * 4] << 16) & 0x00FF0000) |
+                                            (((int) buffer[4 + i * 4] << 8) & 0x0000FF00) |
+                                            (((int) buffer[3 + i * 4] << 0) & 0x000000FF);
+                                    quans[3 - i] = Float.intBitsToFloat(result);
+
+                                    // quans_2[3 - i] =
+                                    // ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+
+                                    /*
+                                     * int result = (((int)buffer[6]<<24) & 0xFF000000) |
+                                     * (((int)buffer[5]<<16) & 0x00FF0000) | (((int)buffer[4]<< 8) &
+                                     * 0x0000FF00) | (((int)buffer[3]<< 0) & 0x000000FF); float n =
+                                     * Float.intBitsToFloat(result);
+                                     */
+                                }
+                                // debug_log("result: x= " + quans[0] + " y= " + quans[1] + " z= " +
+                                // quans[2] + " w= " + quans[3]);
+
+                                sendPhoneEventControllerOrientationEvent(quans[0], quans[1],
+                                        quans[2],
+                                        quans[3]);
+                            } else if (temp_value == 2) {
+                                int[] sensor = new int[6];
+                                for (int i = 0; i < 6; i++) {
+                                    sensor[i] = (((int) buffer[4 + i * 2] << 8) & 0x0000FF00) |
+                                            (((int) buffer[3 + i * 2] << 0) & 0x000000FF);
+                                    if ((sensor[i] & 0x8000) != 0) {
+                                        sensor[i] |= 0xFFFF0000;
+                                    }
+                                }
+                                int touchX = ((int) buffer[15]) & 0x000000FF;
+                                int touchY = ((int) buffer[16]) & 0x000000FF;
+                                byte keymask = buffer[17];
+                                // int battery = (((int)buffer[18]) & 0x000000FF) + 100;
+
+                                // debug_log("mshuai, get data:gyro.x:" + sensor[0] + ", gyro.y:" +
+                                // sensor[1] + ", gyro.z:" + sensor[2] + ", acc.x" + sensor[3] +
+                                // ", acc.y:" + sensor[4] + ", acc.z:" + sensor[5]);
+                                // debug_log("mshuai, get touchx:" + touchX + ", touchy:" + touchY);
+                                sendPhoneEventControllerAccAndGyroEvent(sensor);
+                                sendPhoneEventControllerButtonEvent(keymask);
+                                // sendPhoneEventControllerTouchPadEvent(touchX,touchY);
+                            } else {
+                                Log.e(TAG, "get node invalid data!!!");
+                                debug_log("hidraw data:" + toHexString(buffer, size));
+                            }
                         }
-//                        Log.d(TAG, TAG + "socket buffer bytes start");
-                        //System.out.println(TAG+"socket buffer bytes start");
-                        //System.out.println(buffer.toString());
-                        debug_log("hidraw data:" + toHexString(buffer, size));
-//                        Log.d(TAG, TAG + "socket buffer bytes end");
-                        //System.out.println(TAG+"socket buffer bytes end");
-                    }
-                    debug_log("isCancel:"+isCancel+", close inputStream!");
-                    mInputStream.close();
-//                    socket.close();
-                } catch (SocketTimeoutException timeException) {
-                    isCancel = true;
-                    timeException.printStackTrace();
-                    Log.d(TAG, TAG + "connect socket time out exception");
-                    // System.out.println(TAG+"connect socket time out exception");
-                } catch (IOException exception) {
-                    isCancel = true;
-                    exception.printStackTrace();
-                    Log.d(TAG, TAG + "connect socket address exception");
-                    //System.out.println(TAG+"connect socket address exception");
-                }finally {
-                    Log.d(TAG,"finally, set Controller state DISCONNECTED");
-                    try {
-                        controllerListener.onControllerStateChanged(controllerId, ControllerStates.DISCONNECTED);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
+                        Log.d(TAG, "isCancel:" + isCancel + ", close inputStream!");
+                        mInputStream.close();
+                    } catch (SocketTimeoutException timeException) {
+                        isCancel = true;
+                        timeException.printStackTrace();
+                        Log.d(TAG, TAG + "connect socket time out exception");
+                    } catch (IOException exception) {
+                        isCancel = true;
+                        exception.printStackTrace();
+                        Log.d(TAG, TAG + "connect socket address exception");
+                    } finally {
+                        Log.d(TAG, "finally, set Controller state DISCONNECTED");
+                        try {
+                            controllerListener.onControllerStateChanged(controllerId,
+                                    ControllerStates.DISCONNECTED);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
-            }
-        });
-        if(!backThread.isAlive()) {
-            backThread.start();
+            });
+        }
+        if(!getNodeDataThread.isAlive()) {
+            getNodeDataThread.start();
         }
     }
 
