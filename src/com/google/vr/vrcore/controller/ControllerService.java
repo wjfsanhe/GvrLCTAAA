@@ -25,7 +25,9 @@ import com.google.vr.vrcore.controller.api.IControllerListener;
 import com.google.vr.vrcore.controller.api.IControllerService;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -162,6 +164,8 @@ public class ControllerService extends Service {
 
     char[] hexBuf;
     char[] hexArray = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
+    private FileWriter mNodeWriter;
     protected String toHexString(byte[] bytes, int size) {
         int v, index = 0;
         hexBuf = new char[4096];
@@ -190,29 +194,70 @@ public class ControllerService extends Service {
         return ret;
     }
 
+
+    private static String gpio_NODE = "/sys/class/gpio/gpio126/value";
+    private boolean prepareFileAccess(String Filename)
+    {
+        File file=new File(Filename);
+        try {
+            mNodeWriter = new FileWriter(file);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;// TODO: handle exception
+        }
+        return true;
+    }
+    private void setValues(String values)
+    {
+        if(mNodeWriter!=null)
+        {
+            try {
+                mNodeWriter.write(values);
+                mNodeWriter.flush();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+    }
+
+    static{
+        try{
+            System.loadLibrary("lctgetnode");
+        }catch(Exception e){
+            e.printStackTrace();
+            Log.d(TAG,e.getMessage());
+        }
+    }
+    /*
+     * -1, is ok
+     * 0 is hidraw0
+     * 1 is hidraw1
+     * 2 is hidraw2
+     */
+    public native int nativeOpenFile();
+    public native bt_node_data nativeReadFile();
+    public native int nativeCloseFile();
+
+    private void scheduleNext(){
+
+    }
+
     private void startGetNodeDataThread() {
         if (getNodeDataThread == null) {
             getNodeDataThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    // THREAD_PRIORITY_URGENT_DISPLAY THREAD_PRIORITY_URGENT_AUDIO
+                    android.os.Process
+                            .setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
                     try {
-                        FileInputStream mInputStream = null;
-                        for (int path_index = 0; path_index < device_path.length; path_index++) {
-                            try {
-                                mInputStream = new FileInputStream(device_path[path_index]);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                                Log.e(TAG, "ERR:Failed to open /dev/hidraw" + path_index + "!");
-                                continue;
-                            }
-                            // if not failed break
-                            Log.i(TAG, "open /dev/hidraw" + path_index + " successed!");
-                            break;
-                        }
-                        if (mInputStream == null) {
-                            Log.e(TAG, "err to open hidraw node!");
+                        int res = nativeOpenFile();
+                        if(res <0 ){
+                            Log.e(TAG,"native open file failed");
                             return;
                         }
+                        Log.d(TAG, "natvie Open File");
                         // boolean needSetControllerState = true;
 
                         while (!isCancel) {
@@ -239,44 +284,25 @@ public class ControllerService extends Service {
                                     }
                                 }
                             }
-                            //
-                            byte[] buffer = new byte[32];
-                            int size = mInputStream.read(buffer);
-                            if (size < 0)
-                                break;
-                            Log.i(TAG, "read node data, count is :" + size);
 
-                            buffer = deleteAt(buffer, 0);
-                            int temp_value = (int) buffer[2] & 0xff;
+                            bt_node_data nodeData = nativeReadFile();
+                            Log.d(TAG, "native Read File finish");
+                            if (nodeData == null) {
+                                Log.e(TAG, "do not get hidraw data from native");
+                                continue;
+                            }
 
-                            if (temp_value == 1) {
-                                float[] quans = new float[4];
-                                int index = 2;
-                                // float[] quans_2 = new float[4];
-                                for (int i = 0; i < 4; i++) {
-                                    int result = (((int) buffer[6 + i * 4] << 24) & 0xFF000000) |
-                                            (((int) buffer[5 + i * 4] << 16) & 0x00FF0000) |
-                                            (((int) buffer[4 + i * 4] << 8) & 0x0000FF00) |
-                                            (((int) buffer[3 + i * 4] << 0) & 0x000000FF);
-                                    quans[3 - i] = Float.intBitsToFloat(result);
-
-                                    // quans_2[3 - i] =
-                                    // ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getFloat();
-
-                                    /*
-                                     * int result = (((int)buffer[6]<<24) & 0xFF000000) |
-                                     * (((int)buffer[5]<<16) & 0x00FF0000) | (((int)buffer[4]<< 8) &
-                                     * 0x0000FF00) | (((int)buffer[3]<< 0) & 0x000000FF); float n =
-                                     * Float.intBitsToFloat(result);
-                                     */
-                                }
-                                // debug_log("result: x= " + quans[0] + " y= " + quans[1] + " z= " +
-                                // quans[2] + " w= " + quans[3]);
-
-                                sendPhoneEventControllerOrientationEvent(quans[0], quans[1],
-                                        quans[2],
-                                        quans[3]);
-                            } else if (temp_value == 2) {
+                            if (nodeData.type == 1) {// quans
+                                debug_log("nodeData:x:" + nodeData.quans_x + ", y:"
+                                        + nodeData.quans_y + ",z:" + nodeData.quans_z + ",w:"
+                                        + nodeData.quans_w);
+                                sendPhoneEventControllerOrientationEvent(nodeData.quans_x,
+                                        nodeData.quans_y,
+                                        nodeData.quans_z,
+                                        nodeData.quans_w);
+                                debug_log("send phon event finish");
+                            } else if (nodeData.type == 2) {
+/*
                                 int[] sensor = new int[6];
                                 for (int i = 0; i < 6; i++) {
                                     sensor[i] = (((int) buffer[4 + i * 2] << 8) & 0x0000FF00) |
@@ -290,33 +316,33 @@ public class ControllerService extends Service {
                                 byte keymask = buffer[17];
                                 // int battery = (((int)buffer[18]) & 0x000000FF) + 100;
 
-                                // debug_log("mshuai, get data:gyro.x:" + sensor[0] + ", gyro.y:" +
-                                // sensor[1] + ", gyro.z:" + sensor[2] + ", acc.x" + sensor[3] +
-                                // ", acc.y:" + sensor[4] + ", acc.z:" + sensor[5]);
-                                // debug_log("mshuai, get touchx:" + touchX + ", touchy:" + touchY);
+                                if (DEBUG) {
+                                    Log.d(TAG, "mshuai, get data:gyro.x:" + sensor[0] + ", gyro.y:"
+                                            + sensor[1] + ", gyro.z:" + sensor[2] + ", acc.x"
+                                            + sensor[3] + ", acc.y:" + sensor[4] + ", acc.z:"
+                                            + sensor[5]);
+                                    Log.d(TAG, "mshuai, get touchx:" + touchX + ", touchy:"
+                                            + touchY);
+                                }
                                 sendPhoneEventControllerAccAndGyroEvent(sensor);
                                 sendPhoneEventControllerButtonEvent(keymask);
-                                // sendPhoneEventControllerTouchPadEvent(touchX,touchY);
+                                sendPhoneEventControllerTouchPadEvent(touchX,touchY);*/
+                                Log.d(TAG, "dajiangyou");
                             } else {
-                                Log.e(TAG, "get node invalid data!!!");
-                                debug_log("hidraw data:" + toHexString(buffer, size));
+                                Log.e(TAG, "invalid data");
                             }
                         }
-                        Log.d(TAG, "isCancel:" + isCancel + ", close inputStream!");
-                        mInputStream.close();
-                    } catch (SocketTimeoutException timeException) {
+                        nativeCloseFile();
+                        Log.d(TAG, "natvie Open File");
+                    }
+                    finally {
                         isCancel = true;
-                        timeException.printStackTrace();
-                        Log.d(TAG, TAG + "connect socket time out exception");
-                    } catch (IOException exception) {
-                        isCancel = true;
-                        exception.printStackTrace();
-                        Log.d(TAG, TAG + "connect socket address exception");
-                    } finally {
                         Log.d(TAG, "finally, set Controller state DISCONNECTED");
                         try {
-                            controllerListener.onControllerStateChanged(controllerId,
-                                    ControllerStates.DISCONNECTED);
+                            if (controllerListener != null) {
+                                controllerListener.onControllerStateChanged(controllerId,
+                                        ControllerStates.DISCONNECTED);
+                            }
                         } catch (RemoteException e) {
                             e.printStackTrace();
                         }
@@ -324,7 +350,7 @@ public class ControllerService extends Service {
                 }
             });
         }
-        if(!getNodeDataThread.isAlive()) {
+        if (!getNodeDataThread.isAlive()) {
             getNodeDataThread.start();
         }
     }
@@ -340,6 +366,7 @@ public class ControllerService extends Service {
     private static final ControllerButtonEvent controllerButtonEvent = new ControllerButtonEvent();
 //    private static final ControllerEventPacket cep = new ControllerEventPacket();
     private void sendPhoneEventControllerOrientationEvent(float x, float y, float z, float w){
+
         controllerOrientationEvent.qx = x;
         controllerOrientationEvent.qy = y;
         controllerOrientationEvent.qz = z;
@@ -487,5 +514,37 @@ public class ControllerService extends Service {
 
 //        controllerListener.deprecatedOnControllerOrientationEvent(controllerOrientationEvent); //must be send
         controllerListener.onControllerOrientationEvent(controllerOrientationEvent); //must be send
+    }
+}
+
+class bt_node_data{
+    public int type;
+
+    public float quans_x;
+    public float quans_y;
+    public float quans_z;
+    public float quans_w;
+
+    public int gyro_x;
+    public int gyro_y;
+    public int gyro_z;
+
+    public int acc_x;
+    public int acc_y;
+    public int acc_z;
+
+    public float touchX;
+    public float touchY;
+
+    public byte keymask;
+
+    public int battery;
+
+    public bt_node_data(){}
+    public bt_node_data(float x, float y, float z, float w){
+        this.quans_x = x;
+        this.quans_y = y;
+        this.quans_z = z;
+        this.quans_w = w;
     }
 }
