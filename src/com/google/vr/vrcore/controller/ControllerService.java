@@ -286,7 +286,6 @@ public class ControllerService extends Service {
                             }
 
                             Bt_node_data nodeData = nativeReadFile();
-                            Log.d(TAG, "native Read File finish");
                             if (nodeData == null) {
                                 Log.e(TAG, "do not get hidraw data from native");
                                 continue;
@@ -309,7 +308,7 @@ public class ControllerService extends Service {
                                 sendPhoneEventControllerAccAndGyroEvent(nodeData.gyro_x, nodeData.gyro_y, nodeData.gyro_z, nodeData.acc_x, nodeData.acc_y, nodeData.acc_z);
                                 sendPhoneEventControllerButtonEvent(nodeData.keymask);
                                 sendPhoneEventControllerTouchPadEvent(nodeData.touchX,nodeData.touchY);
-                                Log.d(TAG, "send acc button touch event finish");
+                                debug_log("send acc button touch event finish");
                                 debug_log("battery:"+nodeData.bat_level);
                                 // send broadcast to notify the hand shank's battery
 
@@ -318,7 +317,7 @@ public class ControllerService extends Service {
                             }
                         }
                         nativeCloseFile();
-                        Log.d(TAG, "natvie Open File");
+                        Log.d(TAG, "natvie Close File");
                     }
                     finally {
                         isCancel = true;
