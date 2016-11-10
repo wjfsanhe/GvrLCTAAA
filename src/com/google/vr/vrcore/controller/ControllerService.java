@@ -236,7 +236,7 @@ public class ControllerService extends Service {
      * 2 is hidraw2
      */
     public native int nativeOpenFile();
-    public native bt_node_data nativeReadFile();
+    public native Bt_node_data nativeReadFile();
     public native int nativeCloseFile();
 
     private void scheduleNext(){
@@ -285,7 +285,7 @@ public class ControllerService extends Service {
                                 }
                             }
 
-                            bt_node_data nodeData = nativeReadFile();
+                            Bt_node_data nodeData = nativeReadFile();
                             Log.d(TAG, "native Read File finish");
                             if (nodeData == null) {
                                 Log.e(TAG, "do not get hidraw data from native");
@@ -302,32 +302,17 @@ public class ControllerService extends Service {
                                         nodeData.quans_w);
                                 debug_log("send phon event finish");
                             } else if (nodeData.type == 2) {
-/*
-                                int[] sensor = new int[6];
-                                for (int i = 0; i < 6; i++) {
-                                    sensor[i] = (((int) buffer[4 + i * 2] << 8) & 0x0000FF00) |
-                                            (((int) buffer[3 + i * 2] << 0) & 0x000000FF);
-                                    if ((sensor[i] & 0x8000) != 0) {
-                                        sensor[i] |= 0xFFFF0000;
-                                    }
-                                }
-                                int touchX = ((int) buffer[15]) & 0x000000FF;
-                                int touchY = ((int) buffer[16]) & 0x000000FF;
-                                byte keymask = buffer[17];
-                                // int battery = (((int)buffer[18]) & 0x000000FF) + 100;
+                                debug_log("nodeData.gyro x:" + nodeData.gyro_x + ", y:"
+                                        + nodeData.gyro_y + ", z:" + nodeData.gyro_z + ", acc x:"
+                                        + nodeData.acc_x + ", y:" + nodeData.acc_y + ", z:"
+                                        + nodeData.acc_z +", touchX:"+nodeData.touchX+", touchY:"+nodeData.touchY+", keymask:"+nodeData.keymask);
+                                sendPhoneEventControllerAccAndGyroEvent(nodeData.gyro_x, nodeData.gyro_y, nodeData.gyro_z, nodeData.acc_x, nodeData.acc_y, nodeData.acc_z);
+                                sendPhoneEventControllerButtonEvent(nodeData.keymask);
+                                sendPhoneEventControllerTouchPadEvent(nodeData.touchX,nodeData.touchY);
+                                Log.d(TAG, "send acc button touch event finish");
+                                debug_log("battery:"+nodeData.bat_level);
+                                // send broadcast to notify the hand shank's battery
 
-                                if (DEBUG) {
-                                    Log.d(TAG, "mshuai, get data:gyro.x:" + sensor[0] + ", gyro.y:"
-                                            + sensor[1] + ", gyro.z:" + sensor[2] + ", acc.x"
-                                            + sensor[3] + ", acc.y:" + sensor[4] + ", acc.z:"
-                                            + sensor[5]);
-                                    Log.d(TAG, "mshuai, get touchx:" + touchX + ", touchy:"
-                                            + touchY);
-                                }
-                                sendPhoneEventControllerAccAndGyroEvent(sensor);
-                                sendPhoneEventControllerButtonEvent(keymask);
-                                sendPhoneEventControllerTouchPadEvent(touchX,touchY);*/
-                                Log.d(TAG, "dajiangyou");
                             } else {
                                 Log.e(TAG, "invalid data");
                             }
@@ -434,10 +419,10 @@ public class ControllerService extends Service {
         lastButton = button;
         lastButtonStatus = buttonActionDown;
     }
-    private void sendPhoneEventControllerAccAndGyroEvent(int[] sensor){
-        controllerGyroEvent.x = sensor[0];
-        controllerGyroEvent.y = sensor[1];
-        controllerGyroEvent.z = sensor[2];
+    private void sendPhoneEventControllerAccAndGyroEvent(float gyrpX, float gyrpY, float gyrpZ, float accX, float accY, float accZ){
+        controllerGyroEvent.x = gyrpX;
+        controllerGyroEvent.y = gyrpY;
+        controllerGyroEvent.z = gyrpZ;
 
         controllerGyroEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
@@ -447,9 +432,9 @@ public class ControllerService extends Service {
             e.printStackTrace();
         }
 
-        controllerAccelEvent.x = sensor[3];
-        controllerAccelEvent.y = sensor[4];
-        controllerAccelEvent.z = -sensor[5];
+        controllerAccelEvent.x = accX;
+        controllerAccelEvent.y = accY;
+        controllerAccelEvent.z = -accZ;
 
         controllerAccelEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
@@ -459,7 +444,7 @@ public class ControllerService extends Service {
             e.printStackTrace();
         }
     }
-    private void sendPhoneEventControllerTouchPadEvent(int touchX, int touchY){
+    private void sendPhoneEventControllerTouchPadEvent(float touchX, float touchY){
         if(touchX == 0 && touchY == 0){
             // not touch
             return;
@@ -517,31 +502,30 @@ public class ControllerService extends Service {
     }
 }
 
-class bt_node_data{
+class Bt_node_data{
+    public byte keymask;
     public int type;
+    public int bat_level;
 
     public float quans_x;
     public float quans_y;
     public float quans_z;
     public float quans_w;
 
-    public int gyro_x;
-    public int gyro_y;
-    public int gyro_z;
+    public float gyro_x;
+    public float gyro_y;
+    public float gyro_z;
 
-    public int acc_x;
-    public int acc_y;
-    public int acc_z;
+    public float acc_x;
+    public float acc_y;
+    public float acc_z;
 
     public float touchX;
     public float touchY;
 
-    public byte keymask;
 
-    public int battery;
-
-    public bt_node_data(){}
-    public bt_node_data(float x, float y, float z, float w){
+    public Bt_node_data(){}
+    public Bt_node_data(float x, float y, float z, float w){
         this.quans_x = x;
         this.quans_y = y;
         this.quans_z = z;
