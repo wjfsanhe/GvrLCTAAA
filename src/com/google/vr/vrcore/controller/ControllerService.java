@@ -154,72 +154,9 @@ public class ControllerService extends Service {
         return true;
     }
 
-    private static final String SOCKET_ADDRESS = "127.0.0.1";
-
-    private static final int  SOCKET_PORT = 4321;
-
     private boolean isCancel = false;
 
     private String[] device_path = new String[]{"/dev/hidraw0", "/dev/hidraw1", "/dev/hidraw2"};// read 32Byte/time
-
-    char[] hexBuf;
-    char[] hexArray = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-
-    private FileWriter mNodeWriter;
-    protected String toHexString(byte[] bytes, int size) {
-        int v, index = 0;
-        hexBuf = new char[4096];
-        for (int j = 0; j < size; j++) {
-            v = bytes[j] & 0xFF;
-            hexBuf[index++] = '0';
-            hexBuf[index++] = 'x';
-            hexBuf[index++] = hexArray[v >> 4];
-            hexBuf[index++] = hexArray[v & 0x0F];
-            hexBuf[index++] = ' ';
-            if ((j + 1) % 16 == 0)
-                hexBuf[index++] = '\n';
-        }
-        return new String(hexBuf, 0, index);
-    }
-
-
-    public static byte[] deleteAt(byte[] bs, int index)
-    {
-        int length = bs.length - 1;
-        byte[] ret = new byte[length];
-
-        System.arraycopy(bs, 0, ret, 0, index);
-        System.arraycopy(bs, index + 1, ret, index, length - index);
-
-        return ret;
-    }
-
-
-    private static String gpio_NODE = "/sys/class/gpio/gpio126/value";
-    private boolean prepareFileAccess(String Filename)
-    {
-        File file=new File(Filename);
-        try {
-            mNodeWriter = new FileWriter(file);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;// TODO: handle exception
-        }
-        return true;
-    }
-    private void setValues(String values)
-    {
-        if(mNodeWriter!=null)
-        {
-            try {
-                mNodeWriter.write(values);
-                mNodeWriter.flush();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-    }
 
     static{
         try{
@@ -276,8 +213,8 @@ public class ControllerService extends Service {
                                 if (true) {// needSetControllerState) {
                                     debug_log("set Controller state CONNECTED!");
                                     try {
-                                        controllerListener.onControllerStateChanged(controllerId,
-                                                ControllerStates.CONNECTED);
+                                            controllerListener.onControllerStateChanged(controllerId,
+                                                    ControllerStates.CONNECTED);
                                         // needSetControllerState = false;
                                     } catch (RemoteException e) {
                                         e.printStackTrace();
@@ -295,9 +232,10 @@ public class ControllerService extends Service {
                                 debug_log("nodeData:x:" + nodeData.quans_x + ", y:"
                                         + nodeData.quans_y + ",z:" + nodeData.quans_z + ",w:"
                                         + nodeData.quans_w);
-                                sendPhoneEventControllerOrientationEvent(nodeData.quans_x,
+                                //-x, -z, y, w
+                                sendPhoneEventControllerOrientationEvent(-nodeData.quans_x,
+                                        -nodeData.quans_z,
                                         nodeData.quans_y,
-                                        nodeData.quans_z,
                                         nodeData.quans_w);
                                 debug_log("send phon event finish");
                             } else if (nodeData.type == 2) {
@@ -359,8 +297,12 @@ public class ControllerService extends Service {
         controllerOrientationEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
 
         try {
-//            controllerListener.deprecatedOnControllerOrientationEvent(controllerOrientationEvent); //must be send
-            controllerListener.onControllerOrientationEvent(controllerOrientationEvent); //must be send
+            if(controllerListener!=null){
+//                controllerListener.deprecatedOnControllerOrientationEvent(controllerOrientationEvent); //must be send
+              controllerListener.onControllerOrientationEvent(controllerOrientationEvent); //must be send
+            }else{
+                Log.e(TAG,"when send orientation event, controllerListener is null");
+            }
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -409,8 +351,12 @@ public class ControllerService extends Service {
         // if last time is not down, this time still not down ,do not send event
         if(lastButtonStatus || buttonActionDown) {
             try {
-//                controllerListener.deprecatedOnControllerButtonEvent(controllerButtonEvent);
-                controllerListener.onControllerButtonEvent(controllerButtonEvent);
+                if (controllerListener != null) {
+//                    controllerListener.deprecatedOnControllerButtonEvent(controllerButtonEvent);
+                     controllerListener.onControllerButtonEvent(controllerButtonEvent);
+                } else {
+                    Log.e(TAG, "when send button event, controllerListener is null");
+                }
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -425,8 +371,12 @@ public class ControllerService extends Service {
 
         controllerGyroEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
-//            controllerListener.deprecatedOnControllerGyroEvent(controllerGyroEvent); //probably not used
-            controllerListener.onControllerGyroEvent(controllerGyroEvent); //probably not used
+            if (controllerListener != null) {
+//                controllerListener.deprecatedOnControllerGyroEvent(controllerGyroEvent); // probably not used
+                 controllerListener.onControllerGyroEvent(controllerGyroEvent); //probably not used
+            } else {
+                Log.e(TAG, "when send Gyro event, controllerListener is null");
+            }
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -437,8 +387,12 @@ public class ControllerService extends Service {
 
         controllerAccelEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
-            //controllerListener.deprecatedOnControllerAccelEvent(controllerAccelEvent); //probably not used
-            controllerListener.onControllerAccelEvent(controllerAccelEvent); //probably not used
+            if (controllerListener != null) {
+//                controllerListener.deprecatedOnControllerAccelEvent(controllerAccelEvent); //probably not used
+              controllerListener.onControllerAccelEvent(controllerAccelEvent); //probably not used
+            } else {
+                Log.e(TAG, "when send Accel event, controllerListener is null");
+            }
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -455,8 +409,13 @@ public class ControllerService extends Service {
 
         controllerTouchEvent.timestampNanos = 0;
         try {
-//            controllerListener.deprecatedOnControllerTouchEvent(controllerTouchEvent);
-            controllerListener.onControllerTouchEvent(controllerTouchEvent);
+            if (controllerListener != null) {
+//                controllerListener.deprecatedOnControllerTouchEvent(controllerTouchEvent);
+              controllerListener.onControllerTouchEvent(controllerTouchEvent);
+            } else {
+                Log.e(TAG, "when send Touch event, controllerListener is null");
+            }
+
         } catch (RemoteException e) {
             e.printStackTrace();
         }
