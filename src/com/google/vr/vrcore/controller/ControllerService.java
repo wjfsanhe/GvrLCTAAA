@@ -35,6 +35,11 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+//add by zhangyawen
+import android.view.KeyEvent;
+import android.app.Instrumentation;
+//end
+
 /**
  * Created by mashuai on 2016/9/29.
  */
@@ -369,12 +374,17 @@ public class ControllerService extends Service {
         int button = ControllerButtonEvent.BUTTON_NONE;
         boolean buttonActionDown = false;
 
+        //add by zhangyawen
+        Log.d("[YYY]","keymask = "+keymask);
+        ButtonEvent(keymask);
+        //end
         if ((keymask&0x01) != 0) {
             //click or ok
             button = ControllerButtonEvent.BUTTON_CLICK;
         }/*else if ((keymask&0x02) != 0) {
             //back
             button = ControllerButtonEvent.BUTTON_NONE;
+
         }else if ((keymask&0x04) != 0) {
             //trigger
             button = ControllerButtonEvent.BUTTON_NONE;
@@ -499,6 +509,169 @@ public class ControllerService extends Service {
 //        controllerListener.deprecatedOnControllerOrientationEvent(controllerOrientationEvent); //must be send
         controllerListener.onControllerOrientationEvent(controllerOrientationEvent); //must be send
     }
+
+
+    //add by zhangyawen for system event
+    private boolean isDone = false;
+    private int mLastKeyMask = 0;
+    private static final int DELAY_TIME = 500;
+
+    public static final int SYSTEM_EVENT_NOT_DEFINED_ID = -1;
+    public static final int SYSTEM_EVENT_BACK_ID = 0;
+    public static final int SYSTEM_EVENT_ENTER_ID = 1;
+    public static final int SYSTEM_EVENT_UP_ID = 2;
+    public static final int SYSTEM_EVENT_DOWN_ID = 3;
+    public static final int SYSTEM_EVENT_LEFT_ID = 4;
+    public static final int SYSTEM_EVENT_RIGHT_ID = 5;
+    public static final int SYSTEM_EVENT_HOME_ID = 6;
+
+    //timer
+    private Runnable runnable = new Runnable() {
+        @Override
+        public void run() {
+            isDone = false;
+        }
+    };
+
+    private void simulationButtonSystemEvent(int keymask){
+        if ((keymask&0x01) != 0) {
+            //click Panel
+            Log.d("[ZZZ]","click Panel (not match the Event)");
+        }else if ((keymask&0x02) != 0) {
+            //back
+            Log.d("[ZZZ]","back");
+            sendSystemEvent(SYSTEM_EVENT_BACK_ID);
+        }else if ((keymask&0x04) != 0) {
+            //trigger
+            Log.d("[ZZZ]","trigger");
+            sendSystemEvent(SYSTEM_EVENT_ENTER_ID);
+        }else if ((keymask&0x08) != 0) {
+            //home
+            Log.d("[ZZZ]","home (only home event)");
+            sendSystemEvent(SYSTEM_EVENT_HOME_ID);
+        }else if ((keymask&0x16) != 0) {
+            //menu
+            Log.d("[ZZZ]","menu (not match the Event)");
+        }else if ((keymask&0x32) != 0) {
+            //volume up
+            Log.d("[ZZZ]","volume up (not match the Event)");
+        }else if ((keymask&0x64) != 0) {
+            //volume down
+            Log.d("[ZZZ]","volume down (not match the Event)");
+        }else{
+            // none
+            Log.d("[ZZZ]","none (not match the Event)");
+        }
+    }
+
+    private void ButtonEvent( int keymask){
+
+        if (keymask != 0) {
+            if (keymask != mLastKeyMask) {
+                simulationButtonSystemEvent(keymask);
+                mLastKeyMask = keymask;
+            } else {
+                //do nothing
+            }
+        } else {
+            mLastKeyMask = keymask;
+        }
+    }
+
+
+    private void simulationSystemEvent(float touchX, float touchY){
+        int witchEventId = matchEvent(touchX,touchY);
+        Log.d("[YYY]","witchEventId = "+witchEventId);
+        if (witchEventId != SYSTEM_EVENT_NOT_DEFINED_ID) {
+            if (!isDone) {
+                sendSystemEvent(witchEventId);
+                //handler.removeCallbacks(runnable);
+                handler.postDelayed(runnable, DELAY_TIME);
+                isDone = true;
+            } else {
+                //do nothing
+            }
+        } else {
+            handler.removeCallbacks(runnable);
+            isDone = false;
+        }
+    }
+
+
+    private int matchEvent(float touchX, float touchY){
+        Log.d("[YYY]","matchEvent touchX = "+touchX+" touchY = "+touchY);
+        if ((touchX>touchY) && ((touchX+touchY)<1) && (touchY>=0 && touchY<=0.2)) {
+            return SYSTEM_EVENT_UP_ID;
+        } else if ((touchX>touchY) && ((touchX +touchY)>1) && (touchX>=0.8 && touchX<=1)) {
+            return SYSTEM_EVENT_RIGHT_ID;
+        } else if ((touchX<touchY) && ((touchY+touchX)>1) && (touchY>=0.8 && touchY<=1)) {
+            return SYSTEM_EVENT_DOWN_ID;
+        } else if ((touchX<touchY) && ((touchY+touchX)<1) && (touchX>=0 && touchX<=0.2)) {
+            return SYSTEM_EVENT_LEFT_ID;
+        } else if ((touchX-0.5)*(touchX-0.5)+(touchY-0.5)*(touchY-0.5) < 0.04) {
+            return SYSTEM_EVENT_ENTER_ID;
+        } else {
+            Log.d("[YYY]","matchEvent the event not defined.");
+            return SYSTEM_EVENT_NOT_DEFINED_ID;
+        }
+    }
+
+    /*simulation key event of system
+     * KeyEvent: 1.KEYCODE_BACK
+     *           2.KEYCODE_ENTER || KEYCODE_DPAD_CENTER
+     *           3.KEYCODE_DPAD_UP,KEYCODE_DPAD_DOWN,KEYCODE_DPAD_LEFT,KEYCODE_DPAD_RIGHT
+     *           4.KEYCODE_HOME
+    */
+    private synchronized void sendSystemEvent(final int systemEventId){
+        Thread th = new Thread(){
+            //can not run in UI thread
+            public void run() {
+                Instrumentation inst = new Instrumentation();
+                String logInfo = "";
+                try {
+                    switch (systemEventId){
+                        case SYSTEM_EVENT_BACK_ID:
+                            inst.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK);
+                            logInfo = "KeyEvent.KEYCODE_BACK";
+                            break;
+                        case SYSTEM_EVENT_ENTER_ID:
+                            inst.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER);
+                            logInfo = "KeyEvent.KEYCODE_ENTER";
+                            break;
+                        case SYSTEM_EVENT_UP_ID:
+                            inst.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_UP);
+                            logInfo = "KeyEvent.KEYCODE_DPAD_UP";
+                            break;
+                        case SYSTEM_EVENT_DOWN_ID:
+                            inst.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_DOWN);
+                            logInfo = "KeyEvent.KEYCODE_DPAD_DOWN";
+                            break;
+                        case SYSTEM_EVENT_LEFT_ID:
+                            inst.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_LEFT);
+                            logInfo = "KeyEvent.KEYCODE_DPAD_LEFT";
+                            break;
+                        case SYSTEM_EVENT_RIGHT_ID:
+                            inst.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_RIGHT);
+                            logInfo = "KeyEvent.KEYCODE_DPAD_RIGHT";
+                            break;
+                        case SYSTEM_EVENT_HOME_ID:
+                            inst.sendKeyDownUpSync(KeyEvent.KEYCODE_HOME);
+                            logInfo = "KeyEvent.KEYCODE_HOME";
+                            break;
+                        default:
+                            logInfo = "This behavior does not match system event ! ";
+                            break;
+                    }
+                    Log.d(TAG, logInfo);
+                } catch (Exception e) {
+                    android.util.Log.d(TAG," Instrumentation Exception = "+e);
+                }
+            };
+        };
+        th.start();
+    }
+    //end
+
 }
 
 class Bt_node_data{
