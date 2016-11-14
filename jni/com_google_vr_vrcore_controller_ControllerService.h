@@ -30,4 +30,5 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
 
 JNIEXPORT jobject JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeReadFile(JNIEnv *, jclass);
 
+JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeWriteFile(JNIEnv *, jclass, jint, jint, jint);
 #endif

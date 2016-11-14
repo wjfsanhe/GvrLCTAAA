@@ -14,6 +14,13 @@
 
 #define DEBUG 1
 
+#define JOYSTICK_TO_HOST 8
+#define HOST_TO_JOYSTICK 7
+
+#define REPORT_TYPE_ORIENTATION 1
+#define REPORT_TYPE_SENSOR		2
+#define REPORT_TYPE_VERSION		3
+
 typedef unsigned char byte;
 
 const char *device[3] = {"/dev/hidraw0", "/dev/hidraw1","/dev/hidraw2"};
@@ -78,11 +85,11 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 		return 0;
 	}
 	ALOGD("native read, data count is %d\n", res);
-	if(buf[0] == 0x08 && buf[3] == 0x01) {
+	if(buf[0] == JOYSTICK_TO_HOST && buf[3] == REPORT_TYPE_ORIENTATION) {
 		float *qd;
 		qd = (float*)(buf+4);
 #ifdef DEBUG
-		ALOGD("quans data:%f,%f,%f,%f\n",qd[0], qd[1], qd[2], qd[3]);
+		ALOGD("quans data(w,x,y,z):%f,%f,%f,%f\n",qd[0], qd[1], qd[2], qd[3]);
 #endif
 
 		jfieldID type = (*env)->GetFieldID(env, clsBt_node_data, "type", "I");
@@ -90,23 +97,21 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 		jfieldID quans_y = (*env)->GetFieldID(env, clsBt_node_data, "quans_y", "F");
 		jfieldID quans_z = (*env)->GetFieldID(env, clsBt_node_data, "quans_z", "F");
 		jfieldID quans_w = (*env)->GetFieldID(env, clsBt_node_data, "quans_w", "F");
-		(*env)->SetIntField(env, data_struct, type, 1);
+		(*env)->SetIntField(env, data_struct, type, REPORT_TYPE_ORIENTATION);
 		(*env)->SetFloatField(env, data_struct, quans_x, qd[1]);
 		(*env)->SetFloatField(env, data_struct, quans_y, qd[2]);
 		(*env)->SetFloatField(env, data_struct, quans_z, qd[3]);
 		(*env)->SetFloatField(env, data_struct, quans_w, qd[0]);
 #ifdef DEBUG
 		if (buf[20] == 0x01) {
-			ALOGD("set gpio value to 1\n");
 			write(out_fd, &values_str[1], 1);
 		}
 		else {
-			ALOGD("set gpio value to 0\n");
 			write(out_fd, &values_str[0], 1);
 		}
 #endif
 		return data_struct;
-	} else if (buf[0] == 0x08 && buf[3] == 0x02) {
+	} else if (buf[0] == JOYSTICK_TO_HOST && buf[3] == REPORT_TYPE_SENSOR) {
 		float sensor_gyro[3], sensor_accel[3], touch_x, touch_y;
 		unsigned char i;
 		byte data_keymask;
@@ -121,7 +126,7 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 		touch_x = ((float) buf[16]) / 200.0f; //0~200  19~190
 		touch_y = ((float) buf[17]) / 200.0f;
 		data_keymask = buf[18];
-		data_battery = (int) buf[19] + 100;
+		data_battery = (int) buf[19];
 #if 0//def DEBUG
 		ALOGD("type2 %02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X\n",
 				buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],buf[10],buf[11],buf[12],buf[13],buf[14],buf[15],buf[16]);
@@ -140,7 +145,6 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 				"F");
 		jfieldID touchY = (*env)->GetFieldID(env, clsBt_node_data, "touchY",
 				"F");
-//		jfieldID battery = (*env)->GetFieldID(env, clsBt_node_data, "battery_level", "F");
 		jfieldID bat_level = (*env)->GetFieldID(env, clsBt_node_data,
 				"bat_level", "I");
 		jfieldID keymask = (*env)->GetFieldID(env, clsBt_node_data, "keymask",
@@ -149,9 +153,8 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 		if (type == NULL) {
 			ALOGE("getFieldID type failed");
 		} else {
-			(*env)->SetIntField(env, data_struct, type, 2);
+			(*env)->SetIntField(env, data_struct, type, REPORT_TYPE_SENSOR);
 		}
-		ALOGD("type2 data4 ,SetIntField type\n");
 		if (gyro_x == NULL) {
 			ALOGE("getFieldID gyro_x failed");
 		} else {
@@ -203,7 +206,52 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 			(*env)->SetByteField(env, data_struct, keymask, data_keymask);
 		}
 		return data_struct;
+	}else if (buf[0] == JOYSTICK_TO_HOST && buf[3] == REPORT_TYPE_VERSION){
+		int appVersion, deviceVersion, deviceType;
+
+		appVersion = (int)buf[4];
+		deviceVersion = (short)buf[8];
+		deviceType = (short)buf[10];
+#ifdef DEBUG
+		ALOGD("type3 VERSION: %02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X\n",
+				buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],buf[10],buf[11],buf[12],buf[13],buf[14],buf[15],buf[16]);
+#endif
+		ALOGD("appversion:%d, deviceVerion:%d, deviceType:%d\n", appVersion, deviceVersion, deviceType);
+		jfieldID type = (*env)->GetFieldID(env, clsBt_node_data, "type", "I");
+		jfieldID aVersion = (*env)->GetFieldID(env, clsBt_node_data, "appVersion", "I");
+		jfieldID dVersion = (*env)->GetFieldID(env, clsBt_node_data, "deviceVersion", "I");
+		jfieldID dType = (*env)->GetFieldID(env, clsBt_node_data, "deviceType", "I");
+		(*env)->SetIntField(env, data_struct, type, REPORT_TYPE_VERSION);
+		(*env)->SetIntField(env, data_struct, aVersion, appVersion);
+		(*env)->SetIntField(env, data_struct, dVersion, deviceVersion);
+		(*env)->SetIntField(env, data_struct, dType, deviceType);
+
+		return data_struct;
+	}else{
+		jfieldID type = (*env)->GetFieldID(env, clsBt_node_data, "type", "I");
+		(*env)->SetIntField(env, data_struct, type, -1);
+		return data_struct;
 	}
 
+
 	return 0;
+}
+
+JNIEXPORT jint Java_com_google_vr_vrcore_controller_ControllerService_nativeWriteFile(JNIEnv *env, jobject jclass, jint type, jint data1, jint data2){
+	ALOGD("call Java_com_google_vr_vrcore_controller_ControllerService_nativeWriteFile, hidraw_fd:%d\n", hidraw_fd);
+	if(hidraw_fd <0) return 0;
+	unsigned char buf[4];
+
+	buf[0] = 0x07;//report id
+	buf[1] = (char)type;//type
+	buf[2] = (char)data1;
+	buf[3] = (char)data2;
+
+#ifdef DEBUG
+		ALOGD("write hidraw node %02X,%02X,%02X,%02X,\n",
+				buf[0],buf[1],buf[2],buf[3]);
+#endif
+	write(hidraw_fd, buf, 4);
+//	lseek(hidraw_fd, 0, SEEK_SET);
+		return 0;
 }

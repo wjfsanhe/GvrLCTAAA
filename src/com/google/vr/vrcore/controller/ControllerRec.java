@@ -29,36 +29,22 @@ public class ControllerRec extends BroadcastReceiver {
         };
 
         if(DAYDREAM_TEST.equals(action)){
-            Log.d(TAG,"start phoneEvent");
-            //start send phoneEvent
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    while (count < 50) {
-                        Log.d(TAG,"to start PhoneEvent count:"+count);
-                        try {
-                            Thread.sleep(200);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        try {
-                            ControllerService.OnPhoneEvent();
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
-                        }
-                        count++;
-                    }
-                    count = 0;
-                }
-            }).start();
-        }else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
-            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-            Log.d("mshuai", device.getName() + " ACTION_ACL_CONNECTED");
-
-            i.putExtra(ControllerService.BLUETOOTH_CONNECTED_SUCCESS, true);
-//            context.startService(i);
-            //delay 3s, wait for create hidrawx node
+            Log.d(TAG,"start joystick vibrate");
+            i.putExtra("test_vibrate", true);
             myHandler.postDelayed(startIntentService, 3000);
+        }else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
+            //only iqiyi iDream joystick start Service
+            if (true) {
+
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                Log.d("mshuai", device.getName() + " ACTION_ACL_CONNECTED");
+
+                i.putExtra(ControllerService.BLUETOOTH_CONNECTED_SUCCESS, true);
+                i.putExtra(ControllerService.BLUETOOTH_DEVICE_OBJECT, device);
+                // context.startService(i);
+                // delay 3s, wait for create hidrawx node
+                myHandler.postDelayed(startIntentService, 3000);
+            }
 
         }else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
             BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
@@ -67,7 +53,7 @@ public class ControllerRec extends BroadcastReceiver {
             i.putExtra(ControllerService.BLUETOOTH_DISCONNECTED, true);
 //            context.startService(i);
             //delay 3s, wait for create hidrawx node
-            myHandler.postDelayed(startIntentService, 3000);
+            myHandler.postDelayed(startIntentService, 1500);
         }
     }
 }
