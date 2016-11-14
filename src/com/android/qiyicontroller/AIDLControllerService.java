@@ -24,8 +24,8 @@ public class AIDLControllerService extends Service {
     private Binder mAIDLController = new AIDLController.Stub(){
         @Override
         public String GetBatteryLevel(){
-            Log.d("AIDLControllerService","<<<GetBatteryLevel:");
-            return "50";
+            Log.d("AIDLControllerService","<<<GetBatteryLevel");
+            return AIDLControllerUtil.mBatterLevel;
         }
 
         @Override

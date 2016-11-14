@@ -43,6 +43,7 @@ import java.nio.ByteOrder;
 //add by zhangyawen
 import android.view.KeyEvent;
 import android.app.Instrumentation;
+import com.android.qiyicontroller.AIDLControllerUtil;
 //end
 
 /**
@@ -124,6 +125,7 @@ public class ControllerService extends Service {
             debug_log("onStartCommand intent.getAction:"+intent.getAction()+", set isCancel=false");
             isCancel = true;
             device=null;
+			AIDLControllerUtil.mBatterLevel = "";
         }else if(intent.getBooleanExtra("test_vibrate", false)){//for test shock
             controlJoystickVibrate(200, 40);
         }
@@ -310,6 +312,7 @@ public class ControllerService extends Service {
                                 sendPhoneEventControllerTouchPadEvent(nodeData.touchX,nodeData.touchY);
                                 debug_log("send acc button touch event finish");
                                 debug_log("battery:"+nodeData.bat_level);
+                                AIDLControllerUtil.mBatterLevel = String.valueOf(nodeData.bat_level);
                                 // send broadcast to notify the hand shank's battery
                             }else if (nodeData.type == REPORT_TYPE_VERSION) {
                                 debug_log("nodeData appVersion:"+nodeData.appVersion+", deviceVersion:"+nodeData.deviceVersion+", deviceType:"+nodeData.deviceType);
