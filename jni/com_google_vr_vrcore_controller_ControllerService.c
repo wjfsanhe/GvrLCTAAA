@@ -17,6 +17,8 @@
 #define JOYSTICK_TO_HOST 8
 #define HOST_TO_JOYSTICK 7
 
+#define GET_DATA_TIMEOUT -1
+#define GET_INVALID_DATA -2
 #define REPORT_TYPE_ORIENTATION 1
 #define REPORT_TYPE_SENSOR		2
 #define REPORT_TYPE_VERSION		3
@@ -78,13 +80,35 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 	jmethodID mid_init = (*env)->GetMethodID(env, clsBt_node_data, "<init>", "()V");
 	jobject data_struct = (*env)->NewObject(env, clsBt_node_data, mid_init);//, qd[0], qd[1], qd[2], qd[3]);
 
-	// read hidraw data
-	int res = read(hidraw_fd, buf, HIDRAW_BUFFER_SIZE);
-	if (res < 0) {
-		ALOGE("READERR, res:%d\n", res);
-		return 0;
+	int ready,res;
+	struct pollfd readfds;
+	struct timespec ts1, ts2;
+
+	readfds.fd = hidraw_fd;
+	readfds.events = POLLIN;
+	//record duration
+	clock_gettime(CLOCK_MONOTONIC_RAW, &ts1);
+
+	// poll hidraw_fd ,only 1 fd, block 12ms
+	ready = poll(&readfds, 1,12);
+	if (ready) {
+		// read hidraw data
+		res = read(hidraw_fd, buf, HIDRAW_BUFFER_SIZE);
+		if (res < 0) {
+			ALOGE("READERR, res:%d\n", res);
+			return 0;
+		}
+	}else{
+		clock_gettime(CLOCK_MONOTONIC_RAW, &ts2);
+		ALOGD("native read, block timeout, delta time:%ld\n", (ts2.tv_nsec-ts1.tv_nsec)/1000);
+		ALOGD("No data to read");
+		jfieldID type = (*env)->GetFieldID(env, clsBt_node_data, "type", "I");
+		(*env)->SetIntField(env, data_struct, type, GET_DATA_TIMEOUT);
+		return data_struct;
 	}
-	ALOGD("native read, data count is %d\n", res);
+	clock_gettime(CLOCK_MONOTONIC_RAW, &ts2);
+	ALOGD("native read, delta time:%ld\n", (ts2.tv_nsec-ts1.tv_nsec)/1000);
+	ALOGD("native read, data count is %d, buf[3]:%d,packetNum:%04X\n", res, (int)buf[3],(short) (buf + 1));
 	if(buf[0] == JOYSTICK_TO_HOST && buf[3] == REPORT_TYPE_ORIENTATION) {
 		float *qd;
 		qd = (float*)(buf+4);
@@ -229,7 +253,7 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 		return data_struct;
 	}else{
 		jfieldID type = (*env)->GetFieldID(env, clsBt_node_data, "type", "I");
-		(*env)->SetIntField(env, data_struct, type, -1);
+		(*env)->SetIntField(env, data_struct, type, GET_INVALID_DATA);
 		return data_struct;
 	}
 

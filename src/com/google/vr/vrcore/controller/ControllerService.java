@@ -63,6 +63,9 @@ public class ControllerService extends Service {
 
     public static int JOYSTICK_CONTROL_TYPE = 1;
     public static int JOYSTICK_REQUEST_TYPE = 2;
+
+    public static int GET_DATA_TIMEOUT = -1;
+    public static int GET_INVALID_DATA = -2;
     public static int REPORT_TYPE_ORIENTATION = 1;
     public static int REPORT_TYPE_SENSOR = 2;
     public static int REPORT_TYPE_VERSION = 3;
@@ -317,8 +320,12 @@ public class ControllerService extends Service {
                                 // send broadcast to notify the hand shank's battery
                             }else if (nodeData.type == REPORT_TYPE_VERSION) {
                                 debug_log("nodeData appVersion:"+nodeData.appVersion+", deviceVersion:"+nodeData.deviceVersion+", deviceType:"+nodeData.deviceType);
+                            } else if(nodeData.type == GET_DATA_TIMEOUT){
+                                Log.e(TAG, "no data to read, block timeout");
+                            } else if(nodeData.type == GET_INVALID_DATA){
+                                Log.e(TAG, "get invalid data from hidraw ");
                             } else {
-                                Log.e(TAG, "get invalid data from hidraw");
+                                Log.e(TAG,"other err when read node data");
                             }
                         }
                         nativeCloseFile();
