@@ -1,6 +1,11 @@
 package com.google.vr.vrcore.controller;
 
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothInputDevice;
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProfile.ServiceListener;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -49,12 +54,24 @@ public class ControllerService extends Service {
 
     public final static String BLUETOOTH_CONNECTED_SUCCESS ="bluetooth_connected";
     public final static String BLUETOOTH_DISCONNECTED = "bluetooth_disconnected";
+    public final static String BLUETOOTH_DEVICE_OBJECT = "bluetooth_device";
     private final static boolean DEBUG = true;
 
     private boolean lastButtonStatus = false;
     private int lastButton = 0;
     private IControllerService.Stub controllerService;
     private static IControllerListener controllerListener;
+
+    private static BluetoothInputDevice mBtInputDeviceService = null;
+    private static BluetoothDevice device;
+    private BluetoothAdapter mAdapter;
+
+    public static int JOYSTICK_CONTROL_TYPE = 1;
+    public static int JOYSTICK_REQUEST_TYPE = 2;
+    public static int REPORT_TYPE_ORIENTATION = 1;
+    public static int REPORT_TYPE_SENSOR = 2;
+    public static int REPORT_TYPE_VERSION = 3;
+
     private Handler handler = new Handler();
     private static int button = 0;
 
@@ -72,6 +89,14 @@ public class ControllerService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        mAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (!mAdapter.getProfileProxy(getBaseContext(), mServiceListener,
+                BluetoothProfile.INPUT_DEVICE)) {
+            Log.w(TAG, "Cannot obtain profile proxy");
+            return;
+        }
+
         Log.d("myControllerService", "onCreate");
     }
 
@@ -86,12 +111,21 @@ public class ControllerService extends Service {
         if(intent == null) return super.onStartCommand(intent,flags,startId);
         if(intent.getBooleanExtra(BLUETOOTH_CONNECTED_SUCCESS, false)){
             isCancel = false;
+            device = intent.getParcelableExtra(ControllerService.BLUETOOTH_DEVICE_OBJECT);
+            if(device!=null){
+                debug_log("get device name is:"+device.getName());
+            }else{
+                debug_log("get device is null");
+            }
             startGetNodeDataThread();
             //start read hidrawx node
         }else if(intent.getBooleanExtra(BLUETOOTH_DISCONNECTED,false)){
             //stop read node
             debug_log("onStartCommand intent.getAction:"+intent.getAction()+", set isCancel=false");
             isCancel = true;
+            device=null;
+        }else if(intent.getBooleanExtra("test_vibrate", false)){//for test shock
+            controlJoystickVibrate(200, 40);
         }
         return super.onStartCommand(intent,flags,startId);
     }
@@ -159,6 +193,30 @@ public class ControllerService extends Service {
         return true;
     }
 
+    private final ServiceListener mServiceListener = new ServiceListener() {
+
+        @Override
+        public void onServiceConnected(int profile, BluetoothProfile proxy) {
+            debug_log("serivceconnected profile:"+profile);
+            if (profile != BluetoothProfile.INPUT_DEVICE) return;
+
+            Log.i(TAG, "Profile proxy connected");
+
+            mBtInputDeviceService = (BluetoothInputDevice) proxy;
+
+        }
+
+        @Override
+        public void onServiceDisconnected(int profile) {
+            debug_log("serivcedisconnected profile:"+profile);
+            if (profile != BluetoothProfile.INPUT_DEVICE) return;
+
+            Log.i(TAG, "Profile proxy disconnected");
+
+            mBtInputDeviceService = null;
+        }
+    };
+
     private boolean isCancel = false;
 
     private String[] device_path = new String[]{"/dev/hidraw0", "/dev/hidraw1", "/dev/hidraw2"};// read 32Byte/time
@@ -179,11 +237,12 @@ public class ControllerService extends Service {
      */
     public native int nativeOpenFile();
     public native Bt_node_data nativeReadFile();
+    public native int nativeWriteFile(int type, int shockproofness, int duration);
     public native int nativeCloseFile();
 
-    private void scheduleNext(){
-
-    }
+//    private void scheduleNext(){
+//
+//    }
 
     private void startGetNodeDataThread() {
         if (getNodeDataThread == null) {
@@ -200,11 +259,9 @@ public class ControllerService extends Service {
                             return;
                         }
                         Log.d(TAG, "natvie Open File");
-                        // boolean needSetControllerState = true;
 
                         while (!isCancel) {
-                            if (controllerListener == null) {
-                                // needSetControllerState = true;
+                            if (false){//controllerListener == null) {
                                 Log.i(TAG, "controllerListener is null, sleep 3s");
 
                                 try {
@@ -215,35 +272,35 @@ public class ControllerService extends Service {
                                     continue;
                                 }
                             } else {
-                                if (true) {// needSetControllerState) {
-                                    debug_log("set Controller state CONNECTED!");
-                                    try {
-                                            controllerListener.onControllerStateChanged(controllerId,
-                                                    ControllerStates.CONNECTED);
-                                        // needSetControllerState = false;
-                                    } catch (RemoteException e) {
-                                        e.printStackTrace();
+
+                                try {
+                                    if (controllerListener != null) {
+                                        debug_log("set Controller state CONNECTED!");
+                                        controllerListener.onControllerStateChanged(controllerId,
+                                                ControllerStates.CONNECTED);
                                     }
+                                } catch (RemoteException e) {
+                                    e.printStackTrace();
                                 }
                             }
 
                             Bt_node_data nodeData = nativeReadFile();
                             if (nodeData == null) {
                                 Log.e(TAG, "do not get hidraw data from native");
-                                continue;
+                                break;
                             }
 
-                            if (nodeData.type == 1) {// quans
-                                debug_log("nodeData:x:" + nodeData.quans_x + ", y:"
-                                        + nodeData.quans_y + ",z:" + nodeData.quans_z + ",w:"
-                                        + nodeData.quans_w);
+                            if (nodeData.type == REPORT_TYPE_ORIENTATION) {// quans
+//                                debug_log("nodeData:x:" + nodeData.quans_x + ", y:"
+//                                        + nodeData.quans_y + ",z:" + nodeData.quans_z + ",w:"
+//                                        + nodeData.quans_w);
                                 //-x, -z, y, w
-                                sendPhoneEventControllerOrientationEvent(-nodeData.quans_x,
-                                        -nodeData.quans_z,
+                                sendPhoneEventControllerOrientationEvent(nodeData.quans_x,
                                         nodeData.quans_y,
+                                        nodeData.quans_z,
                                         nodeData.quans_w);
                                 debug_log("send phon event finish");
-                            } else if (nodeData.type == 2) {
+                            } else if (nodeData.type == REPORT_TYPE_SENSOR) {
                                 debug_log("nodeData.gyro x:" + nodeData.gyro_x + ", y:"
                                         + nodeData.gyro_y + ", z:" + nodeData.gyro_z + ", acc x:"
                                         + nodeData.acc_x + ", y:" + nodeData.acc_y + ", z:"
@@ -254,9 +311,10 @@ public class ControllerService extends Service {
                                 debug_log("send acc button touch event finish");
                                 debug_log("battery:"+nodeData.bat_level);
                                 // send broadcast to notify the hand shank's battery
-
+                            }else if (nodeData.type == REPORT_TYPE_VERSION) {
+                                debug_log("nodeData appVersion:"+nodeData.appVersion+", deviceVersion:"+nodeData.deviceVersion+", deviceType:"+nodeData.deviceType);
                             } else {
-                                Log.e(TAG, "invalid data");
+                                Log.e(TAG, "get invalid data from hidraw");
                             }
                         }
                         nativeCloseFile();
@@ -283,7 +341,11 @@ public class ControllerService extends Service {
     }
 
 
-
+    public int controlJoystickVibrate(int powerLevel, int millisceonds){
+        int res = nativeWriteFile(JOYSTICK_CONTROL_TYPE, powerLevel, millisceonds);
+        debug_log("controlJoystickVibrate res:"+res);
+        return res;
+    }
 
 
     private final ControllerTouchEvent controllerTouchEvent = new ControllerTouchEvent();
@@ -294,9 +356,9 @@ public class ControllerService extends Service {
 //    private static final ControllerEventPacket cep = new ControllerEventPacket();
     private void sendPhoneEventControllerOrientationEvent(float x, float y, float z, float w){
 
-        controllerOrientationEvent.qx = x;
-        controllerOrientationEvent.qy = y;
-        controllerOrientationEvent.qz = z;
+        controllerOrientationEvent.qx = -x;
+        controllerOrientationEvent.qy = -z;
+        controllerOrientationEvent.qz = y;
         controllerOrientationEvent.qw = w;
 
         controllerOrientationEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
@@ -311,6 +373,9 @@ public class ControllerService extends Service {
         } catch (RemoteException e) {
             e.printStackTrace();
         }
+        debug_log("OrientationX:" + controllerOrientationEvent.qx + ", Y:"
+                + controllerOrientationEvent.qy + ",Z:" + controllerOrientationEvent.qz + ",W:"
+                + controllerOrientationEvent.qw);
     }
     private void sendPhoneEventControllerButtonEvent(byte keymask){
         int button = ControllerButtonEvent.BUTTON_NONE;
@@ -653,6 +718,10 @@ class Bt_node_data{
 
     public float touchX;
     public float touchY;
+
+    public int appVersion;
+    public int deviceVersion;
+    public int deviceType;
 
 
     public Bt_node_data(){}
