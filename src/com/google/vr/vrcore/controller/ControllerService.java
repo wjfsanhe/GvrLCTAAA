@@ -296,18 +296,27 @@ public class ControllerService extends Service {
 //                                debug_log("nodeData:x:" + nodeData.quans_x + ", y:"
 //                                        + nodeData.quans_y + ",z:" + nodeData.quans_z + ",w:"
 //                                        + nodeData.quans_w);
-                                //-x, -z, y, w
-                                sendPhoneEventControllerOrientationEvent(nodeData.quans_x,
-                                        nodeData.quans_y,
-                                        nodeData.quans_z,
-                                        nodeData.quans_w);
-                                debug_log("send phon event finish");
+                                //if Listener is null ,don't need to send Orientation data
+                                if (controllerListener != null) {
+                                    sendPhoneEventControllerOrientationEvent(nodeData.quans_x,
+                                            nodeData.quans_y,
+                                            nodeData.quans_z,
+                                            nodeData.quans_w);
+                                    debug_log("send phon event finish");
+                                }
                             } else if (nodeData.type == REPORT_TYPE_SENSOR) {
                                 debug_log("nodeData.gyro x:" + nodeData.gyro_x + ", y:"
                                         + nodeData.gyro_y + ", z:" + nodeData.gyro_z + ", acc x:"
                                         + nodeData.acc_x + ", y:" + nodeData.acc_y + ", z:"
-                                        + nodeData.acc_z +", touchX:"+nodeData.touchX+", touchY:"+nodeData.touchY+", keymask:"+nodeData.keymask);
-                                sendPhoneEventControllerAccAndGyroEvent(nodeData.gyro_x, nodeData.gyro_y, nodeData.gyro_z, nodeData.acc_x, nodeData.acc_y, nodeData.acc_z);
+                                        + nodeData.acc_z + ", touchX:" + nodeData.touchX
+                                        + ", touchY:" + nodeData.touchY + ", keymask:"
+                                        + nodeData.keymask);
+                                //if Listener is null, don't need to send Acc&Gyro data
+                                if (controllerListener != null) {
+                                    sendPhoneEventControllerAccAndGyroEvent(nodeData.gyro_x,
+                                            nodeData.gyro_y, nodeData.gyro_z, nodeData.acc_x,
+                                            nodeData.acc_y, nodeData.acc_z);
+                                }
                                 sendPhoneEventControllerButtonEvent(nodeData.keymask);
                                 sendPhoneEventControllerTouchPadEvent(nodeData.touchX,nodeData.touchY);
                                 debug_log("send acc button touch event finish");
