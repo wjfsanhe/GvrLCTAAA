@@ -7,6 +7,10 @@ LOCAL_MODULE_TAGS := optional
 
 LOCAL_SRC_FILES := $(call all-java-files-under, src)
 
+LOCAL_SRC_FILES := $(call all-java-files-under, src) \
+    src/com/android/qiyicontroller/AIDLController.aidl
+
+
 LOCAL_JNI_SHARED_LIBRARIES := liblctgetnode
 LOCAL_JAVA_LIBRARIES := \
 	#gvrlctservice_common\

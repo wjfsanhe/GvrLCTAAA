@@ -11,7 +11,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <application
         android:allowBackup="true"
-        android:persistent="true">
+        android:persistent="true"
+        android:requiredForAllUsers="true">
         <service
             android:name=".controller.ControllerService"
             android:enabled="true"
@@ -20,6 +21,15 @@
             <intent-filter>
                 <action android:name="com.google.vr.vrcore.controller.BIND" />
             </intent-filter>
+        </service>
+        <service
+            android:name="com.android.qiyicontroller.AIDLControllerService"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.android.qiyicontroller.BIND" />
+            </intent-filter>
+
         </service>
         <receiver android:name=".controller.ControllerRec">
             <intent-filter>
