@@ -108,7 +108,7 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 	}
 	clock_gettime(CLOCK_MONOTONIC_RAW, &ts2);
 	ALOGD("native read, delta time:%ld\n", (ts2.tv_nsec-ts1.tv_nsec)/1000);
-	ALOGD("native read, data count is %d, buf[3]:%d,packetNum:%04X\n", res, (int)buf[3],(short) (buf + 1));
+	ALOGD("native read, data count is %d, buf[3]:%d,packetNum:%04X\n", res, (int)buf[3],*((short*) (buf+1)));
 	if(buf[0] == JOYSTICK_TO_HOST && buf[3] == REPORT_TYPE_ORIENTATION) {
 		float *qd;
 		qd = (float*)(buf+4);
@@ -233,9 +233,9 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 	}else if (buf[0] == JOYSTICK_TO_HOST && buf[3] == REPORT_TYPE_VERSION){
 		int appVersion, deviceVersion, deviceType;
 
-		appVersion = (int)buf[4];
-		deviceVersion = (short)buf[8];
-		deviceType = (short)buf[10];
+		appVersion = *((int*)(buf+4));
+		deviceVersion = *((short*)(buf+8));
+		deviceType = *((short*)(buf+10));
 #ifdef DEBUG
 		ALOGD("type3 VERSION: %02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X\n",
 				buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],buf[10],buf[11],buf[12],buf[13],buf[14],buf[15],buf[16]);
