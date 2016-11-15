@@ -34,11 +34,9 @@ static int out_fd = 0;
 static jclass clsBt_node_data = NULL;
 
 JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeOpenFile
-  (
-		JNIEnv *env, jobject jclass) {
+  (JNIEnv *env, jobject jclass) {
 	int ret = -1; // not -1, 0, 1, 2
-	ALOGD(
-			"call Java_com_google_vr_vrcore_controller_ControllerService_native_open_file");
+	ALOGD("call native_open_file");
 	for (int i = 0; i < 3; i++) {
 		hidraw_fd = open(device[i], O_RDWR);
 		if (hidraw_fd < 0) {
@@ -71,7 +69,7 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
 }
 
 JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeReadFile(JNIEnv *env, jobject jclass){
-	ALOGD("call Java_com_google_vr_vrcore_controller_ControllerService_native_read_file, hidraw_fd:%d, out_fd:%d\n", hidraw_fd, out_fd);
+	ALOGD("call nativeReadFile, hidraw_fd:%d, out_fd:%d\n", hidraw_fd, out_fd);
 	if(hidraw_fd <0) return 0;
 	unsigned char buf[HIDRAW_BUFFER_SIZE];
 
@@ -107,12 +105,13 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 		return data_struct;
 	}
 	clock_gettime(CLOCK_MONOTONIC_RAW, &ts2);
+	ALOGD("[%d]:TS %ld.%06ld PN %05d [%d]:", res, ts2.tv_sec, ts2.tv_nsec/1000, buf[1]+buf[2]*256, buf[3]);
 	ALOGD("native read, delta time:%ld\n", (ts2.tv_nsec-ts1.tv_nsec)/1000);
-	ALOGD("native read, data count is %d, buf[3]:%d,packetNum:%04X\n", res, (int)buf[3],*((short*) (buf+1)));
+	//ALOGD("native read, data count is %d, buf[3]:%d,packetNum:%04X\n", res, (int)buf[3],*((short*) (buf+1)));
 	if(buf[0] == JOYSTICK_TO_HOST && buf[3] == REPORT_TYPE_ORIENTATION) {
 		float *qd;
 		qd = (float*)(buf+4);
-#ifdef DEBUG
+#if 0//def DEBUG
 		ALOGD("quans data(w,x,y,z):%f,%f,%f,%f\n",qd[0], qd[1], qd[2], qd[3]);
 #endif
 
@@ -262,7 +261,7 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 }
 
 JNIEXPORT jint Java_com_google_vr_vrcore_controller_ControllerService_nativeWriteFile(JNIEnv *env, jobject jclass, jint type, jint data1, jint data2){
-	ALOGD("call Java_com_google_vr_vrcore_controller_ControllerService_nativeWriteFile, hidraw_fd:%d\n", hidraw_fd);
+	ALOGD("call nativeWriteFile, hidraw_fd:%d\n", hidraw_fd);
 	if(hidraw_fd <0) return 0;
 	unsigned char buf[4];
 
