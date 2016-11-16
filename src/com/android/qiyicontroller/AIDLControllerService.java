@@ -9,6 +9,11 @@ import android.util.Log;
 public class AIDLControllerService extends Service {
     private static String TAG = "AIDLControllerService";
 
+    public static int JOYSTICK_CONTROL_TYPE = 1;
+
+    public native int nativeWriteFile(int type, int shockproofness, int duration);
+
+
     @Override
     public void onCreate(){
         super.onCreate();
@@ -30,6 +35,7 @@ public class AIDLControllerService extends Service {
 
         @Override
         public void OpenVibrator(){
+            controlJoystickVibrate(80, 5);
             Log.d("AIDLControllerService","OpenVibrator");
         }
         @Override
@@ -38,4 +44,11 @@ public class AIDLControllerService extends Service {
         }
 
     };
+
+
+    public int controlJoystickVibrate(int powerLevel, int millisceonds){
+        Log.d("AIDLControllerService","<<<controlJoystickVibrate");
+        int res = nativeWriteFile(JOYSTICK_CONTROL_TYPE, powerLevel, millisceonds);
+        return res;
+    }
 }
