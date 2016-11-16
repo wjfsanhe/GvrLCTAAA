@@ -411,10 +411,11 @@ public class ControllerService extends Service {
             //back
             button = ControllerButtonEvent.BUTTON_NONE;
 
-        }else if ((keymask&0x04) != 0) {
-            //trigger
-            button = ControllerButtonEvent.BUTTON_NONE;
-        }*/else if ((keymask&0x08) != 0) {
+       }*/else if ((keymask&0x04) != 0) {
+            //trigger treat as touch pad click
+            Log.d("[YYY]","keymask = "+keymask+" trigger treat as touch pad click");
+            button = ControllerButtonEvent.BUTTON_CLICK;
+        }else if ((keymask&0x08) != 0) {
             //home
             button = ControllerButtonEvent.BUTTON_HOME;
         }else if ((keymask&0x16) != 0) {
@@ -556,8 +557,21 @@ public class ControllerService extends Service {
 
     //add by zhangyawen for system event
     private boolean isDone = false;
+    private boolean isReseting = false;
+    private boolean isOutting = false;
     private int mLastKeyMask = 0;
     private static final int DELAY_TIME = 500;
+    private static final int DEFINE_LONG_TIME_FOR_HOME = 1*1000;
+    private static final int DEFINE_LONG_TIME_FOR_BACK = 1*1000;
+
+    //short click back key
+    public static final int BACK_BUTTON_DOWN = 100;
+    public static final int BACK_BUTTON = 102;
+    public static final int BACK_BUTTON_UP = 103;
+
+    //long click home key
+    public static final int HOME_RECENTERING = 104;
+    public static final int HOME_RECENTERED = 105;
 
     public static final int SYSTEM_EVENT_NOT_DEFINED_ID = -1;
     public static final int SYSTEM_EVENT_BACK_ID = 0;
@@ -568,11 +582,27 @@ public class ControllerService extends Service {
     public static final int SYSTEM_EVENT_RIGHT_ID = 5;
     public static final int SYSTEM_EVENT_HOME_ID = 6;
 
-    //timer
+    //timer1
     private Runnable runnable = new Runnable() {
         @Override
         public void run() {
             isDone = false;
+        }
+    };
+
+    //timer2
+    private Runnable runnableForHome = new Runnable() {
+        @Override
+        public void run() {
+            isReseting = true;
+        }
+    };
+
+    //timer2
+    private Runnable runnableForBack = new Runnable() {
+        @Override
+        public void run() {
+            isOutting = true;
         }
     };
 
@@ -608,18 +638,71 @@ public class ControllerService extends Service {
     }
 
     private void ButtonEvent( int keymask){
-
         if (keymask != 0) {
-            if (keymask != mLastKeyMask) {
-                simulationButtonSystemEvent(keymask);
-                mLastKeyMask = keymask;
+            if ((keymask&0x08) != 0) {
+                // differ click or longclick for home key(1000ms)
+                if (keymask != mLastKeyMask) {
+                    handler.postDelayed(runnableForHome, DEFINE_LONG_TIME_FOR_HOME);
+                    mLastKeyMask = keymask;
+                } else {
+                    if (isReseting) {
+                        // set Recentering state
+                        Log.d("[ZZZ]","Home longclick Recentering");
+                    } else {
+                        //do nothing
+                    }
+                }
+            } else if((keymask&0x02) != 0) {
+                // differ click or longclick for back key(1000ms)
+                if (keymask != mLastKeyMask) {
+                    handler.postDelayed(runnableForBack, DEFINE_LONG_TIME_FOR_BACK);
+                    mLastKeyMask = keymask;
+                    //set the state (ButtonDown)
+                    Log.d("[ZZZ]","Back shortclick ButtonDown");
+                } else {
+                    if (isOutting) {
+                        // do nothing
+                        Log.d("[ZZZ]","Back shortclick Button");
+                    } else {
+                        // set the state (Button)
+                        Log.d("[ZZZ]","Back shortclick Button");
+                    }
+                }
             } else {
-                //do nothing
+                if (keymask != mLastKeyMask) {
+                    simulationButtonSystemEvent(keymask);
+                    mLastKeyMask = keymask;
+                } else {
+                    //do nothing
+                }
             }
+
         } else {
+            if (isReseting) {
+                // set Recentered state
+                isReseting = false;
+                Log.d("[ZZZ]","Home longclick Recentered");
+            } else if (isOutting) {
+                // set Out of app state
+                isOutting = false;
+                simulationButtonSystemEvent(mLastKeyMask);
+            } else {
+                if ((mLastKeyMask&0x08) != 0) {
+                    handler.removeCallbacks(runnableForHome);
+                    simulationButtonSystemEvent(mLastKeyMask);
+
+                }
+                if ((mLastKeyMask&0x02) != 0) {
+                    handler.removeCallbacks(runnableForBack);
+                    //set the state (ButtonUp)
+
+                    Log.d("[ZZZ]","Back shortclick ButtonUp");
+                }
+            }
             mLastKeyMask = keymask;
         }
     }
+
 
 
     private void simulationSystemEvent(float touchX, float touchY){
@@ -651,7 +734,7 @@ public class ControllerService extends Service {
             return SYSTEM_EVENT_DOWN_ID;
         } else if ((touchX<touchY) && ((touchY+touchX)<1) && (touchX>=0 && touchX<=0.2)) {
             return SYSTEM_EVENT_LEFT_ID;
-        } else if ((touchX-0.5)*(touchX-0.5)+(touchY-0.5)*(touchY-0.5) < 0.04) {
+        } else if ((touchX-0.5)*(touchX-0.5)+(touchY-0.5)*(touchY-0.5) < (0.2*0.2)) {
             return SYSTEM_EVENT_ENTER_ID;
         } else {
             Log.d("[YYY]","matchEvent the event not defined.");
@@ -677,10 +760,12 @@ public class ControllerService extends Service {
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK);
                             logInfo = "KeyEvent.KEYCODE_BACK";
                             break;
+                        /*
                         case SYSTEM_EVENT_ENTER_ID:
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER);
                             logInfo = "KeyEvent.KEYCODE_ENTER";
                             break;
+
                         case SYSTEM_EVENT_UP_ID:
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_UP);
                             logInfo = "KeyEvent.KEYCODE_DPAD_UP";
@@ -697,6 +782,7 @@ public class ControllerService extends Service {
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_RIGHT);
                             logInfo = "KeyEvent.KEYCODE_DPAD_RIGHT";
                             break;
+                      */
                         case SYSTEM_EVENT_HOME_ID:
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_HOME);
                             logInfo = "KeyEvent.KEYCODE_HOME";
