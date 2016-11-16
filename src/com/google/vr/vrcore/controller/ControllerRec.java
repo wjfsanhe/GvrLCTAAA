@@ -24,6 +24,7 @@ public class ControllerRec extends BroadcastReceiver {
         final Runnable startIntentService = new Runnable() {
             @Override
             public void run() {
+                i.setPackage(context.getPackageName());
                 context.startService(i);
             }
         };
@@ -31,7 +32,8 @@ public class ControllerRec extends BroadcastReceiver {
         if(DAYDREAM_TEST.equals(action)){
             Log.d(TAG,"start joystick vibrate");
             i.putExtra("test_vibrate", true);
-            myHandler.postDelayed(startIntentService, 3000);
+            i.setPackage(context.getPackageName());
+            context.startService(i);
         }else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
             //only iqiyi iDream joystick start Service
             if (true) {

@@ -68,6 +68,9 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
 	return 0;
 }
 
+/*
+ * if return 0 ,it means fd is useness, so java thread should close fd
+ */
 JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeReadFile(JNIEnv *env, jobject jclass){
 	ALOGD("call nativeReadFile, hidraw_fd:%d, out_fd:%d\n", hidraw_fd, out_fd);
 	if(hidraw_fd <0) return 0;
@@ -79,6 +82,11 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 	jobject data_struct = (*env)->NewObject(env, clsBt_node_data, mid_init);//, qd[0], qd[1], qd[2], qd[3]);
 
 	int ready,res;
+	static unsigned short packetNum;
+#ifdef DEBUG
+	static unsigned int count, totalCount;
+	static int pre_packetNum=-1;
+#endif
 	struct pollfd readfds;
 	struct timespec ts1, ts2;
 
@@ -98,15 +106,22 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 		}
 	}else{
 		clock_gettime(CLOCK_MONOTONIC_RAW, &ts2);
-		ALOGD("native read, block timeout, delta time:%ld\n", (ts2.tv_nsec-ts1.tv_nsec)/1000);
-		ALOGD("No data to read");
+		ALOGD("No data to read, native read, block timeout, delta time:%ld\n", (ts2.tv_nsec-ts1.tv_nsec)/1000);
 		jfieldID type = (*env)->GetFieldID(env, clsBt_node_data, "type", "I");
 		(*env)->SetIntField(env, data_struct, type, GET_DATA_TIMEOUT);
 		return data_struct;
 	}
 	clock_gettime(CLOCK_MONOTONIC_RAW, &ts2);
-	ALOGD("[%d]:TS %ld.%06ld PN %05d [%d]:", res, ts2.tv_sec, ts2.tv_nsec/1000, buf[1]+buf[2]*256, buf[3]);
-	ALOGD("native read, delta time:%ld\n", (ts2.tv_nsec-ts1.tv_nsec)/1000);
+	packetNum = buf[1]+buf[2]*256;
+#ifdef DEBUG
+	count = packetNum - pre_packetNum;
+	if ((count > 1) && pre_packetNum != -1 && !(pre_packetNum == 65535 && packetNum == 0)){// lost
+		totalCount++;
+		ALOGE("EEEEE lose packet ,count is %d, totalCount:%d\n", count, totalCount);
+	}
+	pre_packetNum = packetNum;
+#endif
+	ALOGD("[%d]:TS %ld.%06ld PN %05d [%d]: delta time:%ld\n", res, ts2.tv_sec, ts2.tv_nsec/1000, packetNum, buf[3], (ts2.tv_nsec-ts1.tv_nsec)/1000);
 	//ALOGD("native read, data count is %d, buf[3]:%d,packetNum:%04X\n", res, (int)buf[3],*((short*) (buf+1)));
 	if(buf[0] == JOYSTICK_TO_HOST && buf[3] == REPORT_TYPE_ORIENTATION) {
 		float *qd;
@@ -262,7 +277,7 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 
 JNIEXPORT jint Java_com_google_vr_vrcore_controller_ControllerService_nativeWriteFile(JNIEnv *env, jobject jclass, jint type, jint data1, jint data2){
 	ALOGD("call nativeWriteFile, hidraw_fd:%d\n", hidraw_fd);
-	if(hidraw_fd <0) return 0;
+	if(hidraw_fd <0) return -1;
 	unsigned char buf[4];
 
 	buf[0] = 0x07;//report id

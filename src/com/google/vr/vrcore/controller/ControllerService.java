@@ -66,6 +66,7 @@ public class ControllerService extends Service {
     private static BluetoothInputDevice mBtInputDeviceService = null;
     private static BluetoothDevice device;
     private BluetoothAdapter mAdapter;
+    private boolean isBtInputDeviceConnected = false;
 
     public static int JOYSTICK_CONTROL_TYPE = 1;
     public static int JOYSTICK_REQUEST_TYPE = 2;
@@ -75,6 +76,9 @@ public class ControllerService extends Service {
     public static int REPORT_TYPE_ORIENTATION = 1;
     public static int REPORT_TYPE_SENSOR = 2;
     public static int REPORT_TYPE_VERSION = 3;
+
+    private String iDreamDeviceVersion = null;
+    private String iDreamDeviceType = null;
 
     private Handler handler = new Handler();
     private static int button = 0;
@@ -125,12 +129,12 @@ public class ControllerService extends Service {
             //start read hidrawx node
         }else if(intent.getBooleanExtra(BLUETOOTH_DISCONNECTED,false)){
             //stop read node
-            debug_log("onStartCommand intent.getAction:"+intent.getAction()+", set isCancel=false");
+            debug_log("onStartCommand intent BLUETOOTH_DISCONNECTED, set isCancel=false");
             isCancel = true;
             device=null;
 			AIDLControllerUtil.mBatterLevel = "";
-        }else if(intent.getBooleanExtra("test_vibrate", false)){//for test shock
-            controlJoystickVibrate(200, 40);
+        }else if(intent.getBooleanExtra("test_vibrate", false)){//for test vibrate
+            controlJoystickVibrate(80, 5);
         }
         return super.onStartCommand(intent,flags,startId);
     }
@@ -207,6 +211,7 @@ public class ControllerService extends Service {
 
             Log.i(TAG, "Profile proxy connected");
 
+            isBtInputDeviceConnected = true;
             mBtInputDeviceService = (BluetoothInputDevice) proxy;
 
         }
@@ -218,6 +223,7 @@ public class ControllerService extends Service {
 
             Log.i(TAG, "Profile proxy disconnected");
 
+            isBtInputDeviceConnected = false;
             mBtInputDeviceService = null;
         }
     };
@@ -234,11 +240,14 @@ public class ControllerService extends Service {
             Log.d(TAG,e.getMessage());
         }
     }
+
     /*
      * -1, is ok
      * 0 is hidraw0
      * 1 is hidraw1
      * 2 is hidraw2
+     *
+     * only getNodeDataThread use it .other thread can't use!!!!!!!
      */
     public native int nativeOpenFile();
     public native Bt_node_data nativeReadFile();
@@ -249,6 +258,14 @@ public class ControllerService extends Service {
 //
 //    }
 
+    private static void controllerServiceSleep(int flag, long ms){
+        Log.d(TAG,"sleep "+ms+"s"+", flag:"+flag);;
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
     private void startGetNodeDataThread() {
         if (getNodeDataThread == null) {
             getNodeDataThread = new Thread(new Runnable() {
@@ -258,19 +275,29 @@ public class ControllerService extends Service {
                     android.os.Process
                             .setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
                     try {
-                        int res = nativeOpenFile();
-                        if(res <0 ){
-                            Log.e(TAG,"native open file failed");
-                            return;
-                        }
-                        Log.d(TAG, "natvie Open File");
-
+                        boolean needOpenFile = true;
                         while (!isCancel) {
+                            // if connect bt device is not hid device, sleep 3s, and do next while
+                            if(!isBtInputDeviceConnected){
+                                controllerServiceSleep(1, 3000);
+                                continue;
+                            }
+                            if (needOpenFile) {
+                                int res = nativeOpenFile();
+                                if (res < 0) {
+                                    needOpenFile = true;
+                                    Log.e(TAG, "native open file failed, sleep 3s");
+                                    controllerServiceSleep(2, 3000);
+                                    continue;
+                                }
+                                needOpenFile = false;
+                                Log.d(TAG, "natvie Open File Success");
+                            }
                             if (false){//controllerListener == null) {
                                 Log.i(TAG, "controllerListener is null, sleep 3s");
 
                                 try {
-                                    Thread.sleep(3000);
+                                    Thread.sleep(3, 3000);
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 } finally {
@@ -291,8 +318,11 @@ public class ControllerService extends Service {
 
                             Bt_node_data nodeData = nativeReadFile();
                             if (nodeData == null) {
-                                Log.e(TAG, "do not get hidraw data from native");
-                                break;
+                                Log.e(TAG, "do not get hidraw data from native, schedule next open data node");
+                                needOpenFile = true;
+                                nativeCloseFile();
+                                controllerServiceSleep(4, 3000);
+                                continue;
                             }
 
                             if (nodeData.type == REPORT_TYPE_ORIENTATION) {// quans
@@ -359,10 +389,29 @@ public class ControllerService extends Service {
         }
     }
 
-
+    /*
+     * -1 is not ok
+     * 0 is ok
+     */
+    //default powerLevel 80, ms:5(500ms)
+    public int controlJoystickVibrate(){
+        int res = nativeWriteFile(JOYSTICK_CONTROL_TYPE, 80, 5);
+        debug_log("controlJoystickVibrate defaultvalue res:"+res);
+        return res;
+    }
     public int controlJoystickVibrate(int powerLevel, int millisceonds){
         int res = nativeWriteFile(JOYSTICK_CONTROL_TYPE, powerLevel, millisceonds);
         debug_log("controlJoystickVibrate res:"+res);
+        return res;
+    }
+
+    /*
+     * -1 is not ok
+     * 0 is ok
+     */
+    public int requestIDreamDeviceInfo(int type){
+        int res = nativeWriteFile(JOYSTICK_REQUEST_TYPE, 0x01, 0);
+        debug_log("requestIDreamDeviceInfo res:"+res);
         return res;
     }
 
