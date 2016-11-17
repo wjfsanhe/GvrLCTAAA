@@ -324,6 +324,7 @@ public class ControllerService extends Service {
                             .setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
                     try {
                         boolean needOpenFile = true;
+                        int timeoutCount = 0;
                         while (!isCancel) {
                             // if connect bt device is not hid device, sleep 3s, and do next while
                             if(!isBtInputDeviceConnected){
@@ -369,6 +370,7 @@ public class ControllerService extends Service {
 //                                debug_log("nodeData:x:" + nodeData.quans_x + ", y:"
 //                                        + nodeData.quans_y + ",z:" + nodeData.quans_z + ",w:"
 //                                        + nodeData.quans_w);
+                                timeoutCount = 0;// timeout count reset to 0
                                 //if Listener is null ,don't need to send Orientation data
                                 if (controllerListener != null) {
                                     sendPhoneEventControllerOrientationEvent(nodeData.quans_x,
@@ -378,6 +380,7 @@ public class ControllerService extends Service {
                                     debug_log("send phon event finish");
                                 }
                             } else if (nodeData.type == REPORT_TYPE_SENSOR) {
+                                timeoutCount = 0;// timeout count reset to 0
                                 debug_log("nodeData.gyro x:" + nodeData.gyro_x + ", y:"
                                         + nodeData.gyro_y + ", z:" + nodeData.gyro_z + ", acc x:"
                                         + nodeData.acc_x + ", y:" + nodeData.acc_y + ", z:"
@@ -397,9 +400,15 @@ public class ControllerService extends Service {
                                 AIDLControllerUtil.mBatterLevel = String.valueOf(nodeData.bat_level);
                                 // send broadcast to notify the hand shank's battery
                             }else if (nodeData.type == REPORT_TYPE_VERSION) {
+                                timeoutCount = 0;// timeout count reset to 0
                                 debug_log("nodeData appVersion:"+nodeData.appVersion+", deviceVersion:"+nodeData.deviceVersion+", deviceType:"+nodeData.deviceType);
                             } else if(nodeData.type == GET_DATA_TIMEOUT){
-                                Log.e(TAG, "no data to read, block timeout");
+                                timeoutCount++;
+                                Log.e(TAG, "no data to read, block timeout, count:"+count);
+                                if (controllerListener != null && timeoutCount >50) {
+                                    sendPhoneEventControllerOrientationEvent(0, 0, 0, 1);
+                                    debug_log("send fake data(w=1,x&y&z=0) which timeout count is more than 50");
+                                }
                             } else if(nodeData.type == GET_INVALID_DATA){
                                 Log.e(TAG, "get invalid data from hidraw ");
                             } else {
