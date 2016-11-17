@@ -13,12 +13,14 @@ import android.util.Log;
  */
 public class ControllerRec extends BroadcastReceiver {
     public static final String TAG = "myControllerRec";
+    public static final boolean DBG = true;
     private static int count = 0;
     public static final String DAYDREAM_TEST = "com.longcheer.net.test.daydream";
     @Override
     public void onReceive(final Context context, Intent intent) {
         final String action = intent.getAction();
         Log.d(TAG,"action:"+action);
+        if(action == null) return;
         final Intent i = new Intent(context, ControllerService.class);
         final Handler myHandler = new Handler();
         final Runnable startIntentService = new Runnable() {
@@ -29,7 +31,14 @@ public class ControllerRec extends BroadcastReceiver {
             }
         };
 
-        if(DAYDREAM_TEST.equals(action)){
+        if (action.equals(Intent.ACTION_BOOT_COMPLETED)) {
+            // start service to do the work.
+            if (DBG) {
+                Log.d(TAG, "Action boot completed received..");
+            }
+            i.putExtra(ControllerService.BOOT_COMPLETE_FLAG, true);
+            context.startService(i);
+        }else if(DAYDREAM_TEST.equals(action)){
             Log.d(TAG,"start joystick vibrate");
             i.putExtra("test_vibrate", true);
             i.setPackage(context.getPackageName());

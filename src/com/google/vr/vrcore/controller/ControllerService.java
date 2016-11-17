@@ -56,6 +56,7 @@ public class ControllerService extends Service {
 
     private final static String TAG = "ControllerService";
 
+    public final static String BOOT_COMPLETE_FLAG = "boot_completed";
     public final static String BLUETOOTH_CONNECTED_SUCCESS ="bluetooth_connected";
     public final static String BLUETOOTH_DISCONNECTED = "bluetooth_disconnected";
     public final static String BLUETOOTH_DEVICE_OBJECT = "bluetooth_device";
@@ -143,7 +144,10 @@ public class ControllerService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(intent == null) return super.onStartCommand(intent,flags,startId);
-        if(intent.getBooleanExtra(BLUETOOTH_CONNECTED_SUCCESS, false)){
+        if(intent.getBooleanExtra(BOOT_COMPLETE_FLAG, false)){
+            isCancel = false;
+            startGetNodeDataThread();
+        }else if(intent.getBooleanExtra(BLUETOOTH_CONNECTED_SUCCESS, false)){
             isCancel = false;
             device = intent.getParcelableExtra(ControllerService.BLUETOOTH_DEVICE_OBJECT);
             if(device!=null){
@@ -156,13 +160,13 @@ public class ControllerService extends Service {
         }else if(intent.getBooleanExtra(BLUETOOTH_DISCONNECTED,false)){
             //stop read node
             debug_log("onStartCommand intent BLUETOOTH_DISCONNECTED, set isCancel=false");
-            isCancel = true;
+//            isCancel = true;
             device=null;
 			AIDLControllerUtil.mBatterLevel = "";
         }else if(intent.getBooleanExtra("test_vibrate", false)){//for test vibrate
             controlJoystickVibrate(80, 5);
         }
-        return super.onStartCommand(intent,flags,startId);
+        return Service.START_REDELIVER_INTENT;
     }
 
  //   @Nullable
@@ -592,7 +596,7 @@ public class ControllerService extends Service {
         controllerTouchEvent.x = touchX;
         controllerTouchEvent.y = touchY;
 
-        controllerTouchEvent.timestampNanos = 0;
+        controllerTouchEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
             if (controllerListener != null) {
 //                controllerListener.deprecatedOnControllerTouchEvent(controllerTouchEvent);
