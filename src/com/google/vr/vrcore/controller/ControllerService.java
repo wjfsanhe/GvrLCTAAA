@@ -405,9 +405,9 @@ public class ControllerService extends Service {
                             } else if(nodeData.type == GET_DATA_TIMEOUT){
                                 timeoutCount++;
                                 Log.e(TAG, "no data to read, block timeout, count:"+count);
-                                if (controllerListener != null && timeoutCount >50) {
+                                if (controllerListener != null && timeoutCount >5) {
                                     sendPhoneEventControllerOrientationEvent(0, 0, 0, 1);
-                                    debug_log("send fake data(w=1,x&y&z=0) which timeout count is more than 50");
+                                    debug_log("send fake data(w=1,x&y&z=0) which timeout count is more than 5");
                                 }
                             } else if(nodeData.type == GET_INVALID_DATA){
                                 Log.e(TAG, "get invalid data from hidraw ");
