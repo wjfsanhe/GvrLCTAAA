@@ -35,6 +35,7 @@ public class AIDLControllerService extends Service {
         localBroadcastManager = LocalBroadcastManager.getInstance(this);
         IntentFilter filter = new IntentFilter();
         filter.addAction("SHORT_CLICK_BACK_KEY_ACTION");
+        filter.addAction("BATTER_LEVEL_ACTION");
         Log.d(TAG,"registerReceiver");
         localBroadcastManager.registerReceiver(eventReceiver,filter);
         //end
@@ -101,6 +102,22 @@ public class AIDLControllerService extends Service {
         mListenerList.finishBroadcast();
     }
 
+    private void batterLevelEventService(int level){
+        final int N = mListenerList.beginBroadcast();
+        for (int i = 0; i < N; i++) {
+            AIDLListener l = mListenerList.getBroadcastItem(i);
+            if (l != null) {
+                try{
+                    Log.d(TAG,"l.batterLevelEvent  level = "+level);
+                    l.batterLevelEvent(level);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        mListenerList.finishBroadcast();
+    }
+
     public class EventReceiver extends BroadcastReceiver {
 
         @Override
@@ -112,6 +129,12 @@ public class AIDLControllerService extends Service {
                 state = intent.getExtras().getInt("state");
                 Log.d(TAG,"EventReceiver onReceive  state = "+state);
                 shortClickBackEventService(state);
+            }
+            if("BATTER_LEVEL_ACTION".equals(action)){
+                int level = -1;
+                level = intent.getExtras().getInt("level");
+                Log.d(TAG,"EventReceiver onReceive  level = "+level);
+                batterLevelEventService(level);
             }
         }
     }
