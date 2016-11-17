@@ -46,7 +46,9 @@ import android.app.Instrumentation;
 import com.android.qiyicontroller.AIDLControllerUtil;
 import android.support.v4.content.LocalBroadcastManager;
 //end
-
+import android.content.IntentFilter;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 /**
  * Created by mashuai on 2016/9/29.
  */
@@ -90,6 +92,10 @@ public class ControllerService extends Service {
     private static int controllerId=0;
 
     private Thread getNodeDataThread = null;
+
+    private LocalBroadcastManager localBroadcastManager;
+    EventReceiver eventReceiver = new EventReceiver();
+
     public static void debug_log(String log){
         if(DEBUG){
             Log.d(TAG,log);
@@ -106,12 +112,31 @@ public class ControllerService extends Service {
             return;
         }
 
+        localBroadcastManager = LocalBroadcastManager.getInstance(this);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("OPEN_VIBRATOR_ACTION");
+        Log.d(TAG,"registerReceiver");
+        localBroadcastManager.registerReceiver(eventReceiver,filter);
+
         Log.d("myControllerService", "onCreate");
+    }
+
+    public class EventReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // TODO Auto-generated method stub
+            String action = intent.getAction();
+            if("OPEN_VIBRATOR_ACTION".equals(action)){
+                controlJoystickVibrate(80, 5);
+            }
+        }
     }
 
     @Override
     public void onDestroy() {
         Log.d("myControllerService", "onDestroy");
+        localBroadcastManager.unregisterReceiver(eventReceiver);
         super.onDestroy();
     }
 
@@ -609,7 +634,6 @@ public class ControllerService extends Service {
     private boolean isReseting = false;
     private boolean isOutting = false;
     private int mLastKeyMask = 0;
-    private LocalBroadcastManager localBroadcastManager;
     private static final int DELAY_TIME = 500;
     private static final int DEFINE_LONG_TIME_FOR_HOME = 1*1000;
     private static final int DEFINE_LONG_TIME_FOR_BACK = 1*1000;
@@ -759,7 +783,6 @@ public class ControllerService extends Service {
     }
 
     private void backKeyShortClickEvent(int state){
-        localBroadcastManager = LocalBroadcastManager.getInstance(this);
         Intent intent = new Intent();
         intent.putExtra("state",state);
         intent.setAction(BACK_SHORT_CLICK_EVENT_ACTION);

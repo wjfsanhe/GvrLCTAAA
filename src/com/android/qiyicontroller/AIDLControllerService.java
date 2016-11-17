@@ -19,8 +19,6 @@ public class AIDLControllerService extends Service {
 
     public static int JOYSTICK_CONTROL_TYPE = 1;
 
-    public native int nativeWriteFile(int type, int shockproofness, int duration);
-
     //add by zhangyawen
     LocalBroadcastManager localBroadcastManager;
 
@@ -58,8 +56,10 @@ public class AIDLControllerService extends Service {
 
         @Override
         public void OpenVibrator(){
-            controlJoystickVibrate(80, 5);
             Log.d("AIDLControllerService","OpenVibrator");
+            Intent intent = new Intent();
+            intent.setAction("OPEN_VIBRATOR_ACTION");
+            localBroadcastManager.sendBroadcast(intent);
         }
         @Override
         public void CloseVibrator(){
@@ -75,13 +75,6 @@ public class AIDLControllerService extends Service {
             mListenerList.unregister(listener);
         }
     };
-
-
-    public int controlJoystickVibrate(int powerLevel, int millisceonds){
-        Log.d("AIDLControllerService","<<<controlJoystickVibrate");
-        int res = nativeWriteFile(JOYSTICK_CONTROL_TYPE, powerLevel, millisceonds);
-        return res;
-    }
 
     //add by zhangyawen
     @Override
