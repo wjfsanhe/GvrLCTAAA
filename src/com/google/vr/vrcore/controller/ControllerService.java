@@ -44,6 +44,7 @@ import java.nio.ByteOrder;
 import android.view.KeyEvent;
 import android.app.Instrumentation;
 import com.android.qiyicontroller.AIDLControllerUtil;
+import android.support.v4.content.LocalBroadcastManager;
 //end
 
 /**
@@ -407,11 +408,10 @@ public class ControllerService extends Service {
         if ((keymask&0x01) != 0) {
             //click or ok
             button = ControllerButtonEvent.BUTTON_CLICK;
-        }/*else if ((keymask&0x02) != 0) {
-            //back
+        }else if ((keymask&0x02) != 0) {
+            //back: handle this back event by AIDLControllerService
             button = ControllerButtonEvent.BUTTON_NONE;
-
-       }*/else if ((keymask&0x04) != 0) {
+        }else if ((keymask&0x04) != 0) {
             //trigger treat as touch pad click
             Log.d("[YYY]","keymask = "+keymask+" trigger treat as touch pad click");
             button = ControllerButtonEvent.BUTTON_CLICK;
@@ -560,14 +560,17 @@ public class ControllerService extends Service {
     private boolean isReseting = false;
     private boolean isOutting = false;
     private int mLastKeyMask = 0;
+    private LocalBroadcastManager localBroadcastManager;
     private static final int DELAY_TIME = 500;
     private static final int DEFINE_LONG_TIME_FOR_HOME = 1*1000;
     private static final int DEFINE_LONG_TIME_FOR_BACK = 1*1000;
 
     //short click back key
     public static final int BACK_BUTTON_DOWN = 100;
-    public static final int BACK_BUTTON = 102;
-    public static final int BACK_BUTTON_UP = 103;
+    public static final int BACK_BUTTON = 101;
+    public static final int BACK_BUTTON_UP = 102;
+    public static final int BACK_BUTTON_CANCEL = -1;
+    public static final String BACK_SHORT_CLICK_EVENT_ACTION = "SHORT_CLICK_BACK_KEY_ACTION";
 
     //long click home key
     public static final int HOME_RECENTERING = 104;
@@ -658,6 +661,7 @@ public class ControllerService extends Service {
                     handler.postDelayed(runnableForBack, DEFINE_LONG_TIME_FOR_BACK);
                     mLastKeyMask = keymask;
                     //set the state (ButtonDown)
+                    backKeyShortClickEvent(BACK_BUTTON_DOWN);
                     Log.d("[ZZZ]","Back shortclick ButtonDown");
                 } else {
                     if (isOutting) {
@@ -665,6 +669,7 @@ public class ControllerService extends Service {
                         Log.d("[ZZZ]","Back shortclick Button");
                     } else {
                         // set the state (Button)
+                        backKeyShortClickEvent(BACK_BUTTON);
                         Log.d("[ZZZ]","Back shortclick Button");
                     }
                 }
@@ -685,6 +690,7 @@ public class ControllerService extends Service {
             } else if (isOutting) {
                 // set Out of app state
                 isOutting = false;
+                backKeyShortClickEvent(BACK_BUTTON_CANCEL);
                 simulationButtonSystemEvent(mLastKeyMask);
             } else {
                 if ((mLastKeyMask&0x08) != 0) {
@@ -695,7 +701,7 @@ public class ControllerService extends Service {
                 if ((mLastKeyMask&0x02) != 0) {
                     handler.removeCallbacks(runnableForBack);
                     //set the state (ButtonUp)
-
+                    backKeyShortClickEvent(BACK_BUTTON_UP);
                     Log.d("[ZZZ]","Back shortclick ButtonUp");
                 }
             }
@@ -703,7 +709,14 @@ public class ControllerService extends Service {
         }
     }
 
-
+    private void backKeyShortClickEvent(int state){
+        localBroadcastManager = LocalBroadcastManager.getInstance(this);
+        Intent intent = new Intent();
+        intent.putExtra("state",state);
+        intent.setAction(BACK_SHORT_CLICK_EVENT_ACTION);
+        localBroadcastManager.sendBroadcast(intent);
+        Log.d(TAG,"localBroadcastManager.sendBroadcast(intent)");
+    }
 
     private void simulationSystemEvent(float touchX, float touchY){
         int witchEventId = matchEvent(touchX,touchY);

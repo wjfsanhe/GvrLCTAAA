@@ -8,7 +8,8 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := $(call all-java-files-under, src)
 
 LOCAL_SRC_FILES := $(call all-java-files-under, src) \
-    src/com/android/qiyicontroller/AIDLController.aidl
+    src/com/android/qiyicontroller/AIDLController.aidl \
+    src/com/android/qiyicontroller/AIDLListener.aidl
 
 
 LOCAL_JNI_SHARED_LIBRARIES := liblctgetnode
@@ -32,6 +33,9 @@ LOCAL_STATIC_JAVA_AAR_LIBRARIES:= gvrlctservice_common
 LOCAL_AAPT_FLAGS := --auto-add-overlay \
     --extra-packages android.support.v7.preference:android.support.v14.preference:android.support.v17.preference:android.support.v7.appcompat:android.support.v7.recyclerview
 
+
+LOCAL_STATIC_JAVA_LIBRARIES := \
+    android-support-v4 \
 
 LOCAL_PACKAGE_NAME := GvrLctService
 LOCAL_CERTIFICATE := platform
