@@ -158,7 +158,8 @@ public class ControllerService extends Service {
             debug_log("onStartCommand intent BLUETOOTH_DISCONNECTED, set isCancel=false");
             isCancel = true;
             device=null;
-			AIDLControllerUtil.mBatterLevel = "";
+			//AIDLControllerUtil.mBatterLevel = "";
+            batterLevelEvent(-1);
         }else if(intent.getBooleanExtra("test_vibrate", false)){//for test vibrate
             controlJoystickVibrate(80, 5);
         }
@@ -380,7 +381,12 @@ public class ControllerService extends Service {
                                 sendPhoneEventControllerTouchPadEvent(nodeData.touchX,nodeData.touchY);
                                 debug_log("send acc button touch event finish");
                                 debug_log("battery:"+nodeData.bat_level);
-                                AIDLControllerUtil.mBatterLevel = String.valueOf(nodeData.bat_level);
+                                //AIDLControllerUtil.mBatterLevel = String.valueOf(nodeData.bat_level);
+                                if (mLastBatterLevel != nodeData.bat_level) {
+                                    mLastBatterLevel = nodeData.bat_level;
+                                    batterLevelEvent(nodeData.bat_level);
+                                }
+
                                 // send broadcast to notify the hand shank's battery
                             }else if (nodeData.type == REPORT_TYPE_VERSION) {
                                 debug_log("nodeData appVersion:"+nodeData.appVersion+", deviceVersion:"+nodeData.deviceVersion+", deviceType:"+nodeData.deviceType);
@@ -634,6 +640,7 @@ public class ControllerService extends Service {
     private boolean isReseting = false;
     private boolean isOutting = false;
     private int mLastKeyMask = 0;
+    private int mLastBatterLevel = -1;
     private static final int DELAY_TIME = 500;
     private static final int DEFINE_LONG_TIME_FOR_HOME = 1*1000;
     private static final int DEFINE_LONG_TIME_FOR_BACK = 1*1000;
@@ -644,6 +651,7 @@ public class ControllerService extends Service {
     public static final int BACK_BUTTON_UP = 102;
     public static final int BACK_BUTTON_CANCEL = -1;
     public static final String BACK_SHORT_CLICK_EVENT_ACTION = "SHORT_CLICK_BACK_KEY_ACTION";
+    public static final String BATTER_LEVEL_EVENT_ACTION = "BATTER_LEVEL_ACTION";
 
     //long click home key
     public static final int HOME_RECENTERING = 104;
@@ -780,6 +788,14 @@ public class ControllerService extends Service {
             }
             mLastKeyMask = keymask;
         }
+    }
+
+    private void batterLevelEvent(int level){
+        Intent intent = new Intent();
+        intent.putExtra("level",level);
+        intent.setAction(BATTER_LEVEL_EVENT_ACTION);
+        localBroadcastManager.sendBroadcast(intent);
+        Log.d(TAG,"localBroadcastManager.sendBroadcast(intent)[batterLevelEvent]");
     }
 
     private void backKeyShortClickEvent(int state){
