@@ -266,6 +266,28 @@ public class ControllerService extends Service {
             e.printStackTrace();
         }
     }
+    private void setControllerListenerConnected(){
+        try {
+            if (controllerListener != null) {
+                debug_log("set Controller state CONNECTED!");
+                controllerListener.onControllerStateChanged(controllerId,
+                        ControllerStates.CONNECTED);
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+    private void setControllerListenerDisconnected(){
+        try {
+            if (controllerListener != null) {
+                debug_log("set Controller state DISCONNECTED!");
+                controllerListener.onControllerStateChanged(controllerId,
+                        ControllerStates.DISCONNECTED);
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
     private void startGetNodeDataThread() {
         if (getNodeDataThread == null) {
             getNodeDataThread = new Thread(new Runnable() {
@@ -304,22 +326,14 @@ public class ControllerService extends Service {
                                     continue;
                                 }
                             } else {
-
-                                try {
-                                    if (controllerListener != null) {
-                                        debug_log("set Controller state CONNECTED!");
-                                        controllerListener.onControllerStateChanged(controllerId,
-                                                ControllerStates.CONNECTED);
-                                    }
-                                } catch (RemoteException e) {
-                                    e.printStackTrace();
-                                }
+                                setControllerListenerConnected();
                             }
 
                             Bt_node_data nodeData = nativeReadFile();
                             if (nodeData == null) {
                                 Log.e(TAG, "do not get hidraw data from native, schedule next open data node");
                                 needOpenFile = true;
+                                setControllerListenerDisconnected();
                                 nativeCloseFile();
                                 controllerServiceSleep(4, 3000);
                                 continue;
@@ -372,14 +386,7 @@ public class ControllerService extends Service {
                     finally {
                         isCancel = true;
                         Log.d(TAG, "finally, set Controller state DISCONNECTED");
-                        try {
-                            if (controllerListener != null) {
-                                controllerListener.onControllerStateChanged(controllerId,
-                                        ControllerStates.DISCONNECTED);
-                            }
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
-                        }
+                        setControllerListenerDisconnected();
                     }
                 }
             });
