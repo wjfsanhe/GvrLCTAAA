@@ -518,13 +518,13 @@ public class ControllerService extends Service {
         }else if ((keymask&0x08) != 0) {
             //home
             button = ControllerButtonEvent.BUTTON_HOME;
-        }else if ((keymask&0x16) != 0) {
+        }else if ((keymask&0x10) != 0) {
             //menu or app
             button = ControllerButtonEvent.BUTTON_APP;
-        }else if ((keymask&0x32) != 0) {
+        }else if ((keymask&0x20) != 0) {
             //volume up
             button = ControllerButtonEvent.BUTTON_VOLUME_UP;
-        }else if ((keymask&0x64) != 0) {
+        }else if ((keymask&0x40) != 0) {
             //volume down
             button = ControllerButtonEvent.BUTTON_VOLUME_DOWN;
         }else{
