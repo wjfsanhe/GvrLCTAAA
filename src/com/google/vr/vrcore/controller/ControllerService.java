@@ -62,6 +62,9 @@ public class ControllerService extends Service {
     public final static String BLUETOOTH_DEVICE_OBJECT = "bluetooth_device";
     private final static boolean DEBUG = true;
 
+    //runAsDaemonService means start when boot, and not allow stop
+    public final static boolean runAsDaemonService = true;
+
     private boolean lastButtonStatus = false;
     private int lastButton = 0;
     private IControllerService.Stub controllerService;
@@ -119,6 +122,9 @@ public class ControllerService extends Service {
         Log.d(TAG,"registerReceiver");
         localBroadcastManager.registerReceiver(eventReceiver,filter);
 
+        if(runAsDaemonService){
+            startGetNodeDataThread();//begin to run thread
+        }
         Log.d("myControllerService", "onCreate");
     }
 
@@ -160,7 +166,9 @@ public class ControllerService extends Service {
         }else if(intent.getBooleanExtra(BLUETOOTH_DISCONNECTED,false)){
             //stop read node
             debug_log("onStartCommand intent BLUETOOTH_DISCONNECTED, set isCancel=false");
-//            isCancel = true;
+            if (!runAsDaemonService) {
+                isCancel = true;
+            }
             device=null;
 			//AIDLControllerUtil.mBatterLevel = "";
             batterLevelEvent(-1);

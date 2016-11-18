@@ -31,7 +31,7 @@ public class ControllerRec extends BroadcastReceiver {
             }
         };
 
-        if (action.equals(Intent.ACTION_BOOT_COMPLETED)) {
+        if (action.equals(Intent.ACTION_BOOT_COMPLETED) && ControllerService.runAsDaemonService) {
             // start service to do the work.
             if (DBG) {
                 Log.d(TAG, "Action boot completed received..");
