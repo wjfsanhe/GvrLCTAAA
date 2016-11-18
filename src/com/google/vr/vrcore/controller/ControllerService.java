@@ -734,13 +734,13 @@ public class ControllerService extends Service {
             //home
             Log.d("[ZZZ]","home (only home event)");
             sendSystemEvent(SYSTEM_EVENT_HOME_ID);
-        }else if ((keymask&0x16) != 0) {
+        }else if ((keymask&0x10) != 0) {
             //menu
             Log.d("[ZZZ]","menu (not match the Event)");
-        }else if ((keymask&0x32) != 0) {
+        }else if ((keymask&0x20) != 0) {
             //volume up
             Log.d("[ZZZ]","volume up (not match the Event)");
-        }else if ((keymask&0x64) != 0) {
+        }else if ((keymask&0x40) != 0) {
             //volume down
             Log.d("[ZZZ]","volume down (not match the Event)");
         }else{
