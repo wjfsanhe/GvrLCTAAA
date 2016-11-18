@@ -99,6 +99,7 @@ public class ControllerService extends Service {
 
     private LocalBroadcastManager localBroadcastManager;
     EventReceiver eventReceiver = new EventReceiver();
+    private static boolean mVibrateClose = false;
 
     public static void debug_log(String log){
         if(DEBUG){
@@ -119,6 +120,10 @@ public class ControllerService extends Service {
         localBroadcastManager = LocalBroadcastManager.getInstance(this);
         IntentFilter filter = new IntentFilter();
         filter.addAction("OPEN_VIBRATOR_ACTION");
+        filter.addAction("OPEN_VIBRATOR_TIME_ACTION");
+        filter.addAction("OPEN_VIBRATOR_MODE_ACTION");
+        filter.addAction("OPEN_VIBRATOR_REPEAT_ACTION");
+        filter.addAction("CLOSE_VIBRATOR_ACTION");
         Log.d(TAG,"registerReceiver");
         localBroadcastManager.registerReceiver(eventReceiver,filter);
 
@@ -134,8 +139,45 @@ public class ControllerService extends Service {
         public void onReceive(Context context, Intent intent) {
             // TODO Auto-generated method stub
             String action = intent.getAction();
-            if("OPEN_VIBRATOR_ACTION".equals(action)){
+            if("OPEN_VIBRATOR_ACTION".equals(action)) {
                 controlJoystickVibrate(80, 5);
+            }else if("OPEN_VIBRATOR_TIME_ACTION".equals(action)) {
+                long time = intent.getLongExtra("time", -1);
+                controlJoystickVibrate(80, (int)time);
+            }else if("OPEN_VIBRATOR_MODE_ACTION".equals(action)) {
+                long time = intent.getLongExtra("time", -1);
+                int mode = intent.getIntExtra("mode", -1);
+                int power = 0;
+                if(mode == 0){
+                    power = 80;
+                }else if(mode == 1){
+                    power = 120;
+                }else if(mode == 2){
+                    power = 160;
+                }
+                controlJoystickVibrate(power, (int)time);
+            }else if("OPEN_VIBRATOR_REPEAT_ACTION".equals(action)){
+                mVibrateClose = false;
+                long[] pattern = intent.getLongArrayExtra("pattern");
+                int repeat = intent.getIntExtra("repeat", -1);
+                if(pattern.length > 0 && repeat < pattern.length){
+                    final long time = pattern[repeat];
+                    new Thread(){
+                        public void run(){
+                            while(!mVibrateClose){
+                                controlJoystickVibrate(80, (int)time);
+                                try {
+                                    Thread.sleep(time);
+                                }catch (Exception exception){
+                                }
+                            }
+                        }
+                    }.start();
+
+                }
+            }else if("CLOSE_VIBRATOR_ACTION".equals(action)){
+                mVibrateClose = true;
+                controlJoystickVibrate(0, 0);
             }
         }
     }

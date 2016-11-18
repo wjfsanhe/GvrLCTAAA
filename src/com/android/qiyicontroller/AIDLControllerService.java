@@ -67,6 +67,35 @@ public class AIDLControllerService extends Service {
             Log.d("AIDLControllerService","CloseVibrator");
         }
         @Override
+        public void vibrate(long milliseconds){
+            Intent intent = new Intent();
+            intent.putExtra("time",milliseconds);
+            intent.setAction("OPEN_VIBRATOR_TIME_ACTION");
+            localBroadcastManager.sendBroadcast(intent);
+        }
+        @Override
+        public void vibrate_mode(long milliseconds,int mode){
+            Intent intent = new Intent();
+            intent.putExtra("time",milliseconds);
+            intent.putExtra("mode",mode);
+            intent.setAction("OPEN_VIBRATOR_MODE_ACTION");
+            localBroadcastManager.sendBroadcast(intent);
+        }
+        @Override
+        public void vibrate_repeat(long[] pattern,int repeat){
+            Intent intent = new Intent();
+            intent.putExtra("pattern",pattern);
+            intent.putExtra("repeat",repeat);
+            intent.setAction("OPEN_VIBRATOR_REPEAT_ACTION");
+            localBroadcastManager.sendBroadcast(intent);
+        }
+        @Override
+        public void vibrate_cancel(){
+            Intent intent = new Intent();
+            intent.setAction("CLOSE_VIBRATOR_ACTION");
+            localBroadcastManager.sendBroadcast(intent);
+        }
+        @Override
         public void registerListener(AIDLListener listener){
             mListenerList.register(listener);
         }

@@ -14,4 +14,8 @@ interface AIDLController {
       void CloseVibrator();
       void registerListener(AIDLListener listener);
       void unRegisterListener(AIDLListener listener);
+      void vibrate(long milliseconds);
+      void vibrate_mode(long milliseconds,int mode);
+      void vibrate_repeat(in long[] pattern,int repeat);
+      void vibrate_cancel();
 }
