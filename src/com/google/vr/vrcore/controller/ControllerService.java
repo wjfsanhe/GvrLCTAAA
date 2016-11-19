@@ -158,6 +158,9 @@ public class ControllerService extends Service {
                 controlJoystickVibrate(power, (int)time);
             }else if("OPEN_VIBRATOR_REPEAT_ACTION".equals(action)){
                 mVibrateClose = false;
+                if (DEBUG) {
+                    Log.d("[GGG]","<<<<mVibrateClose:"+mVibrateClose);
+                }
                 long[] pattern = intent.getLongArrayExtra("pattern");
                 int repeat = intent.getIntExtra("repeat", -1);
                 if(pattern.length > 0 && repeat < pattern.length){
@@ -165,9 +168,15 @@ public class ControllerService extends Service {
                     new Thread(){
                         public void run(){
                             while(!mVibrateClose){
+                                if (DEBUG) {
+                                    Log.d("[GGG]", "time = " + time + " mVibrateClose:" + mVibrateClose);
+                                }
                                 controlJoystickVibrate(80, (int)time);
                                 try {
-                                    Thread.sleep(time);
+                                    if (DEBUG) {
+                                        Log.d("[GGG]", "Thread.sleep  time = " + time);
+                                    }
+                                    Thread.sleep(time*200);
                                 }catch (Exception exception){
                                 }
                             }
@@ -177,6 +186,9 @@ public class ControllerService extends Service {
                 }
             }else if("CLOSE_VIBRATOR_ACTION".equals(action)){
                 mVibrateClose = true;
+                if (DEBUG) {
+                    Log.d("[GGG]", "<<<CLOSE_VIBRATOR_ACTION mVibrateClose22:" + mVibrateClose);
+                }
                 controlJoystickVibrate(0, 0);
             }
         }
@@ -552,7 +564,9 @@ public class ControllerService extends Service {
         boolean buttonActionDown = false;
 
         //add by zhangyawen
-        Log.d("[YYY]","keymask = "+keymask);
+        if (DEBUG) {
+            Log.d("[YYY]","keymask = "+keymask);
+        }
         ButtonEvent(keymask);
         //end
         if ((keymask&0x01) != 0) {
@@ -563,7 +577,9 @@ public class ControllerService extends Service {
             button = ControllerButtonEvent.BUTTON_NONE;
         }else if ((keymask&0x04) != 0) {
             //trigger treat as touch pad click
-            Log.d("[YYY]","keymask = "+keymask+" trigger treat as touch pad click");
+            if (DEBUG) {
+                Log.d("[YYY]","keymask = "+keymask+" trigger treat as touch pad click");
+            }
             button = ControllerButtonEvent.BUTTON_CLICK;
         }else if ((keymask&0x08) != 0) {
             //home
@@ -878,7 +894,9 @@ public class ControllerService extends Service {
 
     private void simulationSystemEvent(float touchX, float touchY){
         int witchEventId = matchEvent(touchX,touchY);
-        Log.d("[YYY]","witchEventId = "+witchEventId);
+        if (DEBUG) {
+            Log.d("[YYY]","witchEventId = "+witchEventId);
+        }
         if (witchEventId != SYSTEM_EVENT_NOT_DEFINED_ID) {
             if (!isDone) {
                 sendSystemEvent(witchEventId);
