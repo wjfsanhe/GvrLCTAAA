@@ -737,7 +737,22 @@ public class ControllerService extends Service {
     public static final int BACK_BUTTON_UP = 102;
     public static final int BACK_BUTTON_CANCEL = -1;
     public static final String BACK_SHORT_CLICK_EVENT_ACTION = "SHORT_CLICK_BACK_KEY_ACTION";
+
     public static final String BATTER_LEVEL_EVENT_ACTION = "BATTER_LEVEL_ACTION";
+
+    //AppButton key
+    public static final int APP_BUTTON_DOWN = 200;
+    public static final int APP_BUTTON = 201;
+    public static final int APP_BUTTON_UP = 202;
+    public static final int APP_BUTTON_CANCEL = -2;
+    public static final String APP_BUTTON_EVENT_ACTION = "APP_BUTTON_KEY_ACTION";
+
+    //Trigger/Click key
+    public static final int TRIGGER_BUTTON_DOWN = 300;
+    public static final int TRIGGER_BUTTON = 301;
+    public static final int TRIGGER_BUTTON_UP = 302;
+    public static final int TRIGGER_BUTTON_CANCEL = -3;
+    public static final String TRIGGER_BUTTON_EVENT_ACTION = "TRIGGER_BUTTON_KEY_ACTION";
 
     //long click home key
     public static final int HOME_RECENTERING = 104;
@@ -840,12 +855,23 @@ public class ControllerService extends Service {
                         Log.d("[ZZZ]","Back shortclick Button");
                     }
                 }
-            } else {
+            } else if ((keymask&0x01) !=0 || (keymask&0x04) != 0) {
+                //trigger/click key event
                 if (keymask != mLastKeyMask) {
-                    simulationButtonSystemEvent(keymask);
+                    TriggerAndClickEvent(TRIGGER_BUTTON_DOWN);
                     mLastKeyMask = keymask;
+                    Log.d("[ZZZ]","TriggerAndClickEvent Buttondown");
                 } else {
-                    //do nothing
+                    TriggerAndClickEvent(TRIGGER_BUTTON);
+                }
+            } else if ((keymask&0x10) != 0) {
+                //appButton key event
+                if (keymask != mLastKeyMask) {
+                    appButtonEvent(APP_BUTTON_DOWN);
+                    mLastKeyMask = keymask;
+                    Log.d("[ZZZ]","appButtonEvent Buttondown");
+                } else {
+                    appButtonEvent(APP_BUTTON);
                 }
             }
 
@@ -871,6 +897,14 @@ public class ControllerService extends Service {
                     backKeyShortClickEvent(BACK_BUTTON_UP);
                     Log.d("[ZZZ]","Back shortclick ButtonUp");
                 }
+                if ((mLastKeyMask&0x01) !=0 || (mLastKeyMask&0x04) != 0) {
+                    TriggerAndClickEvent(TRIGGER_BUTTON_UP);
+                    Log.d("[ZZZ]","TriggerAndClickEvent ButtonUp");
+                }
+                if ((mLastKeyMask&0x10) != 0) {
+                    appButtonEvent(APP_BUTTON_UP);
+                    Log.d("[ZZZ]","appButtonEvent ButtonUp");
+                }
             }
             mLastKeyMask = keymask;
         }
@@ -881,7 +915,7 @@ public class ControllerService extends Service {
         intent.putExtra("level",level);
         intent.setAction(BATTER_LEVEL_EVENT_ACTION);
         localBroadcastManager.sendBroadcast(intent);
-        Log.d(TAG,"localBroadcastManager.sendBroadcast(intent)[batterLevelEvent]");
+        Log.d(TAG,"batterLevelEvent.sendBroadcast(intent)");
     }
 
     private void backKeyShortClickEvent(int state){
@@ -889,7 +923,23 @@ public class ControllerService extends Service {
         intent.putExtra("state",state);
         intent.setAction(BACK_SHORT_CLICK_EVENT_ACTION);
         localBroadcastManager.sendBroadcast(intent);
-        Log.d(TAG,"localBroadcastManager.sendBroadcast(intent)");
+        Log.d(TAG,"backKeyShortClickEvent.sendBroadcast(intent)");
+    }
+
+    private void TriggerAndClickEvent(int state){
+        Intent intent = new Intent();
+        intent.putExtra("state",state);
+        intent.setAction(TRIGGER_BUTTON_EVENT_ACTION);
+        localBroadcastManager.sendBroadcast(intent);
+        Log.d(TAG,"TriggerAndClickEvent.sendBroadcast(intent)");
+    }
+
+    private void appButtonEvent(int state){
+        Intent intent = new Intent();
+        intent.putExtra("state",state);
+        intent.setAction(APP_BUTTON_EVENT_ACTION);
+        localBroadcastManager.sendBroadcast(intent);
+        Log.d(TAG,"appButtonEvent.sendBroadcast(intent)");
     }
 
     private void simulationSystemEvent(float touchX, float touchY){

@@ -36,6 +36,8 @@ public class AIDLControllerService extends Service {
         IntentFilter filter = new IntentFilter();
         filter.addAction("SHORT_CLICK_BACK_KEY_ACTION");
         filter.addAction("BATTER_LEVEL_ACTION");
+        filter.addAction("APP_BUTTON_KEY_ACTION");
+        filter.addAction("TRIGGER_BUTTON_KEY_ACTION");
         Log.d(TAG,"registerReceiver");
         localBroadcastManager.registerReceiver(eventReceiver,filter);
         //end
@@ -147,6 +149,38 @@ public class AIDLControllerService extends Service {
         mListenerList.finishBroadcast();
     }
 
+    private void clickAppButtonEventService(int state){
+        final int N = mListenerList.beginBroadcast();
+        for (int i = 0; i < N; i++) {
+            AIDLListener l = mListenerList.getBroadcastItem(i);
+            if (l != null) {
+                try{
+                    Log.d(TAG,"l.clickAppButtonEvent  state = "+state);
+                    l.clickAppButtonEvent(state);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        mListenerList.finishBroadcast();
+    }
+
+    private void clickAndTriggerEventService(int state){
+        final int N = mListenerList.beginBroadcast();
+        for (int i = 0; i < N; i++) {
+            AIDLListener l = mListenerList.getBroadcastItem(i);
+            if (l != null) {
+                try{
+                    Log.d(TAG,"l.clickAndTriggerEvent  state = "+state);
+                    l.clickAndTriggerEvent(state);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        mListenerList.finishBroadcast();
+    }
+
     public class EventReceiver extends BroadcastReceiver {
 
         @Override
@@ -156,7 +190,7 @@ public class AIDLControllerService extends Service {
             if("SHORT_CLICK_BACK_KEY_ACTION".equals(action)){
                 int state = -1;
                 state = intent.getExtras().getInt("state");
-                Log.d(TAG,"EventReceiver onReceive  state = "+state);
+                Log.d(TAG,"[BACK] EventReceiver onReceive  state = "+state);
                 shortClickBackEventService(state);
             }
             if("BATTER_LEVEL_ACTION".equals(action)){
@@ -165,6 +199,19 @@ public class AIDLControllerService extends Service {
                 Log.d(TAG,"EventReceiver onReceive  level = "+level);
                 batterLevelEventService(level);
             }
+            if("APP_BUTTON_KEY_ACTION".equals(action)){
+                int state = -2;
+                state = intent.getExtras().getInt("state");
+                Log.d(TAG,"[APPBUTTON] EventReceiver onReceive  state = "+state);
+                clickAppButtonEventService(state);
+            }
+            if("TRIGGER_BUTTON_KEY_ACTION".equals(action)){
+                int state = -3;
+                state = intent.getExtras().getInt("state");
+                Log.d(TAG,"[TRIGGER] EventReceiver onReceive  state = "+state);
+                clickAndTriggerEventService(state);
+            }
+
         }
     }
     //end

@@ -11,5 +11,9 @@ interface AIDLListener {
 
       void shortClickBackEvent(int state);
 
+      void clickAppButtonEvent(int state);
+
+      void clickAndTriggerEvent(int state);
+
       void batterLevelEvent(int level);
 }
