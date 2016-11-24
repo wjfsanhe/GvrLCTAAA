@@ -559,6 +559,20 @@ public class ControllerService extends Service {
                 + controllerOrientationEvent.qy + ",Z:" + controllerOrientationEvent.qz + ",W:"
                 + controllerOrientationEvent.qw);
     }
+
+    private void sendButtonEvent(){
+        try {
+            if (controllerListener != null) {
+//                controllerListener.deprecatedOnControllerButtonEvent(controllerButtonEvent);
+                 controllerListener.onControllerButtonEvent(controllerButtonEvent);
+
+            } else {
+                Log.e(TAG, "when send button event, controllerListener is null");
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
     private void sendPhoneEventControllerButtonEvent(byte keymask){
         int button = ControllerButtonEvent.BUTTON_NONE;
         boolean buttonActionDown = false;
@@ -599,28 +613,25 @@ public class ControllerService extends Service {
         }
         buttonActionDown = button != ControllerButtonEvent.BUTTON_NONE;
         controllerButtonEvent.button = button;
-        controllerButtonEvent.down = buttonActionDown;
 
         // if last button status is key down, this time send key up event
         if(button == ControllerButtonEvent.BUTTON_NONE && lastButton != ControllerButtonEvent.BUTTON_NONE){
             controllerButtonEvent.button = lastButton;
-        }
+        }/*else if (button != ControllerButtonEvent.BUTTON_NONE && lastButton != ControllerButtonEvent.BUTTON_NONE && lastButton != button){
+            // last not none, thie time not none, and this time do not equal last .
+            controllerButtonEvent.button = lastButton;
+            controllerButtonEvent.down = false;
+            sendButtonEvent();
+            controllerButtonEvent.button = button;
+        }*/
+        controllerButtonEvent.down = buttonActionDown;
 
         if(DEBUG) {
             Log.d(TAG, "mshuai, buttonevent button:" + button + ", isDown? :" + buttonActionDown + ", lastButtonStatus:" + lastButtonStatus);
         }
         // if last time is not down, this time still not down ,do not send event
-        if(lastButtonStatus || buttonActionDown) {
-            try {
-                if (controllerListener != null) {
-//                    controllerListener.deprecatedOnControllerButtonEvent(controllerButtonEvent);
-                     controllerListener.onControllerButtonEvent(controllerButtonEvent);
-                } else {
-                    Log.e(TAG, "when send button event, controllerListener is null");
-                }
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
+        if(lastButtonStatus != buttonActionDown) {
+            sendButtonEvent();
         }
         lastButton = button;
         lastButtonStatus = buttonActionDown;
