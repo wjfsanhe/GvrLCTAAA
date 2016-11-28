@@ -586,14 +586,13 @@ public class ControllerService extends Service {
         if ((keymask&0x01) != 0) {
             //click or ok
             button = ControllerButtonEvent.BUTTON_CLICK;
-        }else if ((keymask&0x02) != 0) {
+        }/*else if ((keymask&0x02) != 0) {
             //back: handle this back event by AIDLControllerService
             button = ControllerButtonEvent.BUTTON_NONE;
-        }else if ((keymask&0x04) != 0) {
+
+       }*/else if ((keymask&0x04) != 0) {
             //trigger treat as touch pad click
-            if (DEBUG) {
-                Log.d("[YYY]","keymask = "+keymask+" trigger treat as touch pad click");
-            }
+            Log.d("[YYY]","keymask = "+keymask+" trigger treat as touch pad click");
             button = ControllerButtonEvent.BUTTON_CLICK;
         }else if ((keymask&0x08) != 0) {
             //home
@@ -854,7 +853,6 @@ public class ControllerService extends Service {
                     handler.postDelayed(runnableForBack, DEFINE_LONG_TIME_FOR_BACK);
                     mLastKeyMask = keymask;
                     //set the state (ButtonDown)
-                    backKeyShortClickEvent(BACK_BUTTON_DOWN);
                     Log.d("[ZZZ]","Back shortclick ButtonDown");
                 } else {
                     if (isOutting) {
@@ -862,27 +860,15 @@ public class ControllerService extends Service {
                         Log.d("[ZZZ]","Back shortclick Button");
                     } else {
                         // set the state (Button)
-                        backKeyShortClickEvent(BACK_BUTTON);
                         Log.d("[ZZZ]","Back shortclick Button");
                     }
                 }
-            } else if ((keymask&0x01) !=0 || (keymask&0x04) != 0) {
-                //trigger/click key event
+            } else {
                 if (keymask != mLastKeyMask) {
-                    TriggerAndClickEvent(TRIGGER_BUTTON_DOWN);
+                    simulationButtonSystemEvent(keymask);
                     mLastKeyMask = keymask;
-                    Log.d("[ZZZ]","TriggerAndClickEvent Buttondown");
                 } else {
-                    TriggerAndClickEvent(TRIGGER_BUTTON);
-                }
-            } else if ((keymask&0x10) != 0) {
-                //appButton key event
-                if (keymask != mLastKeyMask) {
-                    appButtonEvent(APP_BUTTON_DOWN);
-                    mLastKeyMask = keymask;
-                    Log.d("[ZZZ]","appButtonEvent Buttondown");
-                } else {
-                    appButtonEvent(APP_BUTTON);
+                    //do nothing
                 }
             }
 
@@ -894,7 +880,6 @@ public class ControllerService extends Service {
             } else if (isOutting) {
                 // set Out of app state
                 isOutting = false;
-                backKeyShortClickEvent(BACK_BUTTON_CANCEL);
                 simulationButtonSystemEvent(mLastKeyMask);
             } else {
                 if ((mLastKeyMask&0x08) != 0) {
@@ -905,16 +890,7 @@ public class ControllerService extends Service {
                 if ((mLastKeyMask&0x02) != 0) {
                     handler.removeCallbacks(runnableForBack);
                     //set the state (ButtonUp)
-                    backKeyShortClickEvent(BACK_BUTTON_UP);
                     Log.d("[ZZZ]","Back shortclick ButtonUp");
-                }
-                if ((mLastKeyMask&0x01) !=0 || (mLastKeyMask&0x04) != 0) {
-                    TriggerAndClickEvent(TRIGGER_BUTTON_UP);
-                    Log.d("[ZZZ]","TriggerAndClickEvent ButtonUp");
-                }
-                if ((mLastKeyMask&0x10) != 0) {
-                    appButtonEvent(APP_BUTTON_UP);
-                    Log.d("[ZZZ]","appButtonEvent ButtonUp");
                 }
             }
             mLastKeyMask = keymask;
@@ -952,6 +928,7 @@ public class ControllerService extends Service {
         localBroadcastManager.sendBroadcast(intent);
         Log.d(TAG,"appButtonEvent.sendBroadcast(intent)");
     }
+
 
     private void simulationSystemEvent(float touchX, float touchY){
         int witchEventId = matchEvent(touchX,touchY);
