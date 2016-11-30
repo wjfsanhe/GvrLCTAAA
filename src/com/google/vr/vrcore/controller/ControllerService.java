@@ -6,6 +6,8 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothInputDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProfile.ServiceListener;
+import android.bluetooth.BluetoothServerSocket;
+import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -34,11 +36,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.util.UUID;
 
 //add by zhangyawen
 import android.view.KeyEvent;
@@ -84,6 +91,10 @@ public class ControllerService extends Service {
     public static int REPORT_TYPE_SENSOR = 2;
     public static int REPORT_TYPE_VERSION = 3;
 
+    private static int RAW_DATA_CHANNEL_NONE = 0;
+    private static int RAW_DATA_CHANNEL_JOYSTICK = 0;
+    private static int RAW_DATA_CHANNEL_EMULATOR = 1;
+
     private String iDreamDeviceVersion = null;
     private String iDreamDeviceType = null;
 
@@ -97,9 +108,23 @@ public class ControllerService extends Service {
 
     private Thread getNodeDataThread = null;
 
+    private Thread getRFCommDataThread = null;
+
+    private int dataChannel = RAW_DATA_CHANNEL_NONE;
+
+
     private LocalBroadcastManager localBroadcastManager;
     EventReceiver eventReceiver = new EventReceiver();
     private static boolean mVibrateClose = false;
+
+
+    private BluetoothServerSocket mServerSocket;
+    private BluetoothAdapter mBluetoothAdapter;
+
+    private InputStream inputStream;
+    private OutputStream outputStream;
+
+
 
     public static void debug_log(String log){
         if(DEBUG){
@@ -381,125 +406,301 @@ public class ControllerService extends Service {
             e.printStackTrace();
         }
     }
-    private void startGetNodeDataThread() {
-        if (getNodeDataThread == null) {
-            getNodeDataThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    // THREAD_PRIORITY_URGENT_DISPLAY THREAD_PRIORITY_URGENT_AUDIO
-                    android.os.Process
-                            .setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
-                    try {
-                        boolean needOpenFile = true;
-                        int timeoutCount = 0;
-                        while (!isCancel) {
-                            // if connect bt device is not hid device, sleep 3s, and do next while
-                            if(!isBtInputDeviceConnected){
-                                controllerServiceSleep(1, 3000);
-                                continue;
-                            }
-                            if (needOpenFile) {
-                                int res = nativeOpenFile();
-                                if (res < 0) {
-                                    needOpenFile = true;
-                                    Log.e(TAG, "native open file failed, sleep 3s");
-                                    controllerServiceSleep(2, 3000);
-                                    continue;
-                                }
-                                needOpenFile = false;
-                                Log.d(TAG, "natvie Open File Success");
-                            }
-                            if (false){//controllerListener == null) {
-                                Log.i(TAG, "controllerListener is null, sleep 3s");
+    private int  disposeNodeData(int channel, Bt_node_data nodeData, int timeoutCount){
+        debug_log("disposeRawData channel is :"+channel +", dataChannel:"+dataChannel);
+        if (nodeData.type == REPORT_TYPE_ORIENTATION) {// quans
+//          debug_log("nodeData:x:" + nodeData.quans_x + ", y:"
+//                  + nodeData.quans_y + ",z:" + nodeData.quans_z + ",w:"
+//                  + nodeData.quans_w);
+          timeoutCount = 0;// timeout count reset to 0
+          //if Listener is null ,don't need to send Orientation data
+          if (controllerListener != null) {
+                if (channel == dataChannel) {
+                    sendPhoneEventControllerOrientationEvent(nodeData.quans_x,
+                            nodeData.quans_y,
+                            nodeData.quans_z,
+                            nodeData.quans_w);
+                    debug_log("send phon event finish");
+                }
+          }
+        } else if (nodeData.type == REPORT_TYPE_SENSOR) {
+            timeoutCount = 0;// timeout count reset to 0
+            debug_log("nodeData.gyro x:" + nodeData.gyro_x + ", y:"
+                    + nodeData.gyro_y + ", z:" + nodeData.gyro_z + ", acc x:"
+                    + nodeData.acc_x + ", y:" + nodeData.acc_y + ", z:"
+                    + nodeData.acc_z + ", touchX:" + nodeData.touchX
+                    + ", touchY:" + nodeData.touchY + ", keymask:"
+                    + nodeData.keymask);
+            //schedule channel
+            if((channel != dataChannel && (nodeData.keymask&0x01) != 0) || RAW_DATA_CHANNEL_NONE == dataChannel){
+                dataChannel = channel;
+            }
+            // if Listener is null, don't need to send Acc&Gyro data
+            if (controllerListener != null) {
+                if (channel == dataChannel) {
+                    sendPhoneEventControllerAccAndGyroEvent(nodeData.gyro_x,
+                            nodeData.gyro_y, nodeData.gyro_z, nodeData.acc_x,
+                            nodeData.acc_y, nodeData.acc_z);
+                }
+            }
+            if (channel == dataChannel) {
+                sendPhoneEventControllerButtonEvent(nodeData.keymask);
+                sendPhoneEventControllerTouchPadEvent(nodeData.touchX, nodeData.touchY);
+                debug_log("send acc button touch event finish");
+            }
+            debug_log("battery:" + nodeData.bat_level);
+            // AIDLControllerUtil.mBatterLevel = String.valueOf(nodeData.bat_level);
+            if (mLastBatterLevel != nodeData.bat_level) {
+                mLastBatterLevel = nodeData.bat_level;
+                batterLevelEvent(nodeData.bat_level);
+            }
 
-                                try {
-                                    Thread.sleep(3, 3000);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                } finally {
-                                    continue;
-                                }
-                            } else {
-                                setControllerListenerConnected();
-                            }
+            // send broadcast to notify the hand shank's battery
+        }else if (nodeData.type == REPORT_TYPE_VERSION) {
+          timeoutCount = 0;// timeout count reset to 0
+          debug_log("nodeData appVersion:"+nodeData.appVersion+", deviceVersion:"+nodeData.deviceVersion+", deviceType:"+nodeData.deviceType);
+      } else if(nodeData.type == GET_DATA_TIMEOUT){
+          timeoutCount++;
+          Log.e(TAG, "no data to read, block timeout, count:"+count);
+          if (controllerListener != null && timeoutCount >5) {
+              //recenter
+              sendPhoneEventControllerOrientationEvent(0, 0, 0, 1);
+              debug_log("send fake data(w=1,x&y&z=0) which timeout count is more than 5");
+          }
+      } else if(nodeData.type == GET_INVALID_DATA){
+          Log.e(TAG, "get invalid data ");
+      } else {
+          Log.e(TAG,"other err when get node data");
+      }
+      return timeoutCount;
+    }
+    private Runnable getNodeDataRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // THREAD_PRIORITY_URGENT_DISPLAY THREAD_PRIORITY_URGENT_AUDIO
+            android.os.Process
+                    .setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
+            try {
+                boolean needOpenFile = true;
+                int timeoutCount = 0;
+                while (!isCancel) {
+                    // if connect bt device is not hid device, sleep 3s, and do next while
+                    if (!isBtInputDeviceConnected) {
+                        controllerServiceSleep(1, 3000);
+                        continue;
+                    }
+                    if (needOpenFile) {
+                        int res = nativeOpenFile();
+                        if (res < 0) {
+                            needOpenFile = true;
+                            Log.e(TAG, "native open file failed, sleep 3s");
+                            controllerServiceSleep(2, 3000);
+                            continue;
+                        }
+                        needOpenFile = false;
+                        Log.d(TAG, "natvie Open File Success");
+                    }
+                    setControllerListenerConnected();
 
-                            Bt_node_data nodeData = nativeReadFile();
-                            if (nodeData == null) {
-                                Log.e(TAG, "do not get hidraw data from native, schedule next open data node");
-                                needOpenFile = true;
-                                setControllerListenerDisconnected();
-                                nativeCloseFile();
-                                controllerServiceSleep(4, 3000);
-                                continue;
-                            }
-
-                            if (nodeData.type == REPORT_TYPE_ORIENTATION) {// quans
-//                                debug_log("nodeData:x:" + nodeData.quans_x + ", y:"
-//                                        + nodeData.quans_y + ",z:" + nodeData.quans_z + ",w:"
-//                                        + nodeData.quans_w);
-                                timeoutCount = 0;// timeout count reset to 0
-                                //if Listener is null ,don't need to send Orientation data
-                                if (controllerListener != null) {
-                                    sendPhoneEventControllerOrientationEvent(nodeData.quans_x,
-                                            nodeData.quans_y,
-                                            nodeData.quans_z,
-                                            nodeData.quans_w);
-                                    debug_log("send phon event finish");
-                                }
-                            } else if (nodeData.type == REPORT_TYPE_SENSOR) {
-                                timeoutCount = 0;// timeout count reset to 0
-                                debug_log("nodeData.gyro x:" + nodeData.gyro_x + ", y:"
-                                        + nodeData.gyro_y + ", z:" + nodeData.gyro_z + ", acc x:"
-                                        + nodeData.acc_x + ", y:" + nodeData.acc_y + ", z:"
-                                        + nodeData.acc_z + ", touchX:" + nodeData.touchX
-                                        + ", touchY:" + nodeData.touchY + ", keymask:"
-                                        + nodeData.keymask);
-                                //if Listener is null, don't need to send Acc&Gyro data
-                                if (controllerListener != null) {
-                                    sendPhoneEventControllerAccAndGyroEvent(nodeData.gyro_x,
-                                            nodeData.gyro_y, nodeData.gyro_z, nodeData.acc_x,
-                                            nodeData.acc_y, nodeData.acc_z);
-                                }
-                                sendPhoneEventControllerButtonEvent(nodeData.keymask);
-                                sendPhoneEventControllerTouchPadEvent(nodeData.touchX,nodeData.touchY);
-                                debug_log("send acc button touch event finish");
-                                debug_log("battery:"+nodeData.bat_level);
-                                //AIDLControllerUtil.mBatterLevel = String.valueOf(nodeData.bat_level);
-                                if (mLastBatterLevel != nodeData.bat_level) {
-                                    mLastBatterLevel = nodeData.bat_level;
-                                    batterLevelEvent(nodeData.bat_level);
-                                }
-
-                                // send broadcast to notify the hand shank's battery
-                            }else if (nodeData.type == REPORT_TYPE_VERSION) {
-                                timeoutCount = 0;// timeout count reset to 0
-                                debug_log("nodeData appVersion:"+nodeData.appVersion+", deviceVersion:"+nodeData.deviceVersion+", deviceType:"+nodeData.deviceType);
-                            } else if(nodeData.type == GET_DATA_TIMEOUT){
-                                timeoutCount++;
-                                Log.e(TAG, "no data to read, block timeout, count:"+count);
-                                if (controllerListener != null && timeoutCount >5) {
-                                    sendPhoneEventControllerOrientationEvent(0, 0, 0, 1);
-                                    debug_log("send fake data(w=1,x&y&z=0) which timeout count is more than 5");
-                                }
-                            } else if(nodeData.type == GET_INVALID_DATA){
-                                Log.e(TAG, "get invalid data from hidraw ");
-                            } else {
-                                Log.e(TAG,"other err when read node data");
-                            }
+                    Bt_node_data nodeData = nativeReadFile();
+                    if (nodeData == null) {
+                        Log.e(TAG,
+                                "do not get hidraw data from native, schedule next open data node");
+                        needOpenFile = true;
+                        if (dataChannel == RAW_DATA_CHANNEL_JOYSTICK) {
+                            setControllerListenerDisconnected();
+                            dataChannel = RAW_DATA_CHANNEL_NONE;//reset dataChannel
                         }
                         nativeCloseFile();
-                        Log.d(TAG, "natvie Close File");
+                        controllerServiceSleep(4, 3000);
+                        continue;
                     }
-                    finally {
-                        isCancel = true;
-                        Log.d(TAG, "finally, set Controller state DISCONNECTED");
-                        setControllerListenerDisconnected();
-                    }
+                    //record timeoutCount
+                    timeoutCount = disposeNodeData(RAW_DATA_CHANNEL_JOYSTICK, nodeData, timeoutCount);
                 }
-            });
+                nativeCloseFile();
+                Log.d(TAG, "natvie Close File");
+            }
+            finally {
+                isCancel = true;
+                Log.d(TAG, "finally, set Controller state DISCONNECTED");
+                setControllerListenerDisconnected();
+            }
+        }
+    };
+    private static final String NAME = "BTAcceptThread";
+    public static final String PROTOCOL_SCHEME_RFCOMM = "btspp";
+    private static final UUID MY_UUID = UUID.fromString("00001102-0001-1001-8001-00805F9B34FC");
+    public static byte[] deleteAt(byte[] bs, int index)
+    {
+        int length = bs.length - 1;
+        byte[] ret = new byte[length];
+
+        System.arraycopy(bs, 0, ret, 0, index);
+        System.arraycopy(bs, index + 1, ret, index, length - index);
+
+        return ret;
+    }
+    private Bt_node_data decodeRFCommRawData(byte[] buffer){
+        Bt_node_data node_data = new Bt_node_data();
+        buffer = deleteAt(buffer, 0);
+        int temp_value = (int) buffer[2] & 0xff;
+
+        if (temp_value == 1) {
+            float[] quans = new float[4];
+            int index = 2;
+            // float[] quans_2 = new float[4];
+            for (int i = 0; i < 4; i++) {
+                int result = (((int) buffer[6 + i * 4] << 24) & 0xFF000000) |
+                        (((int) buffer[5 + i * 4] << 16) & 0x00FF0000) |
+                        (((int) buffer[4 + i * 4] << 8) & 0x0000FF00) |
+                        (((int) buffer[3 + i * 4] << 0) & 0x000000FF);
+                quans[3 - i] = Float.intBitsToFloat(result);
+
+            }
+             debug_log("result: x= " + quans[0] + " y= " + quans[1] + " z= " +
+             quans[2] + " w= " + quans[3]);
+
+             node_data.type = REPORT_TYPE_ORIENTATION;
+             node_data.quans_x = quans[0];
+             node_data.quans_y = quans[1];
+             node_data.quans_z = quans[2];
+             node_data.quans_w = quans[3];
+        } else if (temp_value == 2) {
+            int[] sensor = new int[6];
+            for (int i = 0; i < 6; i++) {
+                sensor[i] = (((int) buffer[4 + i * 2] << 8) & 0x0000FF00) |
+                        (((int) buffer[3 + i * 2] << 0) & 0x000000FF);
+                if ((sensor[i] & 0x8000) != 0) {
+                    sensor[i] |= 0xFFFF0000;
+                }
+            }
+            int touchX = ((int) buffer[15]) & 0x000000FF;
+            int touchY = ((int) buffer[16]) & 0x000000FF;
+            byte keymask = buffer[17];
+             int battery = (((int)buffer[18]) & 0x000000FF) + 100;
+
+             debug_log("mshuai, get data:gyro.x:" + sensor[0] + ", gyro.y:" +
+             sensor[1] + ", gyro.z:" + sensor[2] + ", acc.x" + sensor[3] +
+             ", acc.y:" + sensor[4] + ", acc.z:" + sensor[5]);
+             debug_log("mshuai, get touchx:" + touchX + ", touchy:" + touchY);
+             node_data.type = REPORT_TYPE_SENSOR;
+             node_data.gyro_x = sensor[0];
+             node_data.gyro_y = sensor[1];
+             node_data.gyro_z = sensor[2];
+             node_data.acc_x = sensor[3];
+             node_data.acc_y = sensor[4];
+             node_data.acc_z = sensor[5];
+             node_data.touchX = touchX;
+             node_data.touchY = touchY;
+             node_data.bat_level = battery;
+             node_data.keymask = keymask;
+        } else {
+            Log.e(TAG, "get node invalid data!!!");
+            node_data.type = GET_INVALID_DATA;
+        }
+        return node_data;
+    }
+    private Runnable getRFCommDataRunnable = new Runnable(){
+        @Override
+        public void run() {
+            android.os.Process
+            .setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
+            BluetoothSocket socket = null;
+
+            while (!isCancel) {
+                try {
+                    if (mAdapter != null && mAdapter.isEnabled()) {
+
+//                        if (BluetoothAdapter.STATE_CONNECTED != mAdapter.getConnectionState()) {
+//                            controllerServiceSleep(5, 1000);
+//                            continue;
+//                        }
+
+                        // MY_UUID is the app's UUID string, also used by the client code
+                        // 创建ServerSocket
+                        // mServerSocket =
+                        // mBluetoothAdapter.listenUsingRfcommWithServiceRecord(NAME, MY_UUID);
+                        if (mServerSocket == null) {
+                            mServerSocket = mAdapter.listenUsingInsecureRfcommWithServiceRecord(
+                                    PROTOCOL_SCHEME_RFCOMM, MY_UUID);
+                        }
+                        Log.e(TAG,
+                                "accept() waiting for client connection.... mServerSocket is null?"
+                                        + (mServerSocket == null));
+                        try {
+                            socket = mServerSocket.accept();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                        Log.e(TAG, "accept() accept a client sucess socket =  " + socket);
+
+                        while (socket != null && socket.isConnected()) {
+//                        if(socket != null){
+                            inputStream = socket.getInputStream();
+                            byte[] buffer = new byte[1024 * 4];
+                            int bytes = 0;
+                            Bt_node_data nodeData;
+                            while (bytes != -1) {
+                                try{
+                                    bytes = inputStream.read(buffer);
+                                    if(bytes <0) break;
+                                }catch(IOException e){
+                                    e.printStackTrace();
+                                    break;
+                                }
+                                Log.e(TAG, "read value = " + new String(buffer, 0, bytes, "utf-8"));
+                                setControllerListenerConnected();
+                                nodeData = decodeRFCommRawData(buffer);
+                                disposeNodeData(RAW_DATA_CHANNEL_EMULATOR, nodeData, 0);
+                            }
+                            Log.d(TAG,"read inputStream err, re accept");
+                            if (socket != null) {
+                                socket.close();
+                            }
+//                            controllerServiceSleep(6, 3000);
+                        }
+
+                        inputStream.close();
+                    }else{
+                        //if bt is closed
+                        Log.d(TAG,"bt adapter is null ,sleep 3s");
+                        if (mServerSocket != null) {
+                            try {
+                                mServerSocket.close();
+                                mServerSocket = null;
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        controllerServiceSleep(8, 3000);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    Log.e(TAG, "socket disconnected, reconnect again");
+                    if (dataChannel == RAW_DATA_CHANNEL_EMULATOR) {
+                        setControllerListenerDisconnected();
+                        dataChannel = RAW_DATA_CHANNEL_NONE;//reset dataChannel
+                    }
+//                    controllerServiceSleep(7, 3000);
+                }
+            }
+        }
+    };
+    private void startGetNodeDataThread() {
+        if (getNodeDataThread == null) {
+            getNodeDataThread = new Thread(getNodeDataRunnable);
+        }
+        if (getRFCommDataThread == null) {
+            getRFCommDataThread = new Thread(getRFCommDataRunnable);
         }
         if (!getNodeDataThread.isAlive()) {
             getNodeDataThread.start();
+        }
+        if(!getRFCommDataThread.isAlive()){
+            getRFCommDataThread.start();
         }
     }
 
