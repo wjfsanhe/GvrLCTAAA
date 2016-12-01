@@ -91,7 +91,7 @@ public class ControllerService extends Service {
     public static int REPORT_TYPE_SENSOR = 2;
     public static int REPORT_TYPE_VERSION = 3;
 
-    private static int RAW_DATA_CHANNEL_NONE = 0;
+    private static int RAW_DATA_CHANNEL_NONE = -1;
     private static int RAW_DATA_CHANNEL_JOYSTICK = 0;
     private static int RAW_DATA_CHANNEL_EMULATOR = 1;
 
