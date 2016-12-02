@@ -937,11 +937,16 @@ public class ControllerService extends Service {
     private boolean isDone = false;
     private boolean isReseting = false;
     private boolean isOutting = false;
+    private boolean isVolumeOn = false;
+    private boolean isWorking = false;
+/*    private boolean isVolumeUpOn = false;
+    private boolean isVolumeDownOn = false;*/
     private int mLastKeyMask = 0;
     private int mLastBatterLevel = -1;
     private static final int DELAY_TIME = 500;
     private static final int DEFINE_LONG_TIME_FOR_HOME = 1*1000;
     private static final int DEFINE_LONG_TIME_FOR_BACK = 1*1000;
+    private static final int DEFINE_LONG_TIME_FOR_VOLUME = 500;
 
     //short click back key
     public static final int BACK_BUTTON_DOWN = 100;
@@ -978,6 +983,8 @@ public class ControllerService extends Service {
     public static final int SYSTEM_EVENT_LEFT_ID = 4;
     public static final int SYSTEM_EVENT_RIGHT_ID = 5;
     public static final int SYSTEM_EVENT_HOME_ID = 6;
+    public static final int SYSTEM_EVENT_VOLUME_UP_ID = 7;
+    public static final int SYSTEM_EVENT_VOLUME_DOWN_ID = 8;
 
     //timer1
     private Runnable runnable = new Runnable() {
@@ -1003,6 +1010,38 @@ public class ControllerService extends Service {
         }
     };
 
+    private Runnable runnableForVolume = new Runnable() {
+        @Override
+        public void run() {
+            isVolumeOn = true;
+        }
+    };
+
+    private Runnable runnableForVolumeUpOn = new Runnable() {
+        @Override
+        public void run() {
+            if (isVolumeOn) {
+                //send Volume up event every 200ms
+                simulationButtonSystemEvent(32);
+                handler.postDelayed(runnableForVolumeUpOn, 100);
+            } else {
+                //do nothing
+            }
+        }
+    };
+    private Runnable runnableForVolumeDownOn = new Runnable() {
+        @Override
+        public void run() {
+            if (isVolumeOn) {
+                //send Volume down event every 200ms
+                simulationButtonSystemEvent(64);
+                handler.postDelayed(runnableForVolumeUpOn, 100);
+            } else {
+                //do nothing
+            }
+        }
+    };
+
     private void simulationButtonSystemEvent(int keymask){
         if ((keymask&0x01) != 0) {
             //click Panel
@@ -1024,10 +1063,12 @@ public class ControllerService extends Service {
             Log.d("[ZZZ]","menu (not match the Event)");
         }else if ((keymask&0x20) != 0) {
             //volume up
-            Log.d("[ZZZ]","volume up (not match the Event)");
+            Log.d("[ZZZ]","volume up ");
+            sendSystemEvent(SYSTEM_EVENT_VOLUME_UP_ID);
         }else if ((keymask&0x40) != 0) {
             //volume down
-            Log.d("[ZZZ]","volume down (not match the Event)");
+            Log.d("[ZZZ]","volume down ");
+            sendSystemEvent(SYSTEM_EVENT_VOLUME_DOWN_ID);
         }else{
             // none
             Log.d("[ZZZ]","none (not match the Event)");
@@ -1085,6 +1126,70 @@ public class ControllerService extends Service {
                 } else {
                     appButtonEvent(APP_BUTTON);
                 }
+            } else if ((keymask&0x20) != 0) {
+                // volume up key(500ms)
+                if (keymask != mLastKeyMask) {
+                    Log.d("[ZZZ]","Volume up Event down");
+                    simulationButtonSystemEvent(keymask);
+                    handler.postDelayed(runnableForVolume, DEFINE_LONG_TIME_FOR_VOLUME);
+                    mLastKeyMask = keymask;
+                } else {
+                    if (isVolumeOn && !isWorking) {
+                        //volume up on
+                        isWorking = true;
+                        Log.d("[ZZZ]","Volume up is on");
+                        //handler.post(runnableForVolumeUpOn);
+                        new Thread(){
+                            public void run(){
+                                while(isVolumeOn){
+                                    // send volume up event every 50 ms
+                                    simulationButtonSystemEvent(mLastKeyMask);
+                                    try {
+                                        if (DEBUG) {
+                                            Log.d("[ZZZ]", "Thread.sleep time = 50 ms");
+                                        }
+                                        Thread.sleep(200);
+                                    }catch (Exception exception){
+                                    }
+                                }
+                            }
+                        }.start();
+                    } else {
+                        //do nothing
+                    }
+                }
+            } else if ((keymask&0x40) != 0) {
+                // volume down key(500ms)
+                if (keymask != mLastKeyMask) {
+                    Log.d("[ZZZ]","Volume down Event down");
+                    simulationButtonSystemEvent(keymask);
+                    handler.postDelayed(runnableForVolume, DEFINE_LONG_TIME_FOR_VOLUME);
+                    mLastKeyMask = keymask;
+                } else {
+                    if (isVolumeOn && !isWorking) {
+                        //volume down on
+                        isWorking = true;
+                        Log.d("[ZZZ]","Volume down is on");
+                        //handler.po;acfguwst(runnableForVolumeDownOn);
+                        new Thread(){
+                            public void run(){
+                                while(isVolumeOn){
+                                    // send volume down event every 50 ms
+                                    simulationButtonSystemEvent(mLastKeyMask);
+                                    try {
+                                        if (DEBUG) {
+                                            Log.d("[ZZZ]", "Thread.sleep time = 50 ms");
+                                        }
+                                        Thread.sleep(200);
+                                    }catch (Exception exception){
+                                    }
+                                }
+                            }
+                        }.start();
+                    } else {
+                        //do nothing
+                    }
+                }
             }
 
         } else {
@@ -1117,6 +1222,20 @@ public class ControllerService extends Service {
                     appButtonEvent(APP_BUTTON_UP);
                     Log.d("[ZZZ]","appButtonEvent ButtonUp");
                 }
+                if ((mLastKeyMask&0x20) != 0 ) {
+                    handler.removeCallbacks(runnableForVolume);
+                    Log.d("[ZZZ]","shortClick Volume up  ");
+                }
+                if ((mLastKeyMask&0x40) != 0) {
+                    handler.removeCallbacks(runnableForVolume);
+                    Log.d("[ZZZ]","shortClick Volume down");
+                }
+
+            }
+            if (isVolumeOn) {
+                isVolumeOn = false;
+                isWorking = false;
+                Log.d("[ZZZ]","isVolumeOn = "+isVolumeOn);
             }
             mLastKeyMask = keymask;
         }
@@ -1238,11 +1357,19 @@ public class ControllerService extends Service {
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_HOME);
                             logInfo = "KeyEvent.KEYCODE_HOME";
                             break;
+                        case SYSTEM_EVENT_VOLUME_UP_ID:
+                            inst.sendKeyDownUpSync(KeyEvent.KEYCODE_VOLUME_UP);
+                            logInfo = "KeyEvent.KEYCODE_VOLUME_UP";
+                            break;
+                        case SYSTEM_EVENT_VOLUME_DOWN_ID:
+                            inst.sendKeyDownUpSync(KeyEvent.KEYCODE_VOLUME_DOWN);
+                            logInfo = "KeyEvent.KEYCODE_VOLUME_DOWN";
+                            break;
                         default:
                             logInfo = "This behavior does not match system event ! ";
                             break;
                     }
-                    Log.d(TAG, logInfo);
+                    Log.d("[UUU]", logInfo);
                 } catch (Exception e) {
                     android.util.Log.d(TAG," Instrumentation Exception = "+e);
                 }
