@@ -870,15 +870,39 @@ public class ControllerService extends Service {
             e.printStackTrace();
         }
     }
+    private float preTouchX = 0;
+    private float preTouchY = 0;
     private void sendPhoneEventControllerTouchPadEvent(float touchX, float touchY){
-        if(touchX == 0 && touchY == 0){
-            // not touch
-            return;
+        int action = ControllerTouchEvent.ACTION_NONE;
+
+        if(touchX !=0 || touchY != 0){
+            if(preTouchX != 0 || preTouchY != 0){
+                action = ControllerTouchEvent.ACTION_MOVE;
+            }else{
+                action = ControllerTouchEvent.ACTION_DOWN;
+            }
+        }else {
+            if(preTouchX != 0 || preTouchY != 0){
+                action = ControllerTouchEvent.ACTION_UP;
+            }else {
+                action = ControllerTouchEvent.ACTION_NONE;
+                return;
+            }
         }
-        controllerTouchEvent.action = ControllerTouchEvent.ACTION_MOVE;
+
+        debug_log("touchX:" + touchX + " touchY:" + touchY + " preTouchX:" + preTouchX + " preTouchY:"
+                + preTouchY + " action:"+action);
+        controllerTouchEvent.action = action;
         controllerTouchEvent.fingerId = 0;//event.motionEvent.pointers[0].getId();
-        controllerTouchEvent.x = touchX;
-        controllerTouchEvent.y = touchY;
+        if (action == ControllerTouchEvent.ACTION_UP) {
+            controllerTouchEvent.x = preTouchX;
+            controllerTouchEvent.y = preTouchY;
+        }else{
+            controllerTouchEvent.x = touchX;
+            controllerTouchEvent.y = touchY;
+        }
+        preTouchX = touchX;
+        preTouchY = touchY;
 
         controllerTouchEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
