@@ -174,11 +174,11 @@ public class ControllerService extends Service {
                 int mode = intent.getIntExtra("mode", -1);
                 int power = 0;
                 if(mode == 0){
-                    power = 80;
+                    power = 100;
                 }else if(mode == 1){
-                    power = 120;
+                    power = 150;
                 }else if(mode == 2){
-                    power = 160;
+                    power = 200;
                 }
                 controlJoystickVibrate(power, (int)time);
             }else if("OPEN_VIBRATOR_REPEAT_ACTION".equals(action)){
