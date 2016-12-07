@@ -745,7 +745,12 @@ public class ControllerService extends Service {
         controllerOrientationEvent.qw = w;
 
         controllerOrientationEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
-
+        //add by zhangyawen for quansData jar (controllerService.java)
+        quanDataEvent(controllerOrientationEvent.qx,
+                controllerOrientationEvent.qy,
+                controllerOrientationEvent.qz,
+                controllerOrientationEvent.qw);
+        //end
         try {
             if(controllerListener!=null){
 //                controllerListener.deprecatedOnControllerOrientationEvent(controllerOrientationEvent); //must be send
@@ -998,6 +1003,9 @@ public class ControllerService extends Service {
     //long click home key
     public static final int HOME_RECENTERING = 104;
     public static final int HOME_RECENTERED = 105;
+
+    //quan data event
+    public static final String QUAN_DATA_EVENT_ACTION = "QUAN_DATA_EVENT_ACTION";
 
     public static final int SYSTEM_EVENT_NOT_DEFINED_ID = -1;
     public static final int SYSTEM_EVENT_BACK_ID = 0;
@@ -1295,6 +1303,14 @@ public class ControllerService extends Service {
         intent.setAction(APP_BUTTON_EVENT_ACTION);
         localBroadcastManager.sendBroadcast(intent);
         Log.d(TAG,"appButtonEvent.sendBroadcast(intent)");
+    }
+
+    private void quanDataEvent(float x,float y,float z,float w){
+        Intent intent = new Intent();
+        intent.putExtra("quans",new float[]{x,y,z,w});
+        intent.setAction(QUAN_DATA_EVENT_ACTION);
+        localBroadcastManager.sendBroadcast(intent);
+        //Log.d("[SYS]","quanDataEvent.sendBroadcast(intent)");
     }
 
     private void simulationSystemEvent(float touchX, float touchY){

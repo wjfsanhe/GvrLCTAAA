@@ -25,6 +25,8 @@ public class AIDLControllerService extends Service {
     EventReceiver eventReceiver = new EventReceiver();
 
     RemoteCallbackList<AIDLListener> mListenerList = new RemoteCallbackList<AIDLListener>();
+
+    private float[] quans = new float[]{0,0,0,1};
     //end
 
     @Override
@@ -38,6 +40,7 @@ public class AIDLControllerService extends Service {
         filter.addAction("BATTER_LEVEL_ACTION");
         filter.addAction("APP_BUTTON_KEY_ACTION");
         filter.addAction("TRIGGER_BUTTON_KEY_ACTION");
+        filter.addAction("QUAN_DATA_EVENT_ACTION");
         Log.d(TAG,"registerReceiver");
         localBroadcastManager.registerReceiver(eventReceiver,filter);
         //end
@@ -181,6 +184,22 @@ public class AIDLControllerService extends Service {
         mListenerList.finishBroadcast();
     }
 
+    private void quansDataEventService(float x, float y, float z, float w){
+        final int N = mListenerList.beginBroadcast();
+        for (int i = 0; i < N; i++) {
+            AIDLListener l = mListenerList.getBroadcastItem(i);
+            if (l != null) {
+                try{
+                    //Log.d(TAG,"l.quansDataEvent  x = "+x+" y = "+y+" z = "+z+" w = "+w);
+                    l.quansDataEvent(x, y, z, w);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        mListenerList.finishBroadcast();
+    }
+
     public class EventReceiver extends BroadcastReceiver {
 
         @Override
@@ -211,7 +230,11 @@ public class AIDLControllerService extends Service {
                 Log.d(TAG,"[TRIGGER] EventReceiver onReceive  state = "+state);
                 clickAndTriggerEventService(state);
             }
-
+            if("QUAN_DATA_EVENT_ACTION".equals(action)){
+                quans = intent.getExtras().getFloatArray("quans");
+                //Log.d("[SYS]","[QUANS] EventReceiver quans = "+quans);
+                quansDataEventService(quans[0],quans[1],quans[2],quans[3]);
+            }
         }
     }
     //end

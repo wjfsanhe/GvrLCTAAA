@@ -16,4 +16,6 @@ interface AIDLListener {
       void clickAndTriggerEvent(int state);
 
       void batterLevelEvent(int level);
+
+      void quansDataEvent(float x, float y,float z,float w);
 }
