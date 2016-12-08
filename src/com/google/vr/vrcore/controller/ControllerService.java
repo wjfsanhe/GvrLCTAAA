@@ -659,10 +659,12 @@ public class ControllerService extends Service {
                             if (socket != null) {
                                 socket.close();
                             }
+                            if(inputStream != null){
+                                inputStream.close();
+                            }
 //                            controllerServiceSleep(6, 3000);
                         }
 
-                        inputStream.close();
                     }else{
                         //if bt is closed
                         Log.d(TAG,"bt adapter is null ,sleep 3s");
@@ -825,6 +827,9 @@ public class ControllerService extends Service {
             sendButtonEvent();
             controllerButtonEvent.button = button;
         }*/
+        else if (button == ControllerButtonEvent.BUTTON_NONE && lastButton == ControllerButtonEvent.BUTTON_NONE){
+            return;
+        }
         controllerButtonEvent.down = buttonActionDown;
 
         if(DEBUG) {
