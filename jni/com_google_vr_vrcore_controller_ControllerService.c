@@ -22,6 +22,7 @@
 #define REPORT_TYPE_ORIENTATION 1
 #define REPORT_TYPE_SENSOR		2
 #define REPORT_TYPE_VERSION		3
+#define REPORT_TYPE_SHAKE		4
 
 typedef unsigned char byte;
 
@@ -265,6 +266,24 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 		(*env)->SetIntField(env, data_struct, dType, deviceType);
 
 		return data_struct;
+    }else if (buf[0] == JOYSTICK_TO_HOST && buf[3] == REPORT_TYPE_SHAKE){
+#ifdef DEBUG
+        ALOGD("type3 VERSION: %02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X\n",
+                buf[4],buf[5],buf[6],buf[7],buf[8],buf[9]);
+#endif
+        float time_stamp;
+        int shake_event;
+        int event_parameter;
+        time_stamp = *((short*)(buf+4));
+        shake_event = (int)buf[8];
+        event_parameter = (int)buf[9];
+        ALOGD("time_stamp:%f, shake_event:%d, event_parameter:%d\n", time_stamp, shake_event, event_parameter);
+        jfieldID time = (*env)->GetFieldID(env, clsBt_node_data, "timeStamp", "F");
+        jfieldID shake = (*env)->GetFieldID(env, clsBt_node_data, "shakeEvent", "I");
+        jfieldID parameter = (*env)->GetFieldID(env, clsBt_node_data, "eventParameter", "I");
+        (*env)->SetFloatField(env, data_struct, time, time_stamp);
+        (*env)->SetIntField(env, data_struct, shake, shake_event);
+        (*env)->SetIntField(env, data_struct, parameter, event_parameter);
 	}else{
 		jfieldID type = (*env)->GetFieldID(env, clsBt_node_data, "type", "I");
 		(*env)->SetIntField(env, data_struct, type, GET_INVALID_DATA);
