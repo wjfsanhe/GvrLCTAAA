@@ -90,8 +90,6 @@ public class ControllerService extends Service {
     public static int REPORT_TYPE_ORIENTATION = 1;
     public static int REPORT_TYPE_SENSOR = 2;
     public static int REPORT_TYPE_VERSION = 3;
-    public static int REPORT_TYPE_SHAKE = 4;
-
 
     private static int RAW_DATA_CHANNEL_NONE = -1;
     private static int RAW_DATA_CHANNEL_JOYSTICK = 0;
@@ -459,10 +457,8 @@ public class ControllerService extends Service {
 
             // send broadcast to notify the hand shank's battery
         }else if (nodeData.type == REPORT_TYPE_VERSION) {
-            timeoutCount = 0;// timeout count reset to 0
-            debug_log("nodeData appVersion:" + nodeData.appVersion + ", deviceVersion:" + nodeData.deviceVersion + ", deviceType:" + nodeData.deviceType);
-        }else if (nodeData.type == REPORT_TYPE_SHAKE){
-            debug_log("nodeData.timeStamp :" + nodeData.timeStamp + ", nodeData.shakeEvent :" + nodeData.shakeEvent + ", nodeData.eventParameter:" + nodeData.eventParameter);
+          timeoutCount = 0;// timeout count reset to 0
+          debug_log("nodeData appVersion:"+nodeData.appVersion+", deviceVersion:"+nodeData.deviceVersion+", deviceType:"+nodeData.deviceType);
       } else if(nodeData.type == GET_DATA_TIMEOUT){
           timeoutCount++;
           Log.e(TAG, "no data to read, block timeout, count:"+count);
@@ -1454,10 +1450,6 @@ class Bt_node_data{
     public int appVersion;
     public int deviceVersion;
     public int deviceType;
-
-    public float timeStamp;
-    public int shakeEvent;
-    public int eventParameter;
 
 
     public Bt_node_data(){}
