@@ -1326,7 +1326,7 @@ public class ControllerService extends Service {
         //Log.d("[SYS]","quanDataEvent.sendBroadcast(intent)");
     }
 
-    private void shakeEvent(float timeStamp,int Event,int eventParameter){
+    private void shakeEvent(int timeStamp,int Event,int eventParameter){
         Intent intent = new Intent();
         intent.putExtra("timeStamp",timeStamp);
         intent.putExtra("Event",Event);
@@ -1469,7 +1469,7 @@ class Bt_node_data{
     public int deviceVersion;
     public int deviceType;
 
-    public float timeStamp;
+    public int timeStamp;
     public int shakeEvent;
     public int eventParameter;
 

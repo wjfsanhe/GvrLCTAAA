@@ -19,6 +19,6 @@ interface AIDLListener {
 
       void quansDataEvent(float x, float y,float z,float w);
 
-      void shakeEvent(float timeStamp,int event,int eventParameter);
+      void shakeEvent(int timeStamp,int event,int eventParameter);
 
 }

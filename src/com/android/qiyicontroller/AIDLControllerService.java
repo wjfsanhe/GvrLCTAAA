@@ -201,7 +201,7 @@ public class AIDLControllerService extends Service {
         mListenerList.finishBroadcast();
     }
 
-    private void shakeEventService(float timeStamp,int event,int eventParameter){
+    private void shakeEventService(int timeStamp,int event,int eventParameter){
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -253,10 +253,10 @@ public class AIDLControllerService extends Service {
                 quansDataEventService(quans[0],quans[1],quans[2],quans[3]);
             }
             if("SHAKE_EVENT_ACTION".equals(action)){
-                float timeStamp = 0;
+                int timeStamp = 0;
                 int event = 0;
                 int eventParameter = 0;
-                timeStamp = intent.getExtras().getFloat("timeStamp");
+                timeStamp = intent.getExtras().getInt("timeStamp");
                 event = intent.getExtras().getInt("Event");
                 eventParameter = intent.getExtras().getInt("eventParameter");
                 Log.d(TAG,"[SHAKE] onReceive timeStamp = "+timeStamp+" event = "+event+" eventParameter = "+eventParameter);

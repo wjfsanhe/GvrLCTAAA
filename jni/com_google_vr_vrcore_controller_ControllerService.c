@@ -282,7 +282,7 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
             (*env)->SetIntField(env, data_struct, type, REPORT_TYPE_SHAKE);
         }
         if(time != NULL){
-		    (*env)->SetFloatField(env, data_struct, time, time_stamp);
+		    (*env)->SetIntField(env, data_struct, time, time_stamp);
 		}
 		if(shake != NULL){
             (*env)->SetIntField(env, data_struct, shake, shake_event);
