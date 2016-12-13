@@ -41,6 +41,7 @@ public class AIDLControllerService extends Service {
         filter.addAction("APP_BUTTON_KEY_ACTION");
         filter.addAction("TRIGGER_BUTTON_KEY_ACTION");
         filter.addAction("QUAN_DATA_EVENT_ACTION");
+        filter.addAction("SHAKE_EVENT_ACTION");
         Log.d(TAG,"registerReceiver");
         localBroadcastManager.registerReceiver(eventReceiver,filter);
         //end
@@ -200,6 +201,22 @@ public class AIDLControllerService extends Service {
         mListenerList.finishBroadcast();
     }
 
+    private void shakeEventService(float timeStamp,int event,int eventParameter){
+        final int N = mListenerList.beginBroadcast();
+        for (int i = 0; i < N; i++) {
+            AIDLListener l = mListenerList.getBroadcastItem(i);
+            if (l != null) {
+                try{
+                    Log.d(TAG,"l.shakeEvent  timeStamp = "+timeStamp +" event = "+event+" eventParameter = "+eventParameter);
+                    l.shakeEvent(timeStamp,event,eventParameter);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        mListenerList.finishBroadcast();
+    }
+
     public class EventReceiver extends BroadcastReceiver {
 
         @Override
@@ -235,6 +252,17 @@ public class AIDLControllerService extends Service {
                 //Log.d("[SYS]","[QUANS] EventReceiver quans = "+quans);
                 quansDataEventService(quans[0],quans[1],quans[2],quans[3]);
             }
+            if("SHAKE_EVENT_ACTION".equals(action)){
+                float timeStamp = 0;
+                int event = 0;
+                int eventParameter = 0;
+                timeStamp = intent.getExtras().getFloat("timeStamp");
+                event = intent.getExtras().getInt("Event");
+                eventParameter = intent.getExtras().getInt("eventParameter");
+                Log.d(TAG,"[SHAKE] onReceive timeStamp = "+timeStamp+" event = "+event+" eventParameter = "+eventParameter);
+                shakeEventService(timeStamp,event,eventParameter);
+            }
+
         }
     }
     //end

@@ -18,4 +18,7 @@ interface AIDLListener {
       void batterLevelEvent(int level);
 
       void quansDataEvent(float x, float y,float z,float w);
+
+      void shakeEvent(float timeStamp,int event,int eventParameter);
+
 }

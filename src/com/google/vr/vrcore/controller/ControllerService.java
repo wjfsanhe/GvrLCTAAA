@@ -463,6 +463,7 @@ public class ControllerService extends Service {
             debug_log("nodeData appVersion:" + nodeData.appVersion + ", deviceVersion:" + nodeData.deviceVersion + ", deviceType:" + nodeData.deviceType);
         }else if (nodeData.type == REPORT_TYPE_SHAKE){
             debug_log("nodeData.timeStamp :" + nodeData.timeStamp + ", nodeData.shakeEvent :" + nodeData.shakeEvent + ", nodeData.eventParameter:" + nodeData.eventParameter);
+            shakeEvent(nodeData.timeStamp,nodeData.shakeEvent,nodeData.eventParameter);
       } else if(nodeData.type == GET_DATA_TIMEOUT){
           timeoutCount++;
           Log.e(TAG, "no data to read, block timeout, count:"+count);
@@ -1016,6 +1017,9 @@ public class ControllerService extends Service {
     //quan data event
     public static final String QUAN_DATA_EVENT_ACTION = "QUAN_DATA_EVENT_ACTION";
 
+    //Shake
+    public static final String SHAKE_EVENT_ACTION = "SHAKE_EVENT_ACTION";
+
     public static final int SYSTEM_EVENT_NOT_DEFINED_ID = -1;
     public static final int SYSTEM_EVENT_BACK_ID = 0;
     public static final int SYSTEM_EVENT_ENTER_ID = 1;
@@ -1320,6 +1324,16 @@ public class ControllerService extends Service {
         intent.setAction(QUAN_DATA_EVENT_ACTION);
         localBroadcastManager.sendBroadcast(intent);
         //Log.d("[SYS]","quanDataEvent.sendBroadcast(intent)");
+    }
+
+    private void shakeEvent(float timeStamp,int Event,int eventParameter){
+        Intent intent = new Intent();
+        intent.putExtra("timeStamp",timeStamp);
+        intent.putExtra("Event",Event);
+        intent.putExtra("eventParameter",eventParameter);
+        intent.setAction(SHAKE_EVENT_ACTION);
+        localBroadcastManager.sendBroadcast(intent);
+        Log.d(TAG,"shakeEvent.sendBroadcast(intent)");
     }
 
     private void simulationSystemEvent(float touchX, float touchY){
