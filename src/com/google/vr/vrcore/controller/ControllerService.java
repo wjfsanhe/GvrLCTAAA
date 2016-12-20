@@ -889,6 +889,7 @@ public class ControllerService extends Service {
     private float preTouchX = 0;
     private float preTouchY = 0;
     private void sendPhoneEventControllerTouchPadEvent(float touchX, float touchY){
+        simulationSystemEvent(touchX,touchY);
         int action = ControllerTouchEvent.ACTION_NONE;
 
         if(touchX !=0 || touchY != 0){
@@ -1031,6 +1032,14 @@ public class ControllerService extends Service {
     public static final int SYSTEM_EVENT_HOME_ID = 6;
     public static final int SYSTEM_EVENT_VOLUME_UP_ID = 7;
     public static final int SYSTEM_EVENT_VOLUME_DOWN_ID = 8;
+
+    //touch event
+    private static float swipe_Horizontal_YMax = 0.8536f;
+    private static float swipe_Horizontal_YMin = 0.1464f;
+    private static float swipe_Vertical_XMax = 0.8536f;
+    private static float swipe_Vertical_XMin = 0.1464f;
+    private static float swipe_DragDistance = 0.4714f;
+    private static long timeSwipeDelay = 300L;
 
     //timer1
     private Runnable runnable = new Runnable() {
@@ -1262,6 +1271,7 @@ public class ControllerService extends Service {
                 }
                 if ((mLastKeyMask&0x01) !=0 || (mLastKeyMask&0x04) != 0) {
                     TriggerAndClickEvent(TRIGGER_BUTTON_UP);
+                    sendSystemEvent(SYSTEM_EVENT_ENTER_ID);
                     Log.d("[ZZZ]","TriggerAndClickEvent ButtonUp");
                 }
                 if ((mLastKeyMask&0x10) != 0) {
@@ -1338,11 +1348,14 @@ public class ControllerService extends Service {
     }
 
     private void simulationSystemEvent(float touchX, float touchY){
-        int witchEventId = matchEvent(touchX,touchY);
+        //int witchEventId = matchEvent(touchX,touchY);
+        int witchEventId = GetSwipeDirection(touchX,touchY);
+
         if (DEBUG) {
             Log.d("[YYY]","witchEventId = "+witchEventId);
         }
-        if (witchEventId != SYSTEM_EVENT_NOT_DEFINED_ID) {
+        sendSystemEvent(witchEventId);
+/*        if (witchEventId != SYSTEM_EVENT_NOT_DEFINED_ID) {
             if (!isDone) {
                 sendSystemEvent(witchEventId);
                 //handler.removeCallbacks(runnable);
@@ -1354,9 +1367,90 @@ public class ControllerService extends Service {
         } else {
             handler.removeCallbacks(runnable);
             isDone = false;
-        }
+        }*/
     }
+    private static float lastTouchPos_x = 0.0f;
+    private static float lastTouchPos_y = 0.0f;
+    private static float firstTouchPos_x = 0.0f;
+    private static float firstTouchPos_y = 0.0f;
+    private boolean mTouchDown = false;
+    private boolean mIsTouching = false;
+    private long timeBeginSwipe = 0L;
 
+    //滑动
+    private int GetSwipeDirection(float touchX,float touchY)
+    {
+        int mDirection = SYSTEM_EVENT_NOT_DEFINED_ID;
+        Log.d("[TTT]","GetSwipeDirection touchX = "+touchX+" ; touchY = "+touchY);
+        if (touchX != 0.0f || touchY != 0.0f) {
+            if (lastTouchPos_x == 0.0f && lastTouchPos_x == 0.0f) {
+                Log.d("[TTT]","AA");
+                mTouchDown = true;
+                mIsTouching = false;
+            } else {
+                Log.d("[TTT]","BB");
+                mIsTouching = true;
+                mTouchDown = false;
+            }
+        } else {
+            Log.d("[TTT]","CC");
+            mTouchDown = false;
+            mIsTouching = false;
+        }
+
+        if (mTouchDown)
+        {
+            firstTouchPos_x = touchX;
+            firstTouchPos_y = touchY;
+            timeBeginSwipe=System.currentTimeMillis();
+        }
+        if (mIsTouching) {
+            if (System.currentTimeMillis() - timeBeginSwipe > timeSwipeDelay) {
+                Log.d("[TTT]","timeSwipeDelay time out");
+                timeBeginSwipe = System.currentTimeMillis();
+                firstTouchPos_x = touchX;
+                firstTouchPos_y = touchY;
+            }
+            //左右滑动
+            if (Math.abs(touchX - firstTouchPos_x) >= swipe_DragDistance) {
+                if (firstTouchPos_y <= swipe_Horizontal_YMax && firstTouchPos_y >= swipe_Horizontal_YMin) {
+                    if (touchX > firstTouchPos_x) {
+                        //right
+                        Log.d("[TTT]","right");
+                        mDirection = SYSTEM_EVENT_RIGHT_ID;
+                    } else {
+                        //left
+                        Log.d("[TTT]","left");
+                        mDirection = SYSTEM_EVENT_LEFT_ID;
+                    }
+                    timeBeginSwipe = System.currentTimeMillis();
+                    firstTouchPos_x = touchX;
+                    firstTouchPos_y = touchY;
+                }
+            }
+            //上下滑动
+            if (Math.abs(touchY - firstTouchPos_y) >= swipe_DragDistance) {
+                if (firstTouchPos_x <= swipe_Vertical_XMax && firstTouchPos_x >= swipe_Vertical_XMin) {
+                    if (touchY > firstTouchPos_y) {
+                        //down
+                        Log.d("[TTT]","down");
+                        mDirection = SYSTEM_EVENT_DOWN_ID;
+
+                    } else {
+                        //up
+                        Log.d("[TTT]","up");
+                        mDirection = SYSTEM_EVENT_UP_ID;
+                    }
+                    timeBeginSwipe = System.currentTimeMillis();
+                    firstTouchPos_x = touchX;
+                    firstTouchPos_y = touchY;
+                }
+            }
+        }
+        lastTouchPos_x = touchX;
+        lastTouchPos_y = touchY;
+        return mDirection;
+    }
 
     private int matchEvent(float touchX, float touchY){
         Log.d("[YYY]","matchEvent touchX = "+touchX+" touchY = "+touchY);
@@ -1394,20 +1488,20 @@ public class ControllerService extends Service {
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK);
                             logInfo = "KeyEvent.KEYCODE_BACK";
                             break;
-                        /*
+
                         case SYSTEM_EVENT_ENTER_ID:
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER);
                             logInfo = "KeyEvent.KEYCODE_ENTER";
                             break;
 
-                        case SYSTEM_EVENT_UP_ID:
+/*                        case SYSTEM_EVENT_UP_ID:
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_UP);
                             logInfo = "KeyEvent.KEYCODE_DPAD_UP";
                             break;
                         case SYSTEM_EVENT_DOWN_ID:
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_DOWN);
                             logInfo = "KeyEvent.KEYCODE_DPAD_DOWN";
-                            break;
+                            break;*/
                         case SYSTEM_EVENT_LEFT_ID:
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_LEFT);
                             logInfo = "KeyEvent.KEYCODE_DPAD_LEFT";
@@ -1416,7 +1510,7 @@ public class ControllerService extends Service {
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_RIGHT);
                             logInfo = "KeyEvent.KEYCODE_DPAD_RIGHT";
                             break;
-                      */
+
                         case SYSTEM_EVENT_HOME_ID:
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_HOME);
                             logInfo = "KeyEvent.KEYCODE_HOME";
