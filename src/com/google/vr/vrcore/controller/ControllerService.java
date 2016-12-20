@@ -1494,14 +1494,14 @@ public class ControllerService extends Service {
                             logInfo = "KeyEvent.KEYCODE_ENTER";
                             break;
 
-/*                        case SYSTEM_EVENT_UP_ID:
+                        case SYSTEM_EVENT_UP_ID:
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_UP);
                             logInfo = "KeyEvent.KEYCODE_DPAD_UP";
                             break;
                         case SYSTEM_EVENT_DOWN_ID:
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_DOWN);
                             logInfo = "KeyEvent.KEYCODE_DPAD_DOWN";
-                            break;*/
+                            break;
                         case SYSTEM_EVENT_LEFT_ID:
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_LEFT);
                             logInfo = "KeyEvent.KEYCODE_DPAD_LEFT";
