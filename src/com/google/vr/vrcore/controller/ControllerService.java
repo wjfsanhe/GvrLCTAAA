@@ -1040,6 +1040,13 @@ public class ControllerService extends Service {
     private static float swipe_Vertical_XMin = 0.1464f;
     private static float swipe_DragDistance = 0.4714f;
     private static long timeSwipeDelay = 300L;
+    private static float lastTouchPos_x = 0.0f;
+    private static float lastTouchPos_y = 0.0f;
+    private static float firstTouchPos_x = 0.0f;
+    private static float firstTouchPos_y = 0.0f;
+    private boolean mTouchDown = false;
+    private boolean mIsTouching = false;
+    private long timeBeginSwipe = 0L;
 
     //timer1
     private Runnable runnable = new Runnable() {
@@ -1369,13 +1376,6 @@ public class ControllerService extends Service {
             isDone = false;
         }*/
     }
-    private static float lastTouchPos_x = 0.0f;
-    private static float lastTouchPos_y = 0.0f;
-    private static float firstTouchPos_x = 0.0f;
-    private static float firstTouchPos_y = 0.0f;
-    private boolean mTouchDown = false;
-    private boolean mIsTouching = false;
-    private long timeBeginSwipe = 0L;
 
     //滑动
     private int GetSwipeDirection(float touchX,float touchY)
