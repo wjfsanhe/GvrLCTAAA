@@ -10,16 +10,14 @@ import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.IBinder;
-import android.os.Looper;
-import android.os.Message;
 import android.os.RemoteException;
 import android.os.SystemClock;
 //import android.support.annotation.Nullable;
 import android.util.Log;
-import android.widget.Toast;
 
+import com.android.qiyicontroller.EventInstance;
+import com.android.qiyicontroller.MessageEvent;
 import com.google.vr.vrcore.controller.api.ControllerAccelEvent;
 import com.google.vr.vrcore.controller.api.ControllerButtonEvent;
 //import com.google.vr.vrcore.controller.api.ControllerEventPacket;
@@ -31,26 +29,14 @@ import com.google.vr.vrcore.controller.api.ControllerTouchEvent;
 import com.google.vr.vrcore.controller.api.IControllerListener;
 import com.google.vr.vrcore.controller.api.IControllerService;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.Socket;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.util.UUID;
 
 //add by zhangyawen
 import android.view.KeyEvent;
 import android.app.Instrumentation;
-import com.android.qiyicontroller.AIDLControllerUtil;
 import android.support.v4.content.LocalBroadcastManager;
 //end
 import android.content.IntentFilter;
@@ -1305,53 +1291,59 @@ public class ControllerService extends Service {
     }
 
     private void batterLevelEvent(int level){
-        Intent intent = new Intent();
+        /*Intent intent = new Intent();
         intent.putExtra("level",level);
         intent.setAction(BATTER_LEVEL_EVENT_ACTION);
         localBroadcastManager.sendBroadcast(intent);
-        Log.d(TAG,"batterLevelEvent.sendBroadcast(intent)");
+        Log.d(TAG,"batterLevelEvent.sendBroadcast(intent)");*/
+        EventInstance.getInstance().post(new MessageEvent(MessageEvent.BATTERY_LEVEL_EVENT,level,""));
     }
 
     private void backKeyShortClickEvent(int state){
-        Intent intent = new Intent();
+        /*Intent intent = new Intent();
         intent.putExtra("state",state);
         intent.setAction(BACK_SHORT_CLICK_EVENT_ACTION);
         localBroadcastManager.sendBroadcast(intent);
-        Log.d(TAG,"backKeyShortClickEvent.sendBroadcast(intent)");
+        Log.d(TAG,"backKeyShortClickEvent.sendBroadcast(intent)");*/
+        EventInstance.getInstance().post(new MessageEvent(MessageEvent.SHORT_CLICK_BACK_EVENT,state));
     }
 
     private void TriggerAndClickEvent(int state){
-        Intent intent = new Intent();
+        /*Intent intent = new Intent();
         intent.putExtra("state",state);
         intent.setAction(TRIGGER_BUTTON_EVENT_ACTION);
         localBroadcastManager.sendBroadcast(intent);
-        Log.d(TAG,"TriggerAndClickEvent.sendBroadcast(intent)");
+        Log.d(TAG,"TriggerAndClickEvent.sendBroadcast(intent)");*/
+        EventInstance.getInstance().post(new MessageEvent(MessageEvent.TRIGGER_BUTTON_EVENT,state));
     }
 
     private void appButtonEvent(int state){
-        Intent intent = new Intent();
+        /*Intent intent = new Intent();
         intent.putExtra("state",state);
         intent.setAction(APP_BUTTON_EVENT_ACTION);
         localBroadcastManager.sendBroadcast(intent);
-        Log.d(TAG,"appButtonEvent.sendBroadcast(intent)");
+        Log.d(TAG,"appButtonEvent.sendBroadcast(intent)");*/
+        EventInstance.getInstance().post(new MessageEvent(MessageEvent.APP_BUTTON_EVENT,state));
     }
 
     private void quanDataEvent(float x,float y,float z,float w){
-        Intent intent = new Intent();
+        /*Intent intent = new Intent();
         intent.putExtra("quans",new float[]{x,y,z,w});
         intent.setAction(QUAN_DATA_EVENT_ACTION);
-        localBroadcastManager.sendBroadcast(intent);
+        localBroadcastManager.sendBroadcast(intent);*/
+        EventInstance.getInstance().post(new MessageEvent(MessageEvent.QUANS_DATA_EVENT, x,y,z,w));
         //Log.d("[SYS]","quanDataEvent.sendBroadcast(intent)");
     }
 
     private void shakeEvent(int timeStamp,int Event,int eventParameter){
-        Intent intent = new Intent();
+        /*Intent intent = new Intent();
         intent.putExtra("timeStamp",timeStamp);
         intent.putExtra("Event",Event);
         intent.putExtra("eventParameter",eventParameter);
         intent.setAction(SHAKE_EVENT_ACTION);
         localBroadcastManager.sendBroadcast(intent);
-        Log.d(TAG,"shakeEvent.sendBroadcast(intent)");
+        Log.d(TAG,"shakeEvent.sendBroadcast(intent)");*/
+        EventInstance.getInstance().post(new MessageEvent(MessageEvent.SHAKE_EVENT, timeStamp,Event,eventParameter));
     }
 
     private void simulationSystemEvent(float touchX, float touchY){

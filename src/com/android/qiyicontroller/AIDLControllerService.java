@@ -22,7 +22,7 @@ public class AIDLControllerService extends Service {
     //add by zhangyawen
     LocalBroadcastManager localBroadcastManager;
 
-    EventReceiver eventReceiver = new EventReceiver();
+    //EventReceiver eventReceiver = new EventReceiver();
 
     RemoteCallbackList<AIDLListener> mListenerList = new RemoteCallbackList<AIDLListener>();
 
@@ -35,7 +35,7 @@ public class AIDLControllerService extends Service {
         Log.d(TAG,"onCreate");
         //add by zhangyawen
         localBroadcastManager = LocalBroadcastManager.getInstance(this);
-        IntentFilter filter = new IntentFilter();
+        /*IntentFilter filter = new IntentFilter();
         filter.addAction("SHORT_CLICK_BACK_KEY_ACTION");
         filter.addAction("BATTER_LEVEL_ACTION");
         filter.addAction("APP_BUTTON_KEY_ACTION");
@@ -43,9 +43,32 @@ public class AIDLControllerService extends Service {
         filter.addAction("QUAN_DATA_EVENT_ACTION");
         filter.addAction("SHAKE_EVENT_ACTION");
         Log.d(TAG,"registerReceiver");
-        localBroadcastManager.registerReceiver(eventReceiver,filter);
+        localBroadcastManager.registerReceiver(eventReceiver,filter);*/
         //end
+        EventInstance.getInstance().register(mEventListener);
     }
+
+    private EventListener mEventListener = new EventListener(){
+        @Override
+        public void onEvent(MessageEvent event){
+            int messageType = event.getMessageType();
+            if(messageType == MessageEvent.QUANS_DATA_EVENT) {
+                Log.d("zyc", "<<<onEvent x:" + event.getX() + " y:" + event.getY() + " z:" + event.getZ() + " w:" + event.getW());
+                quansDataEventService(event.getX(), event.getY(), event.getZ(), event.getW());
+            }else if(messageType == MessageEvent.SHORT_CLICK_BACK_EVENT){
+                shortClickBackEventService(event.getBackState());
+            }else if(messageType == MessageEvent.BATTERY_LEVEL_EVENT){
+                batterLevelEventService(event.getLevel());
+            }else if(messageType == MessageEvent.TRIGGER_BUTTON_EVENT){
+                clickAndTriggerEventService(event.getTriggerstate());
+            }else if(messageType == MessageEvent.APP_BUTTON_EVENT){
+                clickAppButtEventService(event.getAppstate());
+            }else if(messageType == MessageEvent.SHAKE_EVENT){
+                shakeEventService(event.getTimestamp(),event.getEvent(),event.getParameter());
+            }
+        }
+    };
+
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -117,11 +140,12 @@ public class AIDLControllerService extends Service {
     public void onDestroy() {
         Log.d(TAG,"onDestroy");
         Log.d(TAG,"unregisterReceiver");
-        localBroadcastManager.unregisterReceiver(eventReceiver);
+        //localBroadcastManager.unregisterReceiver(eventReceiver);
+        EventInstance.getInstance().unregister(mEventListener);
         super.onDestroy();
     }
 
-    private void shortClickBackEventService(int state){
+    private synchronized void shortClickBackEventService(int state){
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -137,7 +161,7 @@ public class AIDLControllerService extends Service {
         mListenerList.finishBroadcast();
     }
 
-    private void batterLevelEventService(int level){
+    private synchronized void batterLevelEventService(int level){
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -153,7 +177,7 @@ public class AIDLControllerService extends Service {
         mListenerList.finishBroadcast();
     }
 
-    private void clickAppButtonEventService(int state){
+    private synchronized void clickAppButtEventService(int state){
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -169,7 +193,7 @@ public class AIDLControllerService extends Service {
         mListenerList.finishBroadcast();
     }
 
-    private void clickAndTriggerEventService(int state){
+    private synchronized void clickAndTriggerEventService(int state){
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -185,13 +209,13 @@ public class AIDLControllerService extends Service {
         mListenerList.finishBroadcast();
     }
 
-    private void quansDataEventService(float x, float y, float z, float w){
+    private synchronized void quansDataEventService(float x, float y, float z, float w){
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
             if (l != null) {
                 try{
-                    //Log.d(TAG,"l.quansDataEvent  x = "+x+" y = "+y+" z = "+z+" w = "+w);
+                    Log.d(TAG,"quans data l.quansDataEvent  x = "+x+" y = "+y+" z = "+z+" w = "+w);
                     l.quansDataEvent(x, y, z, w);
                 } catch (RemoteException e) {
                     e.printStackTrace();
@@ -201,7 +225,7 @@ public class AIDLControllerService extends Service {
         mListenerList.finishBroadcast();
     }
 
-    private void shakeEventService(int timeStamp,int event,int eventParameter){
+    private synchronized void shakeEventService(int timeStamp,int event,int eventParameter){
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -217,7 +241,7 @@ public class AIDLControllerService extends Service {
         mListenerList.finishBroadcast();
     }
 
-    public class EventReceiver extends BroadcastReceiver {
+    /*public class EventReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -239,7 +263,7 @@ public class AIDLControllerService extends Service {
                 int state = -2;
                 state = intent.getExtras().getInt("state");
                 Log.d(TAG,"[APPBUTTON] EventReceiver onReceive  state = "+state);
-                clickAppButtonEventService(state);
+                clickAppButtEventService(state);
             }
             if("TRIGGER_BUTTON_KEY_ACTION".equals(action)){
                 int state = -3;
@@ -250,7 +274,7 @@ public class AIDLControllerService extends Service {
             if("QUAN_DATA_EVENT_ACTION".equals(action)){
                 quans = intent.getExtras().getFloatArray("quans");
                 //Log.d("[SYS]","[QUANS] EventReceiver quans = "+quans);
-                quansDataEventService(quans[0],quans[1],quans[2],quans[3]);
+                //quansDataEventService(quans[0],quans[1],quans[2],quans[3]);
             }
             if("SHAKE_EVENT_ACTION".equals(action)){
                 int timeStamp = 0;
@@ -264,6 +288,7 @@ public class AIDLControllerService extends Service {
             }
 
         }
-    }
+    }*/
     //end
+
 }
