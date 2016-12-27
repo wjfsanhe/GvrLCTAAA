@@ -1130,9 +1130,11 @@ public class ControllerService extends Service {
                 if (keymask != mLastKeyMask) {
                     handler.postDelayed(runnableForHome, DEFINE_LONG_TIME_FOR_HOME);
                     mLastKeyMask = keymask;
+
                 } else {
                     if (isReseting) {
                         // set Recentering state
+                        HomeKeyLongClickEvent(HOME_RECENTERING);
                         Log.d("[ZZZ]","Home longclick Recentering");
                     } else {
                         //do nothing
@@ -1244,6 +1246,7 @@ public class ControllerService extends Service {
             if (isReseting) {
                 // set Recentered state
                 isReseting = false;
+                HomeKeyLongClickEvent(HOME_RECENTERED);
                 Log.d("[ZZZ]","Home longclick Recentered");
             } else if (isOutting) {
                 // set Out of app state
@@ -1297,6 +1300,15 @@ public class ControllerService extends Service {
         localBroadcastManager.sendBroadcast(intent);
         Log.d(TAG,"batterLevelEvent.sendBroadcast(intent)");*/
         EventInstance.getInstance().post(new MessageEvent(MessageEvent.BATTERY_LEVEL_EVENT,level,""));
+    }
+
+    private void HomeKeyLongClickEvent(int state){
+        /*Intent intent = new Intent();
+        intent.putExtra("state",state);
+        intent.setAction(BACK_SHORT_CLICK_EVENT_ACTION);
+        localBroadcastManager.sendBroadcast(intent);
+        Log.d(TAG,"backKeyShortClickEvent.sendBroadcast(intent)");*/
+        EventInstance.getInstance().post(new MessageEvent(MessageEvent.LONG_CLICK_HOME_EVENT,state));
     }
 
     private void backKeyShortClickEvent(int state){

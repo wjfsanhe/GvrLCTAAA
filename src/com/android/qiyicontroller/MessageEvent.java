@@ -1,5 +1,7 @@
 package com.android.qiyicontroller;
 
+import android.util.Log;
+
 /**
  * Created by zhangyunchou on 12/21/16.
  */
@@ -10,6 +12,7 @@ public class MessageEvent {
     public final static int TRIGGER_BUTTON_EVENT = 3;
     public final static int QUANS_DATA_EVENT = 4;
     public final static int SHAKE_EVENT = 5;
+    public final static int LONG_CLICK_HOME_EVENT = 6;
     private int messageType;
     private float quans_x;
     private float quans_y;
@@ -22,6 +25,7 @@ public class MessageEvent {
     private int timestamp;
     private int event;
     private int parameter;
+    private int recentering;
 
 
     public MessageEvent(int messageType,float x,float y,float z,float w){
@@ -47,6 +51,8 @@ public class MessageEvent {
             this.triggerstate = state;
         }else if(messageType == APP_BUTTON_EVENT){
             this.appstate = state;
+        }else if(messageType == LONG_CLICK_HOME_EVENT){
+            this.recentering = state;
         }
     }
 
@@ -76,6 +82,10 @@ public class MessageEvent {
 
     public int getBackState(){
         return backstate;
+    }
+
+    public int getHomeState(){
+        return recentering;
     }
 
     public int getTriggerstate(){

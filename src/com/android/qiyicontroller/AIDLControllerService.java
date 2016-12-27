@@ -53,7 +53,7 @@ public class AIDLControllerService extends Service {
         public void onEvent(MessageEvent event){
             int messageType = event.getMessageType();
             if(messageType == MessageEvent.QUANS_DATA_EVENT) {
-                Log.d("zyc", "<<<onEvent x:" + event.getX() + " y:" + event.getY() + " z:" + event.getZ() + " w:" + event.getW());
+                //Log.d("zyc", "<<<onEvent x:" + event.getX() + " y:" + event.getY() + " z:" + event.getZ() + " w:" + event.getW());
                 quansDataEventService(event.getX(), event.getY(), event.getZ(), event.getW());
             }else if(messageType == MessageEvent.SHORT_CLICK_BACK_EVENT){
                 shortClickBackEventService(event.getBackState());
@@ -65,6 +65,8 @@ public class AIDLControllerService extends Service {
                 clickAppButtEventService(event.getAppstate());
             }else if(messageType == MessageEvent.SHAKE_EVENT){
                 shakeEventService(event.getTimestamp(),event.getEvent(),event.getParameter());
+            }else if(messageType == MessageEvent.LONG_CLICK_HOME_EVENT){
+                longClickHomeEventService(event.getHomeState());
             }
         }
     };
@@ -160,6 +162,21 @@ public class AIDLControllerService extends Service {
         }
         mListenerList.finishBroadcast();
     }
+    private synchronized void longClickHomeEventService(int state){
+        final int N = mListenerList.beginBroadcast();
+        for (int i = 0; i < N; i++) {
+            AIDLListener l = mListenerList.getBroadcastItem(i);
+            if (l != null) {
+                try{
+                    Log.d(TAG,"l.longClickHomeEvent  state = "+state);
+                    l.longClickHomeEvent(state);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        mListenerList.finishBroadcast();
+    }
 
     private synchronized void batterLevelEventService(int level){
         final int N = mListenerList.beginBroadcast();
@@ -215,7 +232,7 @@ public class AIDLControllerService extends Service {
             AIDLListener l = mListenerList.getBroadcastItem(i);
             if (l != null) {
                 try{
-                    Log.d(TAG,"quans data l.quansDataEvent  x = "+x+" y = "+y+" z = "+z+" w = "+w);
+                    //Log.d(TAG,"quans data l.quansDataEvent  x = "+x+" y = "+y+" z = "+z+" w = "+w);
                     l.quansDataEvent(x, y, z, w);
                 } catch (RemoteException e) {
                     e.printStackTrace();

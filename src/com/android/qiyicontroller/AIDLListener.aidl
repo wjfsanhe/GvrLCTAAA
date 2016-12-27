@@ -21,4 +21,6 @@ interface AIDLListener {
 
       void shakeEvent(int timeStamp,int event,int eventParameter);
 
+      void longClickHomeEvent(int state);
+
 }
