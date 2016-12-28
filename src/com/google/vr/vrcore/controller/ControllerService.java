@@ -732,17 +732,19 @@ public class ControllerService extends Service {
 //    private static final ControllerEventPacket cep = new ControllerEventPacket();
     private void sendPhoneEventControllerOrientationEvent(float x, float y, float z, float w){
 
+
+        controllerOrientationEvent.qx = -x;
+        controllerOrientationEvent.qy = -z;
+        controllerOrientationEvent.qz = y;
+        controllerOrientationEvent.qw = w;
+
         //add by zhangyawen for quansData jar (controllerService.java)
         quanDataEvent(controllerOrientationEvent.qx,
                 controllerOrientationEvent.qy,
                 controllerOrientationEvent.qz,
                 controllerOrientationEvent.qw);
         //end
-
-        controllerOrientationEvent.qx = -x;
-        controllerOrientationEvent.qy = -z;
-        controllerOrientationEvent.qz = y;
-        controllerOrientationEvent.qw = w;
+        //Log.d("[QQQ]","x= "+controllerOrientationEvent.qx+" y = "+controllerOrientationEvent.qy+" z = "+controllerOrientationEvent.qz+" w = "+controllerOrientationEvent.qw);
 
         controllerOrientationEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
