@@ -403,7 +403,6 @@ public class ControllerService extends Service {
         // + nodeData.quans_y + ",z:" + nodeData.quans_z + ",w:"
         // + nodeData.quans_w);
             timeoutCount = 0;// timeout count reset to 0
-            // if Listener is null ,don't need to send Orientation data
             if (channel == dataChannel) {
                 sendPhoneEventControllerOrientationEvent(nodeData.quans_x,
                         nodeData.quans_y,
@@ -423,15 +422,10 @@ public class ControllerService extends Service {
             if((channel != dataChannel && (nodeData.keymask&0x01) != 0) || RAW_DATA_CHANNEL_NONE == dataChannel){
                 dataChannel = channel;
             }
-            // if Listener is null, don't need to send Acc&Gyro data
-            if (controllerListener != null) {
-                if (channel == dataChannel) {
-                    sendPhoneEventControllerAccAndGyroEvent(nodeData.gyro_x,
-                            nodeData.gyro_y, nodeData.gyro_z, nodeData.acc_x,
-                            nodeData.acc_y, nodeData.acc_z);
-                }
-            }
             if (channel == dataChannel) {
+                sendPhoneEventControllerAccAndGyroEvent(nodeData.gyro_x,
+                        nodeData.gyro_y, nodeData.gyro_z, nodeData.acc_x,
+                        nodeData.acc_y, nodeData.acc_z);
                 sendPhoneEventControllerButtonEvent(nodeData.keymask);
                 sendPhoneEventControllerTouchPadEvent(nodeData.touchX, nodeData.touchY);
                 debug_log("send acc button touch event finish");
