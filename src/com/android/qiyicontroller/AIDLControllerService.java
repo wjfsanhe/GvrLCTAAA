@@ -19,6 +19,7 @@ public class AIDLControllerService extends Service {
 
     public static int JOYSTICK_CONTROL_TYPE = 1;
 
+    public static boolean DEBUG = false;
     //add by zhangyawen
     LocalBroadcastManager localBroadcastManager;
 
@@ -67,6 +68,12 @@ public class AIDLControllerService extends Service {
                 shakeEventService(event.getTimestamp(),event.getEvent(),event.getParameter());
             }else if(messageType == MessageEvent.LONG_CLICK_HOME_EVENT){
                 longClickHomeEventService(event.getHomeState());
+            }else if(messageType == MessageEvent.GYRO_DATA_EVENT){
+                gyroDataEventService(event.getGyroX(), event.getGyroY(), event.getGyroZ());
+            }else if(messageType == MessageEvent.ACCEL_DATA_EVENT){
+                accelDataEventService(event.getAccelX(),event.getAccelY(),event.getAccelZ());
+            }else if(messageType == MessageEvent.TOUCH_DATA_EVENT){
+                touchDataEventService(event.getTouchX(),event.getTouchY());
             }
         }
     };
@@ -82,20 +89,26 @@ public class AIDLControllerService extends Service {
     private Binder mAIDLController = new AIDLController.Stub(){
         @Override
         public String GetBatteryLevel(){
-            Log.d("AIDLControllerService","<<<GetBatteryLevel");
+            if (DEBUG) {
+                Log.d("AIDLControllerService","<<<GetBatteryLevel");
+            }
             return AIDLControllerUtil.mBatterLevel;
         }
 
         @Override
         public void OpenVibrator(){
-            Log.d("AIDLControllerService","OpenVibrator");
+            if (DEBUG) {
+                Log.d("AIDLControllerService", "OpenVibrator");
+            }
             Intent intent = new Intent();
             intent.setAction("OPEN_VIBRATOR_ACTION");
             localBroadcastManager.sendBroadcast(intent);
         }
         @Override
         public void CloseVibrator(){
-            Log.d("AIDLControllerService","CloseVibrator");
+            if (DEBUG) {
+                Log.d("AIDLControllerService", "CloseVibrator");
+            }
         }
         @Override
         public void vibrate(long milliseconds){
@@ -153,7 +166,9 @@ public class AIDLControllerService extends Service {
             AIDLListener l = mListenerList.getBroadcastItem(i);
             if (l != null) {
                 try{
-                    Log.d(TAG,"l.shortClickBackEvent  state = "+state);
+                    if (DEBUG) {
+                        Log.d(TAG, "l.shortClickBackEvent  state = " + state);
+                    }
                     l.shortClickBackEvent(state);
                 } catch (RemoteException e) {
                     e.printStackTrace();
@@ -168,7 +183,9 @@ public class AIDLControllerService extends Service {
             AIDLListener l = mListenerList.getBroadcastItem(i);
             if (l != null) {
                 try{
-                    Log.d(TAG,"l.longClickHomeEvent  state = "+state);
+                    if (DEBUG) {
+                        Log.d(TAG, "l.longClickHomeEvent  state = " + state);
+                    }
                     l.longClickHomeEvent(state);
                 } catch (RemoteException e) {
                     e.printStackTrace();
@@ -184,7 +201,9 @@ public class AIDLControllerService extends Service {
             AIDLListener l = mListenerList.getBroadcastItem(i);
             if (l != null) {
                 try{
-                    Log.d(TAG,"l.batterLevelEvent  level = "+level);
+                    if (DEBUG) {
+                        Log.d(TAG, "l.batterLevelEvent  level = " + level);
+                    }
                     l.batterLevelEvent(level);
                 } catch (RemoteException e) {
                     e.printStackTrace();
@@ -200,7 +219,9 @@ public class AIDLControllerService extends Service {
             AIDLListener l = mListenerList.getBroadcastItem(i);
             if (l != null) {
                 try{
-                    Log.d(TAG,"l.clickAppButtonEvent  state = "+state);
+                    if (DEBUG) {
+                        Log.d(TAG, "l.clickAppButtonEvent  state = " + state);
+                    }
                     l.clickAppButtonEvent(state);
                 } catch (RemoteException e) {
                     e.printStackTrace();
@@ -216,7 +237,9 @@ public class AIDLControllerService extends Service {
             AIDLListener l = mListenerList.getBroadcastItem(i);
             if (l != null) {
                 try{
-                    Log.d(TAG,"l.clickAndTriggerEvent  state = "+state);
+                    if (DEBUG) {
+                        Log.d(TAG, "l.clickAndTriggerEvent  state = " + state);
+                    }
                     l.clickAndTriggerEvent(state);
                 } catch (RemoteException e) {
                     e.printStackTrace();
@@ -242,13 +265,71 @@ public class AIDLControllerService extends Service {
         mListenerList.finishBroadcast();
     }
 
+    //add by zhangyawen
+    private synchronized void gyroDataEventService(float x, float y, float z){
+        final int N = mListenerList.beginBroadcast();
+        for (int i = 0; i < N; i++) {
+            AIDLListener l = mListenerList.getBroadcastItem(i);
+            if (l != null) {
+                try{
+                    if (DEBUG) {
+                        Log.d(TAG, "[gyro] data l.gyroDataEvent  x = " + x + " y = " + y + " z = " + z);
+                    }
+                    l.gyroDataEvent(x, y, z);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        mListenerList.finishBroadcast();
+    }
+
+    private synchronized void accelDataEventService(float x, float y, float z){
+        final int N = mListenerList.beginBroadcast();
+        for (int i = 0; i < N; i++) {
+            AIDLListener l = mListenerList.getBroadcastItem(i);
+            if (l != null) {
+                try{
+                    if (DEBUG) {
+                        Log.d(TAG, "[accel] data l.accelDataEvent  x = " + x + " y = " + y + " z = " + z);
+                    }
+                    l.accelDataEvent(x, y, z);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        mListenerList.finishBroadcast();
+    }
+
+    private synchronized void touchDataEventService(float x, float y){
+        final int N = mListenerList.beginBroadcast();
+        for (int i = 0; i < N; i++) {
+            AIDLListener l = mListenerList.getBroadcastItem(i);
+            if (l != null) {
+                try{
+                    if (DEBUG) {
+                        Log.d(TAG, "[touch] data l.touchDataEvent  x = " + x + " y = " + y);
+                    }
+                    l.touchDataEvent(x, y);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        mListenerList.finishBroadcast();
+    }
+    //end
+
     private synchronized void shakeEventService(int timeStamp,int event,int eventParameter){
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
             if (l != null) {
                 try{
-                    Log.d(TAG,"l.shakeEvent  timeStamp = "+timeStamp +" event = "+event+" eventParameter = "+eventParameter);
+                    if (DEBUG) {
+                        Log.d(TAG, "l.shakeEvent  timeStamp = " + timeStamp + " event = " + event + " eventParameter = " + eventParameter);
+                    }
                     l.shakeEvent(timeStamp,event,eventParameter);
                 } catch (RemoteException e) {
                     e.printStackTrace();
