@@ -296,6 +296,7 @@ public class ControllerService extends Service {
     };
     }
     public final void registerListener(IControllerListener listener) {
+        Log.d(TAG,"registerListener,set controllerListener");
         controllerListener = listener;
 
 //        isCancel = false;
@@ -303,6 +304,7 @@ public class ControllerService extends Service {
     }
 
     public final boolean unregisterListener(){
+        Log.d(TAG,"unregisterListener, set controllerListener to null");
         controllerListener = null;
 //        isCancel = true;
         return true;
@@ -395,7 +397,7 @@ public class ControllerService extends Service {
         }
     }
     private int  disposeNodeData(int channel, Bt_node_data nodeData, int timeoutCount){
-        debug_log("disposeRawData channel is :"+channel +", dataChannel:"+dataChannel);
+        debug_log("disposeRawData channel is :"+channel +", dataChannel:"+dataChannel + "controllerListener is null?"+(controllerListener == null));
         if (nodeData.type == REPORT_TYPE_ORIENTATION) {// quans
 //          debug_log("nodeData:x:" + nodeData.quans_x + ", y:"
 //                  + nodeData.quans_y + ",z:" + nodeData.quans_z + ",w:"

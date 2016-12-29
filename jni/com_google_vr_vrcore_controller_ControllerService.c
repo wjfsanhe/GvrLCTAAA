@@ -12,7 +12,7 @@
 #endif
 #define LOG_TAG "ControllerService_jni"
 
-#define DEBUG 1
+#define DEBUG 0
 
 #define JOYSTICK_TO_HOST 8
 #define HOST_TO_JOYSTICK 7
@@ -37,7 +37,9 @@ static jclass clsBt_node_data = NULL;
 JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeOpenFile
   (JNIEnv *env, jobject jclass) {
 	int ret = -1; // not -1, 0, 1, 2
+#ifdef DEBUG
 	ALOGD("call native_open_file");
+#endif
 	for (int i = 0; i < 3; i++) {
 		hidraw_fd = open(device[i], O_RDWR);
 		if (hidraw_fd < 0) {
@@ -73,7 +75,9 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
  * if return 0 ,it means fd is useness, so java thread should close fd
  */
 JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeReadFile(JNIEnv *env, jobject jclass){
+#ifdef DEBUG
 	ALOGD("call nativeReadFile, hidraw_fd:%d, out_fd:%d\n", hidraw_fd, out_fd);
+#endif
 	if(hidraw_fd <0) return 0;
 	unsigned char buf[HIDRAW_BUFFER_SIZE];
 
@@ -122,7 +126,9 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 	}
 	pre_packetNum = packetNum;
 #endif
+#ifdef DEBUG
 	ALOGD("[%d]:TS %ld.%06ld PN %05d [%d]: delta time:%ld\n", res, ts2.tv_sec, ts2.tv_nsec/1000, packetNum, buf[3], (ts2.tv_nsec-ts1.tv_nsec)/1000);
+#endif
 	//ALOGD("native read, data count is %d, buf[3]:%d,packetNum:%04X\n", res, (int)buf[3],*((short*) (buf+1)));
 	if(buf[0] == JOYSTICK_TO_HOST && buf[3] == REPORT_TYPE_ORIENTATION) {
 		float *qd;
@@ -302,7 +308,9 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 }
 
 JNIEXPORT jint Java_com_google_vr_vrcore_controller_ControllerService_nativeWriteFile(JNIEnv *env, jobject jclass, jint type, jint data1, jint data2){
+#ifdef DEBUG
 	ALOGD("call nativeWriteFile, hidraw_fd:%d\n", hidraw_fd);
+#endif
 	if(hidraw_fd <0) return -1;
 	unsigned char buf[4];
 
