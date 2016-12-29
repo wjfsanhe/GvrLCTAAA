@@ -746,7 +746,9 @@ public class ControllerService extends Service {
 //                controllerListener.deprecatedOnControllerOrientationEvent(controllerOrientationEvent); //must be send
               controllerListener.onControllerOrientationEvent(controllerOrientationEvent); //must be send
             }else{
-                Log.e(TAG,"when send orientation event, controllerListener is null");
+                if (DEBUG) {
+                    Log.e(TAG,"when send orientation event, controllerListener is null");
+                }
             }
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -763,7 +765,9 @@ public class ControllerService extends Service {
                  controllerListener.onControllerButtonEvent(controllerButtonEvent);
 
             } else {
-                Log.e(TAG, "when send button event, controllerListener is null");
+                if (DEBUG) {
+                    Log.e(TAG, "when send button event, controllerListener is null");
+                }
             }
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -846,7 +850,9 @@ public class ControllerService extends Service {
 //                controllerListener.deprecatedOnControllerGyroEvent(controllerGyroEvent); // probably not used
                  controllerListener.onControllerGyroEvent(controllerGyroEvent); //probably not used
             } else {
-                Log.e(TAG, "when send Gyro event, controllerListener is null");
+                if (DEBUG) {
+                    Log.e(TAG, "when send Gyro event, controllerListener is null");
+                }
             }
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -909,7 +915,9 @@ public class ControllerService extends Service {
 //                controllerListener.deprecatedOnControllerTouchEvent(controllerTouchEvent);
               controllerListener.onControllerTouchEvent(controllerTouchEvent);
             } else {
-                Log.e(TAG, "when send Touch event, controllerListener is null");
+                if (DEBUG) {
+                    Log.e(TAG, "when send Touch event, controllerListener is null");
+                }
             }
 
         } catch (RemoteException e) {
