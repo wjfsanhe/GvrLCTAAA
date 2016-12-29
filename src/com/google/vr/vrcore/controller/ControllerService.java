@@ -399,20 +399,18 @@ public class ControllerService extends Service {
     private int  disposeNodeData(int channel, Bt_node_data nodeData, int timeoutCount){
         debug_log("disposeRawData channel is :"+channel +", dataChannel:"+dataChannel + "controllerListener is null?"+(controllerListener == null));
         if (nodeData.type == REPORT_TYPE_ORIENTATION) {// quans
-//          debug_log("nodeData:x:" + nodeData.quans_x + ", y:"
-//                  + nodeData.quans_y + ",z:" + nodeData.quans_z + ",w:"
-//                  + nodeData.quans_w);
-          timeoutCount = 0;// timeout count reset to 0
-          //if Listener is null ,don't need to send Orientation data
-          if (controllerListener != null) {
-                if (channel == dataChannel) {
-                    sendPhoneEventControllerOrientationEvent(nodeData.quans_x,
-                            nodeData.quans_y,
-                            nodeData.quans_z,
-                            nodeData.quans_w);
-                    debug_log("send phon event finish");
-                }
-          }
+        // debug_log("nodeData:x:" + nodeData.quans_x + ", y:"
+        // + nodeData.quans_y + ",z:" + nodeData.quans_z + ",w:"
+        // + nodeData.quans_w);
+            timeoutCount = 0;// timeout count reset to 0
+            // if Listener is null ,don't need to send Orientation data
+            if (channel == dataChannel) {
+                sendPhoneEventControllerOrientationEvent(nodeData.quans_x,
+                        nodeData.quans_y,
+                        nodeData.quans_z,
+                        nodeData.quans_w);
+                debug_log("send phon event finish");
+            }
         } else if (nodeData.type == REPORT_TYPE_SENSOR) {
             timeoutCount = 0;// timeout count reset to 0
             debug_log("nodeData.gyro x:" + nodeData.gyro_x + ", y:"
