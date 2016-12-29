@@ -844,6 +844,11 @@ public class ControllerService extends Service {
         controllerGyroEvent.y = gyrpY;
         controllerGyroEvent.z = gyrpZ;
 
+        //add by zhangyawen for Gyro
+        gyroDataEvent(gyrpX,gyrpY,gyrpZ);
+        accelDataEvent(accX,accY,-accZ);
+        //end
+
         controllerGyroEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
             if (controllerListener != null) {
@@ -878,6 +883,11 @@ public class ControllerService extends Service {
     private float preTouchY = 0;
     private void sendPhoneEventControllerTouchPadEvent(float touchX, float touchY){
         simulationSystemEvent(touchX,touchY);
+
+        //add by zhangyawen
+        touchDataEvent(touchX,touchY);
+        //end
+
         int action = ControllerTouchEvent.ACTION_NONE;
 
         if(touchX !=0 || touchY != 0){
@@ -1400,6 +1410,22 @@ public class ControllerService extends Service {
         localBroadcastManager.sendBroadcast(intent);*/
         EventInstance.getInstance().post(new MessageEvent(MessageEvent.QUANS_DATA_EVENT, x,y,z,w));
         //Log.d("[SYS]","quanDataEvent.sendBroadcast(intent)");
+    }
+
+    private void gyroDataEvent(float gyro_x,float gyro_y,float gyro_z){
+        //Log.d("[GYRO]","gyroDataEvent x = "+gyro_x+" y = "+gyro_y+" z = "+gyro_z);
+        EventInstance.getInstance().post(new MessageEvent(MessageEvent.GYRO_DATA_EVENT, gyro_x,gyro_y,gyro_z));
+
+    }
+
+    private void accelDataEvent(float acc_X, float acc_Y, float acc_Z){
+        //Log.d("[ACCEL]","accelDataEvent x = "+acc_X+" y = "+acc_Y+" z = "+acc_Z);
+        EventInstance.getInstance().post(new MessageEvent(MessageEvent.ACCEL_DATA_EVENT, acc_X,acc_Y,acc_Z));
+    }
+
+    private void touchDataEvent(float touch_X, float touch_Y){
+        //Log.d("[TOUCH]","touchDataEvent x = "+touch_X+" y = "+touch_Y);
+        EventInstance.getInstance().post(new MessageEvent(MessageEvent.TOUCH_DATA_EVENT, touch_X,touch_Y));
     }
 
     private void shakeEvent(int timeStamp,int Event,int eventParameter){

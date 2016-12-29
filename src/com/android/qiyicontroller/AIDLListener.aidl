@@ -23,4 +23,10 @@ interface AIDLListener {
 
       void longClickHomeEvent(int state);
 
+      void gyroDataEvent(float x, float y,float z);
+
+      void accelDataEvent(float x, float y,float z);
+
+      void touchDataEvent(float x, float y);
+
 }
