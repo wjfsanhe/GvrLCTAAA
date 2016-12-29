@@ -53,7 +53,7 @@ public class ControllerService extends Service {
     public final static String BLUETOOTH_CONNECTED_SUCCESS ="bluetooth_connected";
     public final static String BLUETOOTH_DISCONNECTED = "bluetooth_disconnected";
     public final static String BLUETOOTH_DEVICE_OBJECT = "bluetooth_device";
-    private final static boolean DEBUG = true;
+    private final static boolean DEBUG = false;
 
     //runAsDaemonService means start when boot, and not allow stop
     public final static boolean runAsDaemonService = true;
@@ -1095,33 +1095,50 @@ public class ControllerService extends Service {
     private void simulationButtonSystemEvent(int keymask){
         if ((keymask&0x01) != 0) {
             //click Panel
-            Log.d("[ZZZ]","click Panel (not match the Event)");
+            if (DEBUG) {
+                Log.d("[ZZZ]","click Panel (not match the Event)");
+            }
+
         }else if ((keymask&0x02) != 0) {
             //back
-            Log.d("[ZZZ]","back");
+            if (DEBUG) {
+                Log.d("[ZZZ]", "back");
+            }
             sendSystemEvent(SYSTEM_EVENT_BACK_ID);
         }else if ((keymask&0x04) != 0) {
             //trigger
-            Log.d("[ZZZ]","trigger");
+            if (DEBUG) {
+                Log.d("[ZZZ]", "trigger");
+            }
             sendSystemEvent(SYSTEM_EVENT_ENTER_ID);
         }else if ((keymask&0x08) != 0) {
             //home
-            Log.d("[ZZZ]","home (only home event)");
+            if (DEBUG) {
+                Log.d("[ZZZ]", "home (only home event)");
+            }
             sendSystemEvent(SYSTEM_EVENT_HOME_ID);
         }else if ((keymask&0x10) != 0) {
             //menu
-            Log.d("[ZZZ]","menu (not match the Event)");
+            if (DEBUG) {
+                Log.d("[ZZZ]", "menu (not match the Event)");
+            }
         }else if ((keymask&0x20) != 0) {
             //volume up
-            Log.d("[ZZZ]","volume up ");
+            if (DEBUG) {
+                Log.d("[ZZZ]", "volume up ");
+            }
             sendSystemEvent(SYSTEM_EVENT_VOLUME_UP_ID);
         }else if ((keymask&0x40) != 0) {
             //volume down
-            Log.d("[ZZZ]","volume down ");
+            if (DEBUG) {
+                Log.d("[ZZZ]", "volume down ");
+            }
             sendSystemEvent(SYSTEM_EVENT_VOLUME_DOWN_ID);
         }else{
             // none
-            Log.d("[ZZZ]","none (not match the Event)");
+            if (DEBUG) {
+                Log.d("[ZZZ]", "none (not match the Event)");
+            }
         }
     }
 
@@ -1137,7 +1154,9 @@ public class ControllerService extends Service {
                     if (isReseting) {
                         // set Recentering state
                         HomeKeyLongClickEvent(HOME_RECENTERING);
-                        Log.d("[ZZZ]","Home longclick Recentering");
+                        if (DEBUG) {
+                            Log.d("[ZZZ]", "Home longclick Recentering");
+                        }
                     } else {
                         //do nothing
                     }
@@ -1149,15 +1168,21 @@ public class ControllerService extends Service {
                     mLastKeyMask = keymask;
                     //set the state (ButtonDown)
                     backKeyShortClickEvent(BACK_BUTTON_DOWN);
-                    Log.d("[ZZZ]","Back shortclick ButtonDown");
+                    if (DEBUG) {
+                        Log.d("[ZZZ]","Back shortclick ButtonDown");
+                    }
                 } else {
                     if (isOutting) {
                         // do nothing
-                        Log.d("[ZZZ]","Back shortclick Button");
+                        if (DEBUG) {
+                            Log.d("[ZZZ]", "Back shortclick Button");
+                        }
                     } else {
                         // set the state (Button)
                         backKeyShortClickEvent(BACK_BUTTON);
-                        Log.d("[ZZZ]","Back shortclick Button");
+                        if (DEBUG) {
+                            Log.d("[ZZZ]", "Back shortclick Button");
+                        }
                     }
                 }
             } else if ((keymask&0x01) !=0 || (keymask&0x04) != 0) {
@@ -1165,7 +1190,9 @@ public class ControllerService extends Service {
                 if (keymask != mLastKeyMask) {
                     TriggerAndClickEvent(TRIGGER_BUTTON_DOWN);
                     mLastKeyMask = keymask;
-                    Log.d("[ZZZ]","TriggerAndClickEvent Buttondown");
+                    if (DEBUG) {
+                        Log.d("[ZZZ]", "TriggerAndClickEvent Buttondown");
+                    }
                 } else {
                     TriggerAndClickEvent(TRIGGER_BUTTON);
                 }
@@ -1174,14 +1201,18 @@ public class ControllerService extends Service {
                 if (keymask != mLastKeyMask) {
                     appButtonEvent(APP_BUTTON_DOWN);
                     mLastKeyMask = keymask;
-                    Log.d("[ZZZ]","appButtonEvent Buttondown");
+                    if (DEBUG) {
+                        Log.d("[ZZZ]", "appButtonEvent Buttondown");
+                    }
                 } else {
                     appButtonEvent(APP_BUTTON);
                 }
             } else if ((keymask&0x20) != 0) {
                 // volume up key(500ms)
                 if (keymask != mLastKeyMask) {
-                    Log.d("[ZZZ]","Volume up Event down");
+                    if (DEBUG) {
+                        Log.d("[ZZZ]", "Volume up Event down");
+                    }
                     simulationButtonSystemEvent(keymask);
                     handler.postDelayed(runnableForVolume, DEFINE_LONG_TIME_FOR_VOLUME);
                     mLastKeyMask = keymask;
@@ -1189,7 +1220,9 @@ public class ControllerService extends Service {
                     if (isVolumeOn && !isWorking) {
                         //volume up on
                         isWorking = true;
-                        Log.d("[ZZZ]","Volume up is on");
+                        if (DEBUG) {
+                            Log.d("[ZZZ]", "Volume up is on");
+                        }
                         //handler.post(runnableForVolumeUpOn);
                         new Thread(){
                             public void run(){
@@ -1213,7 +1246,9 @@ public class ControllerService extends Service {
             } else if ((keymask&0x40) != 0) {
                 // volume down key(500ms)
                 if (keymask != mLastKeyMask) {
-                    Log.d("[ZZZ]","Volume down Event down");
+                    if (DEBUG) {
+                        Log.d("[ZZZ]", "Volume down Event down");
+                    }
                     simulationButtonSystemEvent(keymask);
                     handler.postDelayed(runnableForVolume, DEFINE_LONG_TIME_FOR_VOLUME);
                     mLastKeyMask = keymask;
@@ -1221,7 +1256,9 @@ public class ControllerService extends Service {
                     if (isVolumeOn && !isWorking) {
                         //volume down on
                         isWorking = true;
-                        Log.d("[ZZZ]","Volume down is on");
+                        if (DEBUG) {
+                            Log.d("[ZZZ]", "Volume down is on");
+                        }
                         //handler.po;acfguwst(runnableForVolumeDownOn);
                         new Thread(){
                             public void run(){
@@ -1249,7 +1286,9 @@ public class ControllerService extends Service {
                 // set Recentered state
                 isReseting = false;
                 HomeKeyLongClickEvent(HOME_RECENTERED);
-                Log.d("[ZZZ]","Home longclick Recentered");
+                if (DEBUG) {
+                    Log.d("[ZZZ]", "Home longclick Recentered");
+                }
             } else if (isOutting) {
                 // set Out of app state
                 isOutting = false;
@@ -1265,31 +1304,43 @@ public class ControllerService extends Service {
                     handler.removeCallbacks(runnableForBack);
                     //set the state (ButtonUp)
                     backKeyShortClickEvent(BACK_BUTTON_UP);
-                    Log.d("[ZZZ]","Back shortclick ButtonUp");
+                    if (DEBUG) {
+                        Log.d("[ZZZ]", "Back shortclick ButtonUp");
+                    }
                 }
                 if ((mLastKeyMask&0x01) !=0 || (mLastKeyMask&0x04) != 0) {
                     TriggerAndClickEvent(TRIGGER_BUTTON_UP);
                     sendSystemEvent(SYSTEM_EVENT_ENTER_ID);
-                    Log.d("[ZZZ]","TriggerAndClickEvent ButtonUp");
+                    if (DEBUG) {
+                        Log.d("[ZZZ]", "TriggerAndClickEvent ButtonUp");
+                    }
                 }
                 if ((mLastKeyMask&0x10) != 0) {
                     appButtonEvent(APP_BUTTON_UP);
-                    Log.d("[ZZZ]","appButtonEvent ButtonUp");
+                    if (DEBUG) {
+                        Log.d("[ZZZ]", "appButtonEvent ButtonUp");
+                    }
                 }
                 if ((mLastKeyMask&0x20) != 0 ) {
                     handler.removeCallbacks(runnableForVolume);
-                    Log.d("[ZZZ]","shortClick Volume up  ");
+                    if (DEBUG) {
+                        Log.d("[ZZZ]", "shortClick Volume up  ");
+                    }
                 }
                 if ((mLastKeyMask&0x40) != 0) {
                     handler.removeCallbacks(runnableForVolume);
-                    Log.d("[ZZZ]","shortClick Volume down");
+                    if (DEBUG) {
+                        Log.d("[ZZZ]", "shortClick Volume down");
+                    }
                 }
 
             }
             if (isVolumeOn) {
                 isVolumeOn = false;
                 isWorking = false;
-                Log.d("[ZZZ]","isVolumeOn = "+isVolumeOn);
+                if (DEBUG) {
+                    Log.d("[ZZZ]", "isVolumeOn = " + isVolumeOn);
+                }
             }
             mLastKeyMask = keymask;
         }
@@ -1387,19 +1438,18 @@ public class ControllerService extends Service {
     private int GetSwipeDirection(float touchX,float touchY)
     {
         int mDirection = SYSTEM_EVENT_NOT_DEFINED_ID;
-        Log.d("[TTT]","GetSwipeDirection touchX = "+touchX+" ; touchY = "+touchY);
+        if (DEBUG) {
+            Log.d("[TTT]", "GetSwipeDirection touchX = " + touchX + " ; touchY = " + touchY);
+        }
         if (touchX != 0.0f || touchY != 0.0f) {
             if (lastTouchPos_x == 0.0f && lastTouchPos_x == 0.0f) {
-                Log.d("[TTT]","AA");
                 mTouchDown = true;
                 mIsTouching = false;
             } else {
-                Log.d("[TTT]","BB");
                 mIsTouching = true;
                 mTouchDown = false;
             }
         } else {
-            Log.d("[TTT]","CC");
             mTouchDown = false;
             mIsTouching = false;
         }
@@ -1412,7 +1462,9 @@ public class ControllerService extends Service {
         }
         if (mIsTouching) {
             if (System.currentTimeMillis() - timeBeginSwipe > timeSwipeDelay) {
-                Log.d("[TTT]","timeSwipeDelay time out");
+                if (DEBUG) {
+                    Log.d("[TTT]", "timeSwipeDelay time out");
+                }
                 timeBeginSwipe = System.currentTimeMillis();
                 firstTouchPos_x = touchX;
                 firstTouchPos_y = touchY;
@@ -1422,11 +1474,15 @@ public class ControllerService extends Service {
                 if (firstTouchPos_y <= swipe_Horizontal_YMax && firstTouchPos_y >= swipe_Horizontal_YMin) {
                     if (touchX > firstTouchPos_x) {
                         //right
-                        Log.d("[TTT]","right");
+                        if (DEBUG) {
+                            Log.d("[TTT]", "right");
+                        }
                         mDirection = SYSTEM_EVENT_RIGHT_ID;
                     } else {
                         //left
-                        Log.d("[TTT]","left");
+                        if (DEBUG) {
+                            Log.d("[TTT]", "left");
+                        }
                         mDirection = SYSTEM_EVENT_LEFT_ID;
                     }
                     timeBeginSwipe = System.currentTimeMillis();
@@ -1439,12 +1495,16 @@ public class ControllerService extends Service {
                 if (firstTouchPos_x <= swipe_Vertical_XMax && firstTouchPos_x >= swipe_Vertical_XMin) {
                     if (touchY > firstTouchPos_y) {
                         //down
-                        Log.d("[TTT]","down");
+                        if (DEBUG) {
+                            Log.d("[TTT]", "down");
+                        }
                         mDirection = SYSTEM_EVENT_DOWN_ID;
 
                     } else {
                         //up
-                        Log.d("[TTT]","up");
+                        if (DEBUG) {
+                            Log.d("[TTT]", "up");
+                        }
                         mDirection = SYSTEM_EVENT_UP_ID;
                     }
                     timeBeginSwipe = System.currentTimeMillis();
@@ -1459,7 +1519,9 @@ public class ControllerService extends Service {
     }
 
     private int matchEvent(float touchX, float touchY){
-        Log.d("[YYY]","matchEvent touchX = "+touchX+" touchY = "+touchY);
+        if (DEBUG) {
+            Log.d("[YYY]", "matchEvent touchX = " + touchX + " touchY = " + touchY);
+        }
         if ((touchX>touchY) && ((touchX+touchY)<1) && (touchY>=0 && touchY<=0.2)) {
             return SYSTEM_EVENT_UP_ID;
         } else if ((touchX>touchY) && ((touchX +touchY)>1) && (touchX>=0.8 && touchX<=1)) {
@@ -1471,7 +1533,9 @@ public class ControllerService extends Service {
         } else if ((touchX-0.5)*(touchX-0.5)+(touchY-0.5)*(touchY-0.5) < (0.2*0.2)) {
             return SYSTEM_EVENT_ENTER_ID;
         } else {
-            Log.d("[YYY]","matchEvent the event not defined.");
+            if (DEBUG) {
+                Log.d("[YYY]", "matchEvent the event not defined.");
+            }
             return SYSTEM_EVENT_NOT_DEFINED_ID;
         }
     }
@@ -1533,7 +1597,9 @@ public class ControllerService extends Service {
                             logInfo = "This behavior does not match system event ! ";
                             break;
                     }
-                    Log.d("[UUU]", logInfo);
+                    if (DEBUG) {
+                        Log.d("[UUU]", logInfo);
+                    }
                 } catch (Exception e) {
                     android.util.Log.d(TAG," Instrumentation Exception = "+e);
                 }
