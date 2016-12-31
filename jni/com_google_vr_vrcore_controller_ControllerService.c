@@ -12,7 +12,7 @@
 #endif
 #define LOG_TAG "ControllerService_jni"
 
-#define DEBUG 0
+//#define DEBUG 0
 
 #define JOYSTICK_TO_HOST 8
 #define HOST_TO_JOYSTICK 7
@@ -27,9 +27,9 @@
 typedef unsigned char byte;
 
 const char *device[3] = {"/dev/hidraw0", "/dev/hidraw1","/dev/hidraw2"};
-static const char values_str[] = "01";
 static int hidraw_fd = 0;
 #ifdef DEBUG
+static const char values_str[] = "01";
 static int out_fd = 0;
 #endif
 static jclass clsBt_node_data = NULL;
