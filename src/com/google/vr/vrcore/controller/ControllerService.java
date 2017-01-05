@@ -446,7 +446,7 @@ public class ControllerService extends Service {
             shakeEvent(nodeData.timeStamp,nodeData.shakeEvent,nodeData.eventParameter);
       } else if(nodeData.type == GET_DATA_TIMEOUT){
           timeoutCount++;
-          Log.e(TAG, "no data to read, block timeout, count:"+count);
+          Log.i(TAG, "no data to read, block timeout, count:"+count);
           if (controllerListener != null && timeoutCount >5) {
               //recenter
               sendPhoneEventControllerOrientationEvent(0, 0, 0, 1);
@@ -873,7 +873,9 @@ public class ControllerService extends Service {
 //                controllerListener.deprecatedOnControllerAccelEvent(controllerAccelEvent); //probably not used
               controllerListener.onControllerAccelEvent(controllerAccelEvent); //probably not used
             } else {
-                Log.e(TAG, "when send Accel event, controllerListener is null");
+                if(DEBUG){
+                    Log.e(TAG, "when send Accel event, controllerListener is null");
+                }
             }
         } catch (RemoteException e) {
             e.printStackTrace();
