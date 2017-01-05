@@ -115,7 +115,8 @@ public class ControllerService extends Service {
 
 
     public static void debug_log(String log){
-        if(DEBUG){
+        // setprop log.tag.TAG DEBUG ,we can print log
+        if(DEBUG || Log.isLoggable(TAG, Log.DEBUG)){
             Log.d(TAG,log);
         }
     }
@@ -745,10 +746,8 @@ public class ControllerService extends Service {
             if(controllerListener!=null){
 //                controllerListener.deprecatedOnControllerOrientationEvent(controllerOrientationEvent); //must be send
               controllerListener.onControllerOrientationEvent(controllerOrientationEvent); //must be send
-            }else{
-                if (DEBUG) {
-                    Log.e(TAG,"when send orientation event, controllerListener is null");
-                }
+            } else {
+                debug_log("when send orientation event, controllerListener is null");
             }
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -765,9 +764,7 @@ public class ControllerService extends Service {
                  controllerListener.onControllerButtonEvent(controllerButtonEvent);
 
             } else {
-                if (DEBUG) {
-                    Log.e(TAG, "when send button event, controllerListener is null");
-                }
+                debug_log("when send button event, controllerListener is null");
             }
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -829,9 +826,7 @@ public class ControllerService extends Service {
         }
         controllerButtonEvent.down = buttonActionDown;
 
-        if(DEBUG) {
-            Log.d(TAG, "mshuai, buttonevent button:" + button + ", isDown? :" + buttonActionDown + ", lastButtonStatus:" + lastButtonStatus);
-        }
+        debug_log("mshuai, buttonevent button:" + button + ", isDown? :" + buttonActionDown + ", lastButtonStatus:" + lastButtonStatus);
         // if last time is not down, this time still not down ,do not send event
         if(lastButtonStatus != buttonActionDown) {
             sendButtonEvent();
@@ -855,9 +850,7 @@ public class ControllerService extends Service {
 //                controllerListener.deprecatedOnControllerGyroEvent(controllerGyroEvent); // probably not used
                  controllerListener.onControllerGyroEvent(controllerGyroEvent); //probably not used
             } else {
-                if (DEBUG) {
-                    Log.e(TAG, "when send Gyro event, controllerListener is null");
-                }
+                debug_log("when send Gyro event, controllerListener is null");
             }
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -873,9 +866,7 @@ public class ControllerService extends Service {
 //                controllerListener.deprecatedOnControllerAccelEvent(controllerAccelEvent); //probably not used
               controllerListener.onControllerAccelEvent(controllerAccelEvent); //probably not used
             } else {
-                if(DEBUG){
-                    Log.e(TAG, "when send Accel event, controllerListener is null");
-                }
+                debug_log("when send Accel event, controllerListener is null");
             }
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -927,9 +918,7 @@ public class ControllerService extends Service {
 //                controllerListener.deprecatedOnControllerTouchEvent(controllerTouchEvent);
               controllerListener.onControllerTouchEvent(controllerTouchEvent);
             } else {
-                if (DEBUG) {
-                    Log.e(TAG, "when send Touch event, controllerListener is null");
-                }
+                debug_log("when send Touch event, controllerListener is null");
             }
 
         } catch (RemoteException e) {
