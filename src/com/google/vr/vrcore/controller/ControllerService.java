@@ -479,7 +479,7 @@ public class ControllerService extends Service {
                         int res = nativeOpenFile();
                         if (res < 0) {
                             needOpenFile = true;
-                            Log.e(TAG, "native open file failed, sleep 3s");
+                            Log.e(TAG, "native open file failed");
                             controllerServiceSleep(2, 3000);
                             continue;
                         }
@@ -517,6 +517,26 @@ public class ControllerService extends Service {
     private static final String NAME = "BTAcceptThread";
     public static final String PROTOCOL_SCHEME_RFCOMM = "btspp";
     private static final UUID MY_UUID = UUID.fromString("00001102-0001-1001-8001-00805F9B34FC");
+
+
+    char[] hexBuf;
+    char[] hexArray = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+    protected String toHexString(byte[] bytes, int size) {
+        int v, index = 0;
+        hexBuf = new char[4096];
+        for (int j = 0; j < size; j++) {
+            v = bytes[j] & 0xFF;
+            hexBuf[index++] = '0';
+            hexBuf[index++] = 'x';
+            hexBuf[index++] = hexArray[v >> 4];
+            hexBuf[index++] = hexArray[v & 0x0F];
+            hexBuf[index++] = ' ';
+            if ((j + 1) % 16 == 0)
+                hexBuf[index++] = '\n';
+        }
+        return new String(hexBuf, 0, index);
+    }
+
     public static byte[] deleteAt(byte[] bs, int index)
     {
         int length = bs.length - 1;
@@ -636,7 +656,8 @@ public class ControllerService extends Service {
                                     e.printStackTrace();
                                     break;
                                 }
-                                Log.e(TAG, "read value = " + new String(buffer, 0, bytes, "utf-8"));
+                                debug_log("hidraw data:" + toHexString(buffer, bytes));
+//                                Log.e(TAG, "read value = " + new String(buffer, 0, bytes, "utf-8"));
                                 setControllerListenerConnected();
                                 nodeData = decodeRFCommRawData(buffer);
                                 disposeNodeData(RAW_DATA_CHANNEL_EMULATOR, nodeData, 0);
