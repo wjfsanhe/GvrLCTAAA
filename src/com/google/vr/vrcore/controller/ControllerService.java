@@ -523,7 +523,7 @@ public class ControllerService extends Service {
     char[] hexArray = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
     protected String toHexString(byte[] bytes, int size) {
         int v, index = 0;
-        hexBuf = new char[4096];
+        hexBuf = new char[1024];
         for (int j = 0; j < size; j++) {
             v = bytes[j] & 0xFF;
             hexBuf[index++] = '0';
@@ -645,7 +645,7 @@ public class ControllerService extends Service {
                         while (socket != null && socket.isConnected()) {
 //                        if(socket != null){
                             inputStream = socket.getInputStream();
-                            byte[] buffer = new byte[1024 * 4];
+                            byte[] buffer = new byte[21];
                             int bytes = 0;
                             Bt_node_data nodeData;
                             while (bytes != -1) {
