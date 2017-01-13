@@ -24,6 +24,8 @@
 #define REPORT_TYPE_VERSION		3
 #define REPORT_TYPE_SHAKE		4
 
+#define POLL_TIMEOUT_TIME 12
+
 typedef unsigned char byte;
 
 const char *device[3] = {"/dev/hidraw0", "/dev/hidraw1","/dev/hidraw2"};
@@ -101,7 +103,7 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 	clock_gettime(CLOCK_MONOTONIC_RAW, &ts1);
 
 	// poll hidraw_fd ,only 1 fd, block 12ms
-	ready = poll(&readfds, 1,12);
+	ready = poll(&readfds, 1,POLL_TIMEOUT_TIME);
 	if (ready) {
 		// read hidraw data
 		res = read(hidraw_fd, buf, HIDRAW_BUFFER_SIZE);

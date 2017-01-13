@@ -444,7 +444,9 @@ public class ControllerService extends Service {
             debug_log("nodeData appVersion:" + nodeData.appVersion + ", deviceVersion:" + nodeData.deviceVersion + ", deviceType:" + nodeData.deviceType);
         }else if (nodeData.type == REPORT_TYPE_SHAKE){
             debug_log("nodeData.timeStamp :" + nodeData.timeStamp + ", nodeData.shakeEvent :" + nodeData.shakeEvent + ", nodeData.eventParameter:" + nodeData.eventParameter);
-            shakeEvent(nodeData.timeStamp,nodeData.shakeEvent,nodeData.eventParameter);
+            if (channel == dataChannel) {
+                shakeEvent(nodeData.timeStamp, nodeData.shakeEvent, nodeData.eventParameter);
+            }
       } else if(nodeData.type == GET_DATA_TIMEOUT){
           timeoutCount++;
           Log.i(TAG, "no data to read, block timeout, count:"+count);
@@ -492,13 +494,13 @@ public class ControllerService extends Service {
                     if (nodeData == null) {
                         Log.e(TAG,
                                 "do not get hidraw data from native, schedule next open data node");
-                        needOpenFile = true;
                         if (dataChannel == RAW_DATA_CHANNEL_JOYSTICK) {
                             setControllerListenerDisconnected();
                             dataChannel = RAW_DATA_CHANNEL_NONE;//reset dataChannel
                         }
                         nativeCloseFile();
-                        controllerServiceSleep(4, 3000);
+                        needOpenFile = true;
+//                        controllerServiceSleep(4, 3000);
                         continue;
                     }
                     //record timeoutCount
@@ -665,9 +667,11 @@ public class ControllerService extends Service {
                             Log.d(TAG,"read inputStream err, re accept");
                             if (socket != null) {
                                 socket.close();
+                                socket = null;
                             }
                             if(inputStream != null){
                                 inputStream.close();
+                                inputStream =null;
                             }
 //                            controllerServiceSleep(6, 3000);
                         }
