@@ -989,6 +989,7 @@ public class ControllerService extends Service {
     //add by zhangyawen for system event
     private boolean isDone = false;
     private boolean isReseting = false;
+    private boolean isOnlyOnce = true;
     private boolean isOutting = false;
     private boolean isVolumeOn = false;
     private boolean isWorking = false;
@@ -1177,10 +1178,14 @@ public class ControllerService extends Service {
                 } else {
                     if (isReseting) {
                         // set Recentering state
-                        HomeKeyLongClickEvent(HOME_RECENTERING);
-                        if (DEBUG) {
-                            Log.d("[ZZZ]", "Home longclick Recentering");
+                        if (isOnlyOnce) {
+                            HomeKeyLongClickEvent(HOME_RECENTERING);
+                            isOnlyOnce = false;
+                            if (DEBUG) {
+                                Log.d("[ZZZZ]", "Home longclick Recentering");
+                            }
                         }
+
                     } else {
                         //do nothing
                     }
@@ -1309,9 +1314,10 @@ public class ControllerService extends Service {
             if (isReseting) {
                 // set Recentered state
                 isReseting = false;
+                isOnlyOnce = true;
                 HomeKeyLongClickEvent(HOME_RECENTERED);
                 if (DEBUG) {
-                    Log.d("[ZZZ]", "Home longclick Recentered");
+                    Log.d("[ZZZZ]", "Home longclick Recentered");
                 }
             } else if (isOutting) {
                 // set Out of app state
