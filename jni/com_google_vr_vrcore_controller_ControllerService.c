@@ -1,7 +1,7 @@
 
 #include "com_google_vr_vrcore_controller_ControllerService.h"
 
-#define HIDRAW_BUFFER_SIZE 32
+#define IQIYI_HIDRAW_BUFFER_SIZE 32
 #define OPEN_ERR_DEVICE -1
 #define OPEN_SUCCESS_DEVICE_0 0
 #define OPEN_SUCCESS_DEVICE_1 1
@@ -26,31 +26,62 @@
 
 #define POLL_TIMEOUT_TIME 12
 
+#define IQIYI_HAND_VENDOR_ID  0x1915
+#define IQYI_HAND_PRODUCTION_ID 0xeeee
+
+
 typedef unsigned char byte;
 
 const char *device[3] = {"/dev/hidraw0", "/dev/hidraw1","/dev/hidraw2"};
-static int hidraw_fd = 0;
+static int hidraw_fd = -1;
 #ifdef DEBUG
 static const char values_str[] = "01";
 static int out_fd = 0;
 #endif
 static jclass clsBt_node_data = NULL;
 
+
+
 JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeOpenFile
   (JNIEnv *env, jobject jclass) {
 	int ret = -1; // not -1, 0, 1, 2
+	int fd = -1;
+	struct hidraw_devinfo info;
 #ifdef DEBUG
 	ALOGD("call native_open_file");
 #endif
 	for (int i = 0; i < 3; i++) {
-		hidraw_fd = open(device[i], O_RDWR);
-		if (hidraw_fd < 0) {
+		fd = open(device[i], O_RDWR);
+		if (fd < 0) {
 			ALOGE("Open %s failed, %s\n", device[i], strerror(errno));
 			continue;
+		} else {
+			ALOGD("Open %s Success!\n", device[i]);
+			/* Get Raw Info */
+			int res = ioctl(fd, HIDIOCGRAWINFO, &info);
+			if (res < 0) {
+				ALOGE("get hidraw info err, can't verify if it is iQIYI hand");
+				continue;
+			} else {
+				// here we get IQIQYI hand device
+				if (IQIYI_HAND_VENDOR_ID == (unsigned short) info.vendor
+						&& IQYI_HAND_PRODUCTION_ID
+								== (unsigned short) info.product) {
+					ALOGD("we get IQIYI hand device");
+					ret = 0;
+					hidraw_fd = fd;
+					break;
+				} else {
+					ALOGD(
+							"not IQIYI hand device, get hidraw info, vendor: %d, %d\n", info.vendor, info.product);
+					if(fd >=0){
+						ALOGD("Close device %s\n", device[i]);
+						close(fd);
+					}
+					continue;
+				}
+			}
 		}
-		ALOGD("Open %s Success!\n", device[i]);
-		ret = 0;
-		break;
 	}
 #ifdef DEBUG
 	out_fd = open("/sys/class/gpio/gpio126/value", O_RDWR);
@@ -81,7 +112,7 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 	ALOGD("call nativeReadFile, hidraw_fd:%d, out_fd:%d\n", hidraw_fd, out_fd);
 #endif
 	if(hidraw_fd <0) return 0;
-	unsigned char buf[HIDRAW_BUFFER_SIZE];
+	unsigned char buf[IQIYI_HIDRAW_BUFFER_SIZE];
 
 	// first to find class ,before read, because read can be blocked
 	clsBt_node_data = (*env)->FindClass(env, "com/google/vr/vrcore/controller/Bt_node_data");
@@ -106,14 +137,14 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 	ready = poll(&readfds, 1,POLL_TIMEOUT_TIME);
 	if (ready) {
 		// read hidraw data
-		res = read(hidraw_fd, buf, HIDRAW_BUFFER_SIZE);
+		res = read(hidraw_fd, buf, IQIYI_HIDRAW_BUFFER_SIZE);
 		if (res < 0) {
 			ALOGE("READERR, res:%d\n", res);
 			return 0;
 		}
 	}else{
 		clock_gettime(CLOCK_MONOTONIC_RAW, &ts2);
-		ALOGD("No data to read, native read, block timeout, delta time:%ld\n", (ts2.tv_nsec-ts1.tv_nsec)/1000);
+//		ALOGD("No data to read, native read, block timeout, delta time:%ld\n", (ts2.tv_nsec-ts1.tv_nsec)/1000);
 		jfieldID type = (*env)->GetFieldID(env, clsBt_node_data, "type", "I");
 		(*env)->SetIntField(env, data_struct, type, GET_DATA_TIMEOUT);
 		return data_struct;
