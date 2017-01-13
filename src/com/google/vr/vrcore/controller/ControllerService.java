@@ -32,6 +32,7 @@ import com.google.vr.vrcore.controller.api.IControllerService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.UUID;
 
 //add by zhangyawen
@@ -78,6 +79,7 @@ public class ControllerService extends Service {
     public static int REPORT_TYPE_VERSION = 3;
     public static int REPORT_TYPE_SHAKE = 4;
 
+    private static int POLL_TIMEOUT_COUNT = 100;
 
     private static int RAW_DATA_CHANNEL_NONE = -1;
     private static int RAW_DATA_CHANNEL_JOYSTICK = 0;
@@ -322,7 +324,6 @@ public class ControllerService extends Service {
 
             isBtInputDeviceConnected = true;
             mBtInputDeviceService = (BluetoothInputDevice) proxy;
-
         }
 
         @Override
@@ -330,9 +331,17 @@ public class ControllerService extends Service {
             debug_log("serivcedisconnected profile:"+profile);
             if (profile != BluetoothProfile.INPUT_DEVICE) return;
 
-            Log.i(TAG, "Profile proxy disconnected");
-
+            /* if still has devices connected, don't set isBtInputDeviceConnected=false
+             * we check when open hidraw, use product & vendor id
+            */
+            if(mBtInputDeviceService != null){
+                List<BluetoothDevice> deviceList = mBtInputDeviceService.getConnectedDevices();
+                if(deviceList!=null && deviceList.size()>0){
+                    return;
+                }
+            }
             isBtInputDeviceConnected = false;
+            Log.i(TAG, "Profile proxy disconnected");
             mBtInputDeviceService = null;
         }
     };
@@ -449,8 +458,8 @@ public class ControllerService extends Service {
             }
       } else if(nodeData.type == GET_DATA_TIMEOUT){
           timeoutCount++;
-          Log.i(TAG, "no data to read, block timeout, count:"+count);
-          if (controllerListener != null && timeoutCount >5) {
+          debug_log("no data to read, block timeout, timeoutCount:"+timeoutCount);
+          if (timeoutCount > POLL_TIMEOUT_COUNT) {
               //recenter
               sendPhoneEventControllerOrientationEvent(0, 0, 0, 1);
               debug_log("send fake data(w=1,x&y&z=0) which timeout count is more than 5");
@@ -472,9 +481,9 @@ public class ControllerService extends Service {
                 boolean needOpenFile = true;
                 int timeoutCount = 0;
                 while (!isCancel) {
-                    // if connect bt device is not hid device, sleep 3s, and do next while
+                    // if connect bt device is not hid device, sleep , and do next while
                     if (!isBtInputDeviceConnected) {
-                        controllerServiceSleep(1, 3000);
+                        controllerServiceSleep(1, 1000);
                         continue;
                     }
                     if (needOpenFile) {
@@ -482,7 +491,7 @@ public class ControllerService extends Service {
                         if (res < 0) {
                             needOpenFile = true;
                             Log.e(TAG, "native open file failed");
-                            controllerServiceSleep(2, 3000);
+                            controllerServiceSleep(2, 1000);
                             continue;
                         }
                         needOpenFile = false;

@@ -23,6 +23,7 @@
 #include <dlfcn.h>
 #include <linux/ioctl.h>
 #include <linux/time.h>
+#include <linux/hidraw.h>
 
 
 JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeOpenFile(JNIEnv *, jclass);
