@@ -53,7 +53,7 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
 	for (int i = 0; i < 3; i++) {
 		fd = open(device[i], O_RDWR);
 		if (fd < 0) {
-			ALOGE("Open %s failed, %s\n", device[i], strerror(errno));
+			//ALOGE("Open %s failed, %s\n", device[i], strerror(errno));
 			continue;
 		} else {
 			ALOGD("Open %s Success!\n", device[i]);

@@ -44,27 +44,40 @@ public class ControllerRec extends BroadcastReceiver {
             i.setPackage(context.getPackageName());
             context.startService(i);
         }else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
+            Log.i(TAG,"ACTION_ACL_CONNECTED");
             //only iqiyi iDream joystick start Service
             if (true) {
 
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                Log.d("mshuai", device.getName() + " ACTION_ACL_CONNECTED");
+                if (device != null) {
+                    Log.d("mshuai", device.getName() + " ACTION_ACL_CONNECTED");
 
-                i.putExtra(ControllerService.BLUETOOTH_CONNECTED_SUCCESS, true);
-                i.putExtra(ControllerService.BLUETOOTH_DEVICE_OBJECT, device);
-                // context.startService(i);
-                // delay 3s, wait for create hidrawx node
-                myHandler.postDelayed(startIntentService, 3000);
+                    String dName = device.getName();
+                    if (dName != null && dName.contains("QIYI")) {
+                        i.putExtra(ControllerService.BLUETOOTH_CONNECTED_SUCCESS, true);
+                        i.putExtra(ControllerService.BLUETOOTH_DEVICE_OBJECT, device);
+                        context.startService(i);
+                        // delay 3s, wait for create hidrawx node
+                        // myHandler.postDelayed(startIntentService, 3000);
+                    }else{
+                        Log.e(TAG,"not iqiyi hand device");
+                    }
+                }
             }
 
-        }else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
+        } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
+            Log.i(TAG,"ACTION_ACL_DISCONNECTED");
             BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-            Log.d("mshuai", device.getName() + " ACTION_ACL_DISCONNECTED");
-
-            i.putExtra(ControllerService.BLUETOOTH_DISCONNECTED, true);
-//            context.startService(i);
-            //delay 3s, wait for create hidrawx node
-            myHandler.postDelayed(startIntentService, 1500);
+            if (device != null) {
+                Log.d("mshuai", device.getName() + " ACTION_ACL_DISCONNECTED");
+                String dName = device.getName();
+                if (dName != null && dName.contains("QIYI")) {
+                    i.putExtra(ControllerService.BLUETOOTH_DISCONNECTED, true);
+                    context.startService(i);
+                    // delay 3s, wait for create hidrawx node
+                    // myHandler.postDelayed(startIntentService, 1500);
+                }
+            }
         }
     }
 }

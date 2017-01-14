@@ -231,6 +231,8 @@ public class ControllerService extends Service {
             }else{
                 debug_log("get device is null");
             }
+            // we use broadcast to check if bt device is connected
+            isBtInputDeviceConnected = true;
             startGetNodeDataThread();
             //start read hidrawx node
         }else if(intent.getBooleanExtra(BLUETOOTH_DISCONNECTED,false)){
@@ -240,6 +242,7 @@ public class ControllerService extends Service {
                 isCancel = true;
             }
             device=null;
+            isBtInputDeviceConnected = false;
 			//AIDLControllerUtil.mBatterLevel = "";
             batterLevelEvent(-1);
         }else if(intent.getBooleanExtra("test_vibrate", false)){//for test vibrate
@@ -322,7 +325,7 @@ public class ControllerService extends Service {
 
             Log.i(TAG, "Profile proxy connected");
 
-            isBtInputDeviceConnected = true;
+//            isBtInputDeviceConnected = true;
             mBtInputDeviceService = (BluetoothInputDevice) proxy;
         }
 
@@ -340,7 +343,7 @@ public class ControllerService extends Service {
                     return;
                 }
             }
-            isBtInputDeviceConnected = false;
+//            isBtInputDeviceConnected = false;
             Log.i(TAG, "Profile proxy disconnected");
             mBtInputDeviceService = null;
         }
@@ -377,7 +380,7 @@ public class ControllerService extends Service {
 //    }
 
     private static void controllerServiceSleep(int flag, long ms){
-        Log.d(TAG,"sleep "+ms+"s"+", flag:"+flag);;
+//        Log.d(TAG,"sleep "+ms+"s"+", flag:"+flag);;
         try {
             Thread.sleep(ms);
         } catch (InterruptedException e) {
@@ -483,7 +486,7 @@ public class ControllerService extends Service {
                 while (!isCancel) {
                     // if connect bt device is not hid device, sleep , and do next while
                     if (!isBtInputDeviceConnected) {
-                        controllerServiceSleep(1, 1000);
+                        controllerServiceSleep(1, 300);
                         continue;
                     }
                     if (needOpenFile) {
@@ -491,7 +494,7 @@ public class ControllerService extends Service {
                         if (res < 0) {
                             needOpenFile = true;
                             Log.e(TAG, "native open file failed");
-                            controllerServiceSleep(2, 1000);
+                            controllerServiceSleep(2, 800);
                             continue;
                         }
                         needOpenFile = false;
