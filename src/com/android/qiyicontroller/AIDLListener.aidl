@@ -29,4 +29,6 @@ interface AIDLListener {
 
       void touchDataEvent(float x, float y);
 
+      void handDeviceVersionInfoEvent(int appVersion,int deviceVersion,int deviceType);
+
 }

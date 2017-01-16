@@ -84,7 +84,7 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
 				if (IQIYI_HAND_VENDOR_ID == (unsigned short) info.vendor
 						&& IQYI_HAND_PRODUCTION_ID
 								== (unsigned short) info.product) {
-					ALOGD("we get IQIYI hand device");
+					ALOGD("we get IQIYI hand device, service build time is: %s,%s\n",__DATE__, __TIME__);
 					ret = 0;
 					hidraw_fd = fd;
 					break;

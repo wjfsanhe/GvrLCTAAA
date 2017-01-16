@@ -23,7 +23,7 @@ LOCAL_SHARED_LIBRARIES := \
 	libutils \
     liblog  \
 
-LOCAL_CFLAGS += -Wall  -Wno-unused-parameter
+LOCAL_CFLAGS += -Wall  -Wno-unused-parameter -Wno-date-time
 LOCAL_MODULE:= liblctgetnode
 
 

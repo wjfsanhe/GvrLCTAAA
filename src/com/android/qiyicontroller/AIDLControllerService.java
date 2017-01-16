@@ -20,6 +20,9 @@ public class AIDLControllerService extends Service {
     public static int JOYSTICK_CONTROL_TYPE = 1;
 
     public static boolean DEBUG = false;
+
+    public static String ACTION_GET_HAND_DEVICE_VERSION_INFO = "GET_HAND_DEVICE_VERSION_INFO_ACTION";
+
     //add by zhangyawen
     LocalBroadcastManager localBroadcastManager;
 
@@ -74,6 +77,8 @@ public class AIDLControllerService extends Service {
                 accelDataEventService(event.getAccelX(),event.getAccelY(),event.getAccelZ());
             }else if(messageType == MessageEvent.TOUCH_DATA_EVENT){
                 touchDataEventService(event.getTouchX(),event.getTouchY());
+            }else if (messageType == MessageEvent.VERSION_INFO_EVENT){
+                handDeviceVersionInfoEventService(event.getData1(),event.getData2(),event.getData3());
             }
         }
     };
@@ -137,6 +142,13 @@ public class AIDLControllerService extends Service {
         public void vibrate_cancel(){
             Intent intent = new Intent();
             intent.setAction("CLOSE_VIBRATOR_ACTION");
+            localBroadcastManager.sendBroadcast(intent);
+        }
+
+        @Override
+        public void getHandDeviceVerionInfo(){
+            Intent intent = new Intent();
+            intent.setAction(ACTION_GET_HAND_DEVICE_VERSION_INFO);
             localBroadcastManager.sendBroadcast(intent);
         }
         @Override
@@ -331,6 +343,25 @@ public class AIDLControllerService extends Service {
                         Log.d(TAG, "l.shakeEvent  timeStamp = " + timeStamp + " event = " + event + " eventParameter = " + eventParameter);
                     }
                     l.shakeEvent(timeStamp,event,eventParameter);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        mListenerList.finishBroadcast();
+    }
+
+    private synchronized void handDeviceVersionInfoEventService(int appVersion,int deviceVersion,int deviceType){
+        final int N = mListenerList.beginBroadcast();
+        for (int i = 0; i < N; i++) {
+            AIDLListener l = mListenerList.getBroadcastItem(i);
+            if (l != null) {
+                try{
+                    if (DEBUG) {
+                        Log.d(TAG, "l.versionInfo  appVersion = " + appVersion + " deviceVersion = " + deviceVersion + " deviceType = " + deviceType);
+                    }
+                    Log.d("mshuai", "l.versionInfo  appVersion = " + appVersion + " deviceVersion = " + deviceVersion + " deviceType = " + deviceType);
+                    l.handDeviceVersionInfoEvent(appVersion,deviceVersion,deviceType);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }

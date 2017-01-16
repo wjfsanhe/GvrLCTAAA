@@ -16,6 +16,7 @@ import android.os.SystemClock;
 //import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.android.qiyicontroller.AIDLControllerService;
 import com.android.qiyicontroller.EventInstance;
 import com.android.qiyicontroller.MessageEvent;
 import com.google.vr.vrcore.controller.api.ControllerAccelEvent;
@@ -71,6 +72,8 @@ public class ControllerService extends Service {
 
     public static int JOYSTICK_CONTROL_TYPE = 1;
     public static int JOYSTICK_REQUEST_TYPE = 2;
+
+    public static int JOYSTICK_REQUEST_VERSION = 1;
 
     public static int GET_DATA_TIMEOUT = -1;
     public static int GET_INVALID_DATA = -2;
@@ -140,6 +143,7 @@ public class ControllerService extends Service {
         filter.addAction("OPEN_VIBRATOR_MODE_ACTION");
         filter.addAction("OPEN_VIBRATOR_REPEAT_ACTION");
         filter.addAction("CLOSE_VIBRATOR_ACTION");
+        filter.addAction(AIDLControllerService.ACTION_GET_HAND_DEVICE_VERSION_INFO);
         Log.d(TAG,"registerReceiver");
         localBroadcastManager.registerReceiver(eventReceiver,filter);
 
@@ -206,6 +210,8 @@ public class ControllerService extends Service {
                     Log.d("[GGG]", "<<<CLOSE_VIBRATOR_ACTION mVibrateClose22:" + mVibrateClose);
                 }
                 controlJoystickVibrate(0, 0);
+            }else if (AIDLControllerService.ACTION_GET_HAND_DEVICE_VERSION_INFO.equals(action)){
+                getHandDeviceVersionInfo();
             }
         }
     }
@@ -372,7 +378,7 @@ public class ControllerService extends Service {
      */
     public native int nativeOpenFile();
     public native Bt_node_data nativeReadFile();
-    public native int nativeWriteFile(int type, int shockproofness, int duration);
+    public native int nativeWriteFile(int type, int data1, int data2);
     public native int nativeCloseFile();
 
 //    private void scheduleNext(){
@@ -454,6 +460,9 @@ public class ControllerService extends Service {
         }else if (nodeData.type == REPORT_TYPE_VERSION) {
             timeoutCount = 0;// timeout count reset to 0
             debug_log("nodeData appVersion:" + nodeData.appVersion + ", deviceVersion:" + nodeData.deviceVersion + ", deviceType:" + nodeData.deviceType);
+            if(channel == dataChannel){
+                handDeviceVersionInfoEvent(nodeData.appVersion, nodeData.deviceVersion, nodeData.deviceType);
+            }
         }else if (nodeData.type == REPORT_TYPE_SHAKE){
             debug_log("nodeData.timeStamp :" + nodeData.timeStamp + ", nodeData.shakeEvent :" + nodeData.shakeEvent + ", nodeData.eventParameter:" + nodeData.eventParameter);
             if (channel == dataChannel) {
@@ -648,7 +657,7 @@ public class ControllerService extends Service {
                             mServerSocket = mAdapter.listenUsingInsecureRfcommWithServiceRecord(
                                     PROTOCOL_SCHEME_RFCOMM, MY_UUID);
                         }
-                        Log.e(TAG,
+                        Log.d(TAG,
                                 "accept() waiting for client connection.... mServerSocket is null?"
                                         + (mServerSocket == null));
                         try {
@@ -745,6 +754,12 @@ public class ControllerService extends Service {
     public int controlJoystickVibrate(int powerLevel, int millisceonds){
         int res = nativeWriteFile(JOYSTICK_CONTROL_TYPE, powerLevel, millisceonds);
         debug_log("controlJoystickVibrate res:"+res);
+        return res;
+    }
+
+    private int getHandDeviceVersionInfo(){
+        int res = nativeWriteFile(JOYSTICK_REQUEST_TYPE, JOYSTICK_REQUEST_VERSION, 0);
+        debug_log("get hand device version info, res is :" +res);
         return res;
     }
 
@@ -1474,6 +1489,10 @@ public class ControllerService extends Service {
         localBroadcastManager.sendBroadcast(intent);
         Log.d(TAG,"shakeEvent.sendBroadcast(intent)");*/
         EventInstance.getInstance().post(new MessageEvent(MessageEvent.SHAKE_EVENT, timeStamp,Event,eventParameter));
+    }
+
+    private void handDeviceVersionInfoEvent(int appVersion, int deviceVersion, int deviceType){
+        EventInstance.getInstance().post(new MessageEvent(MessageEvent.VERSION_INFO_EVENT, appVersion, deviceVersion, deviceType));
     }
 
     private void simulationSystemEvent(float touchX, float touchY){

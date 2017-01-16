@@ -13,12 +13,12 @@ public class MessageEvent {
     public final static int QUANS_DATA_EVENT = 4;
     public final static int SHAKE_EVENT = 5;
     public final static int LONG_CLICK_HOME_EVENT = 6;
-
     //add by zhangyawen
     public final static int GYRO_DATA_EVENT = 7;
     public final static int ACCEL_DATA_EVENT = 8;
     public final static int TOUCH_DATA_EVENT = 9;
     //end
+    public final static int VERSION_INFO_EVENT = 10;
 
     private int messageType;
     private float quans_x;
@@ -33,6 +33,10 @@ public class MessageEvent {
     private int event;
     private int parameter;
     private int recentering;
+
+    private int data1;
+    private int data2;
+    private int data3;
 
     //add by zhangyawen
     private float gyro_x;
@@ -76,11 +80,17 @@ public class MessageEvent {
         //Log.d("[EEE]"," touch_x = "+touch_x+"touch_y = "+touch_y);
     }
 
-    public MessageEvent(int messageType,int timestamp,int event,int parameter){
+    public MessageEvent(int messageType,int data1,int data2,int data3){
         this.messageType = messageType;
-        this.timestamp = timestamp;
-        this.event = event;
-        this.parameter = parameter;
+        if (messageType == SHAKE_EVENT) {
+            this.timestamp = data1;
+            this.event = data2;
+            this.parameter = data3;
+        }else{
+            this.data1 = data1;
+            this.data2 = data2;
+            this.data3 = data3;
+        }
     }
 
     public MessageEvent(int messageType,int state){
@@ -184,5 +194,15 @@ public class MessageEvent {
 
     public int getLevel(){
         return level;
+    }
+
+    public int getData1(){
+        return data1;
+    }
+    public int getData2(){
+        return data2;
+    }
+    public int getData3(){
+        return data3;
     }
 }
