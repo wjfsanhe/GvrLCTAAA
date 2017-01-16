@@ -29,6 +29,9 @@
 #define IQIYI_HAND_VENDOR_ID  0x1915
 #define IQYI_HAND_PRODUCTION_ID 0xeeee
 
+#define FILE_EXIST 0
+#define FILE_NOT_EXIST -1
+
 
 typedef unsigned char byte;
 
@@ -40,6 +43,15 @@ static int out_fd = 0;
 #endif
 static jclass clsBt_node_data = NULL;
 
+int is_file_existed(const char *file_path){
+	if(file_path == NULL){
+		return FILE_NOT_EXIST;
+	}
+	if(access(file_path, F_OK) == 0){
+		return FILE_EXIST;
+	}
+	return FILE_NOT_EXIST;
+}
 
 
 JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeOpenFile
@@ -51,6 +63,11 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
 	ALOGD("call native_open_file");
 #endif
 	for (int i = 0; i < 3; i++) {
+		// at first check if file is existed
+		if(FILE_NOT_EXIST == is_file_existed(device[i])){
+//			ALOGD("file %s is not existed", device[i]);
+			continue;
+		}
 		fd = open(device[i], O_RDWR);
 		if (fd < 0) {
 			//ALOGE("Open %s failed, %s\n", device[i], strerror(errno));

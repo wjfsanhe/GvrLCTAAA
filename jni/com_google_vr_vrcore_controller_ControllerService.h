@@ -26,6 +26,8 @@
 #include <linux/hidraw.h>
 
 
+int is_file_exist(const char *file_path);
+
 JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeOpenFile(JNIEnv *, jclass);
 
 JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeCloseFile(JNIEnv *, jclass);

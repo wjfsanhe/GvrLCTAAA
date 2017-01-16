@@ -484,16 +484,19 @@ public class ControllerService extends Service {
                 boolean needOpenFile = true;
                 int timeoutCount = 0;
                 while (!isCancel) {
-                    // if connect bt device is not hid device, sleep , and do next while
-                    if (!isBtInputDeviceConnected) {
-                        controllerServiceSleep(1, 300);
-                        continue;
+                    // since ACTION_ACL_CONNECTED sometimes delays more than 20s. we do not use this to verify
+                    if (false) {
+                        // if connect bt device is not hid device, sleep , and do next while
+                        if (!isBtInputDeviceConnected) {
+                            controllerServiceSleep(1, 300);
+                            continue;
+                        }
                     }
                     if (needOpenFile) {
                         int res = nativeOpenFile();
                         if (res < 0) {
                             needOpenFile = true;
-                            Log.e(TAG, "native open file failed");
+//                            Log.e(TAG, "native open file failed");
                             controllerServiceSleep(2, 800);
                             continue;
                         }
