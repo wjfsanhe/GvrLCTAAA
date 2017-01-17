@@ -146,7 +146,7 @@ public class AIDLControllerService extends Service {
         }
 
         @Override
-        public void getHandDeviceVerionInfo(){
+        public void getHandDeviceVersionInfo(){
             Intent intent = new Intent();
             intent.setAction(ACTION_GET_HAND_DEVICE_VERSION_INFO);
             localBroadcastManager.sendBroadcast(intent);

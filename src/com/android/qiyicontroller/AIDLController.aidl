@@ -18,5 +18,5 @@ interface AIDLController {
       void vibrate_mode(long milliseconds,int mode);
       void vibrate_repeat(in long[] pattern,int repeat);
       void vibrate_cancel();
-      void getHandDeviceVerionInfo();
+      void getHandDeviceVersionInfo();
 }
