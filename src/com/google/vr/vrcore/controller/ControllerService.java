@@ -253,6 +253,8 @@ public class ControllerService extends Service {
             batterLevelEvent(-1);
         }else if(intent.getBooleanExtra("test_vibrate", false)){//for test vibrate
             controlJoystickVibrate(80, 5);
+        }else if(intent.getBooleanExtra(ControllerRec.TEST_GET_HAND_VERSION, false)){
+            getHandDeviceVersionInfo();
         }
         return Service.START_REDELIVER_INTENT;
     }
@@ -459,7 +461,7 @@ public class ControllerService extends Service {
             // send broadcast to notify the hand shank's battery
         }else if (nodeData.type == REPORT_TYPE_VERSION) {
             timeoutCount = 0;// timeout count reset to 0
-            debug_log("nodeData appVersion:" + nodeData.appVersion + ", deviceVersion:" + nodeData.deviceVersion + ", deviceType:" + nodeData.deviceType);
+            Log.d(TAG,"nodeData appVersion:" + nodeData.appVersion + ", deviceVersion:" + nodeData.deviceVersion + ", deviceType:" + nodeData.deviceType);
             if(channel == dataChannel){
                 handDeviceVersionInfoEvent(nodeData.appVersion, nodeData.deviceVersion, nodeData.deviceType);
             }

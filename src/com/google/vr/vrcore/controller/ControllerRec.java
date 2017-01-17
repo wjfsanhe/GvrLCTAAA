@@ -16,6 +16,9 @@ public class ControllerRec extends BroadcastReceiver {
     public static final boolean DBG = true;
     private static int count = 0;
     public static final String DAYDREAM_TEST = "com.longcheer.net.test.daydream";
+    public static final String GETHANDVERSION_TEST = "com.longcheer.net.test.gethandversion";
+
+    public static final String TEST_GET_HAND_VERSION = "test_get_handDevice_version_info";
     @Override
     public void onReceive(final Context context, Intent intent) {
         final String action = intent.getAction();
@@ -41,6 +44,11 @@ public class ControllerRec extends BroadcastReceiver {
         }else if(DAYDREAM_TEST.equals(action)){
             Log.d(TAG,"start joystick vibrate");
             i.putExtra("test_vibrate", true);
+            i.setPackage(context.getPackageName());
+            context.startService(i);
+        }else if(GETHANDVERSION_TEST.equals(action)){
+            Log.d(TAG,"test get hand version ");
+            i.putExtra(TEST_GET_HAND_VERSION, true);
             i.setPackage(context.getPackageName());
             context.startService(i);
         }else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
