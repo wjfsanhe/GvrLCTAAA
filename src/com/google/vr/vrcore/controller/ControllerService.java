@@ -1083,18 +1083,20 @@ public class ControllerService extends Service {
     public static final int SYSTEM_EVENT_VOLUME_DOWN_ID = 8;
 
     //touch event
-    private static float swipe_Horizontal_YMax = 0.8536f;
-    private static float swipe_Horizontal_YMin = 0.1464f;
-    private static float swipe_Vertical_XMax = 0.8536f;
-    private static float swipe_Vertical_XMin = 0.1464f;
-    private static float swipe_DragDistance = 0.4714f;
-    private static long timeSwipeDelay = 300L;
-    private static float lastTouchPos_x = 0.0f;
-    private static float lastTouchPos_y = 0.0f;
-    private static float firstTouchPos_x = 0.0f;
-    private static float firstTouchPos_y = 0.0f;
+   // private  float swipe_Horizontal_YMax = 0.9f;
+    //private  float swipe_Horizontal_YMin = 0.1f;
+    //private  float swipe_Vertical_XMax = 0.9f;
+    //private  float swipe_Vertical_XMin = 0.1f;
+    private  float swipe_DragDistance = 0.3f;
+    private  long timeSwipeDelay = 350L;
+    private  float lastTouchPos_x = 0.0f;
+    private  float lastTouchPos_y = 0.0f;
+    private  float firstTouchPos_x = 0.0f;
+    private  float firstTouchPos_y = 0.0f;
     private boolean mTouchDown = false;
     private boolean mIsTouching = false;
+    private boolean mTouchUp = false;
+    private boolean mCanSwipe = false;
     private long timeBeginSwipe = 0L;
 
     //timer1
@@ -1528,25 +1530,40 @@ public class ControllerService extends Service {
             Log.d("[TTT]", "GetSwipeDirection touchX = " + touchX + " ; touchY = " + touchY);
         }
         if (touchX != 0.0f || touchY != 0.0f) {
-            if (lastTouchPos_x == 0.0f && lastTouchPos_x == 0.0f) {
+            if (lastTouchPos_x == 0.0f && lastTouchPos_y == 0.0f) {
                 mTouchDown = true;
-                mIsTouching = false;
-            } else {
                 mIsTouching = true;
+                mTouchUp=false;
+            } else {
+              //  mIsTouching = true;
                 mTouchDown = false;
             }
         } else {
             mTouchDown = false;
             mIsTouching = false;
+            
+       if (lastTouchPos_x != 0.0f || lastTouchPos_y != 0.0f) {
+            mTouchUp=true;
         }
+        else{
+            mTouchUp=false;
+            }
+        }
+        lastTouchPos_x = touchX;
+        lastTouchPos_y = touchY;
 
         if (mTouchDown)
         {
+            mCanSwipe=true;
             firstTouchPos_x = touchX;
             firstTouchPos_y = touchY;
             timeBeginSwipe=System.currentTimeMillis();
         }
         if (mIsTouching) {
+                if(!mCanSwipe){
+                return SYSTEM_EVENT_NOT_DEFINED_ID;
+               }
+            
             if (System.currentTimeMillis() - timeBeginSwipe > timeSwipeDelay) {
                 if (DEBUG) {
                     Log.d("[TTT]", "timeSwipeDelay time out");
@@ -1557,34 +1574,38 @@ public class ControllerService extends Service {
             }
             //左右滑动
             if (Math.abs(touchX - firstTouchPos_x) >= swipe_DragDistance) {
-                if (firstTouchPos_y <= swipe_Horizontal_YMax && firstTouchPos_y >= swipe_Horizontal_YMin) {
+               // if (firstTouchPos_y <= swipe_Horizontal_YMax && firstTouchPos_y >= swipe_Horizontal_YMin) {
                     if (touchX > firstTouchPos_x) {
                         //right
                         if (DEBUG) {
                             Log.d("[TTT]", "right");
                         }
                         mDirection = SYSTEM_EVENT_RIGHT_ID;
+                        mCanSwipe=false;
                     } else {
                         //left
                         if (DEBUG) {
                             Log.d("[TTT]", "left");
                         }
                         mDirection = SYSTEM_EVENT_LEFT_ID;
+                        mCanSwipe=false;
                     }
                     timeBeginSwipe = System.currentTimeMillis();
                     firstTouchPos_x = touchX;
                     firstTouchPos_y = touchY;
-                }
+               // }
             }
             //上下滑动
-            if (Math.abs(touchY - firstTouchPos_y) >= swipe_DragDistance) {
-                if (firstTouchPos_x <= swipe_Vertical_XMax && firstTouchPos_x >= swipe_Vertical_XMin) {
+            if (Math.abs(touchY - firstTouchPos_y) >= swipe_DragDistance) 
+            {
+                //if (firstTouchPos_x <= swipe_Vertical_XMax && firstTouchPos_x >= swipe_Vertical_XMin) {
                     if (touchY > firstTouchPos_y) {
                         //down
                         if (DEBUG) {
                             Log.d("[TTT]", "down");
                         }
                         mDirection = SYSTEM_EVENT_DOWN_ID;
+                        mCanSwipe=false;
 
                     } else {
                         //up
@@ -1592,15 +1613,20 @@ public class ControllerService extends Service {
                             Log.d("[TTT]", "up");
                         }
                         mDirection = SYSTEM_EVENT_UP_ID;
+                        mCanSwipe=false;
                     }
                     timeBeginSwipe = System.currentTimeMillis();
                     firstTouchPos_x = touchX;
                     firstTouchPos_y = touchY;
-                }
+                //}
             }
         }
-        lastTouchPos_x = touchX;
-        lastTouchPos_y = touchY;
+      if(mTouchUp){
+                 
+                 timeBeginSwipe = System.currentTimeMillis();
+                 firstTouchPos_x = touchX;
+                 firstTouchPos_y = touchY;
+      }
         return mDirection;
     }
 
