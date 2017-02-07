@@ -12,6 +12,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
+
+import com.google.vr.vrcore.controller.ControllerService;
 //end
 
 public class AIDLControllerService extends Service {
@@ -150,6 +152,21 @@ public class AIDLControllerService extends Service {
             Intent intent = new Intent();
             intent.setAction(ACTION_GET_HAND_DEVICE_VERSION_INFO);
             localBroadcastManager.sendBroadcast(intent);
+        }
+        @Override
+        public void enable_home_key(boolean isEnable){
+            Intent intent = new Intent();
+            if (DEBUG) {
+                Log.d("[EEE]","[set] isEnable = "+isEnable);
+            }
+            ControllerService.enableHomeKeyEvent = isEnable;
+        }
+        @Override
+        public boolean get_enable_home_key(){
+            if (DEBUG) {
+                Log.d("[EEE]","[get] enableHomeEvent = "+ControllerService.enableHomeKeyEvent);
+            }
+            return ControllerService.enableHomeKeyEvent;
         }
         @Override
         public void registerListener(AIDLListener listener){
@@ -369,6 +386,7 @@ public class AIDLControllerService extends Service {
         }
         mListenerList.finishBroadcast();
     }
+
 
     /*public class EventReceiver extends BroadcastReceiver {
 

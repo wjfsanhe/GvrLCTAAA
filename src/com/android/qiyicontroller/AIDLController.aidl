@@ -19,4 +19,6 @@ interface AIDLController {
       void vibrate_repeat(in long[] pattern,int repeat);
       void vibrate_cancel();
       void getHandDeviceVersionInfo();
+      void enable_home_key(boolean isEnable);
+      boolean get_enable_home_key();
 }

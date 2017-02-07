@@ -144,6 +144,7 @@ public class ControllerService extends Service {
         filter.addAction("OPEN_VIBRATOR_REPEAT_ACTION");
         filter.addAction("CLOSE_VIBRATOR_ACTION");
         filter.addAction(AIDLControllerService.ACTION_GET_HAND_DEVICE_VERSION_INFO);
+        filter.addAction("ENABLE_HOME_KEY_EVNET_ACTION");
         Log.d(TAG,"registerReceiver");
         localBroadcastManager.registerReceiver(eventReceiver,filter);
 
@@ -1099,6 +1100,14 @@ public class ControllerService extends Service {
     private boolean mCanSwipe = false;
     private long timeBeginSwipe = 0L;
 
+
+    //short click home key
+    public static final int HOME_DOWN = 106;
+    public static final int HOME_UP = 107;
+
+    //disable home key event for customer request
+    public static boolean enableHomeKeyEvent = true;
+
     //timer1
     private Runnable runnable = new Runnable() {
         @Override
@@ -1212,7 +1221,9 @@ public class ControllerService extends Service {
                 if (keymask != mLastKeyMask) {
                     handler.postDelayed(runnableForHome, DEFINE_LONG_TIME_FOR_HOME);
                     mLastKeyMask = keymask;
-
+                    if (!enableHomeKeyEvent) {
+                        HomeKeyLongClickEvent(HOME_DOWN);
+                    }
                 } else {
                     if (isReseting) {
                         // set Recentering state
@@ -1223,7 +1234,6 @@ public class ControllerService extends Service {
                                 Log.d("[ZZZZ]", "Home longclick Recentering");
                             }
                         }
-
                     } else {
                         //do nothing
                     }
@@ -1354,6 +1364,9 @@ public class ControllerService extends Service {
                 isReseting = false;
                 isOnlyOnce = true;
                 HomeKeyLongClickEvent(HOME_RECENTERED);
+                if (!enableHomeKeyEvent) {
+                    HomeKeyLongClickEvent(HOME_UP);
+                }
                 if (DEBUG) {
                     Log.d("[ZZZZ]", "Home longclick Recentered");
                 }
@@ -1365,7 +1378,14 @@ public class ControllerService extends Service {
             } else {
                 if ((mLastKeyMask&0x08) != 0) {
                     handler.removeCallbacks(runnableForHome);
-                    simulationButtonSystemEvent(mLastKeyMask);
+                    if (DEBUG) {
+                        android.util.Log.d("[EEE]","enableHomeKeyEvent = "+enableHomeKeyEvent);
+                    }
+                    if (enableHomeKeyEvent) {
+                        simulationButtonSystemEvent(mLastKeyMask);
+                    }else{
+                        HomeKeyLongClickEvent(HOME_UP);
+                    }
 
                 }
                 if ((mLastKeyMask&0x02) != 0) {
