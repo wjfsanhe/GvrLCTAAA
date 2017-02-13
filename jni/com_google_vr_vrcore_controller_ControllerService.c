@@ -27,7 +27,7 @@
 #define POLL_TIMEOUT_TIME 12
 
 #define IQIYI_HAND_VENDOR_ID  0x1915
-#define IQYI_HAND_PRODUCTION_ID 0xeeee
+#define IQIYI_HAND_PRODUCTION_ID 0xeeee
 
 #define FILE_EXIST 0
 #define FILE_NOT_EXIST -1
@@ -35,7 +35,7 @@
 
 typedef unsigned char byte;
 
-const char *device[3] = {"/dev/hidraw0", "/dev/hidraw1","/dev/hidraw2"};
+const char *device[3] = {"/dev/hidraw-iqiyi0", "/dev/hidraw-iqiyi1","/dev/hidraw-iqiyi2"};
 static int hidraw_fd = -1;
 #ifdef DEBUG
 static const char values_str[] = "01";
@@ -70,7 +70,7 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
 		}
 		fd = open(device[i], O_RDWR);
 		if (fd < 0) {
-			//ALOGE("Open %s failed, %s\n", device[i], strerror(errno));
+			ALOGE("Open %s failed, %s\n", device[i], strerror(errno));
 			continue;
 		} else {
 			ALOGD("Open %s Success!\n", device[i]);
@@ -80,9 +80,9 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
 				ALOGE("get hidraw info err, can't verify if it is iQIYI hand");
 				continue;
 			} else {
-				// here we get IQIQYI hand device
+				// here we get IQIYI hand device
 				if (IQIYI_HAND_VENDOR_ID == (unsigned short) info.vendor
-						&& IQYI_HAND_PRODUCTION_ID
+						&& IQIYI_HAND_PRODUCTION_ID
 								== (unsigned short) info.product) {
 					ALOGD("we get IQIYI hand device, service build time is: %s,%s\n",__DATE__, __TIME__);
 					ret = 0;
