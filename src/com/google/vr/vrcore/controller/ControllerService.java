@@ -13,6 +13,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.os.SystemClock;
+import android.os.SystemProperties;
 //import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -122,6 +123,9 @@ public class ControllerService extends Service {
     private float last_quans_y;
     private float last_quans_z;
     private float last_quans_w;
+
+    // when connected hand device, we get hand version once
+    private boolean needGetHandVersion = true;
 
 
 
@@ -475,6 +479,8 @@ public class ControllerService extends Service {
             Log.d(TAG,"nodeData appVersion:" + nodeData.appVersion + ", deviceVersion:" + nodeData.deviceVersion + ", deviceType:" + nodeData.deviceType);
             if(channel == dataChannel){
                 handDeviceVersionInfoEvent(nodeData.appVersion, nodeData.deviceVersion, nodeData.deviceType);
+                //record device version info
+                recordHandDeviceVersionInfo(nodeData.appVersion, nodeData.deviceVersion, nodeData.deviceType);
             }
         }else if (nodeData.type == REPORT_TYPE_SHAKE){
             debug_log("nodeData.timeStamp :" + nodeData.timeStamp + ", nodeData.shakeEvent :" + nodeData.shakeEvent + ", nodeData.eventParameter:" + nodeData.eventParameter);
@@ -527,10 +533,18 @@ public class ControllerService extends Service {
                             continue;
                         }
                         needOpenFile = false;
+                        needGetHandVersion = true;
                         Log.d(TAG, "natvie Open File Success");
                     }
                     setControllerListenerConnected();
 
+                    if(needGetHandVersion){
+                        int result = getHandDeviceVersionInfo();
+                        if(result < 0){
+                            Log.e(TAG,"when connect hand device,get hand device version err");
+                            needGetHandVersion = false;
+                        }
+                    }
                     Bt_node_data nodeData = nativeReadFile();
                     if (nodeData == null) {
                         Log.e(TAG,
@@ -546,6 +560,7 @@ public class ControllerService extends Service {
                     }
                     //record timeoutCount
                     timeoutCount = disposeNodeData(RAW_DATA_CHANNEL_JOYSTICK, nodeData, timeoutCount);
+
                 }
                 nativeCloseFile();
                 Log.d(TAG, "natvie Close File");
@@ -778,6 +793,15 @@ public class ControllerService extends Service {
         int res = nativeWriteFile(JOYSTICK_REQUEST_TYPE, JOYSTICK_REQUEST_VERSION, 0);
         debug_log("get hand device version info, res is :" +res);
         return res;
+    }
+
+    private void recordHandDeviceVersionInfo(int appVersion, int deviceVersion, int deviceType){
+        String version = null;
+        SystemProperties.set("sys.iqiyi.hand.appVersion", appVersion+"");
+        SystemProperties.set("sys.iqiyi.hand.deviceVersion", deviceVersion+"");
+        SystemProperties.set("sys.iqiyi.hand.deviceType", deviceType+"");
+        debug_log("record hand device version, appVersion:"+appVersion+", deviceVersion:"+deviceVersion+", deviceType:"+deviceType);
+        needGetHandVersion = false;
     }
 
     /*
@@ -1575,7 +1599,7 @@ public class ControllerService extends Service {
         } else {
             mTouchDown = false;
             mIsTouching = false;
-            
+
        if (lastTouchPos_x != 0.0f || lastTouchPos_y != 0.0f) {
             mTouchUp=true;
         }
@@ -1597,7 +1621,7 @@ public class ControllerService extends Service {
                 if(!mCanSwipe){
                 return SYSTEM_EVENT_NOT_DEFINED_ID;
                }
-            
+
             if (System.currentTimeMillis() - timeBeginSwipe > timeSwipeDelay) {
                 if (DEBUG) {
                     Log.d("[TTT]", "timeSwipeDelay time out");
@@ -1630,7 +1654,7 @@ public class ControllerService extends Service {
                // }
             }
             //上下滑动
-            if (Math.abs(touchY - firstTouchPos_y) >= swipe_DragDistance) 
+            if (Math.abs(touchY - firstTouchPos_y) >= swipe_DragDistance)
             {
                 //if (firstTouchPos_x <= swipe_Vertical_XMax && firstTouchPos_x >= swipe_Vertical_XMin) {
                     if (touchY > firstTouchPos_y) {
@@ -1656,7 +1680,7 @@ public class ControllerService extends Service {
             }
         }
       if(mTouchUp){
-                 
+
                  timeBeginSwipe = System.currentTimeMillis();
                  firstTouchPos_x = touchX;
                  firstTouchPos_y = touchY;
