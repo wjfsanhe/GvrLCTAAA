@@ -117,6 +117,12 @@ public class ControllerService extends Service {
     private InputStream inputStream;
     private OutputStream outputStream;
 
+    // for save last quans data
+    private float last_quans_x;
+    private float last_quans_y;
+    private float last_quans_z;
+    private float last_quans_w;
+
 
 
     public static void debug_log(String log){
@@ -430,6 +436,10 @@ public class ControllerService extends Service {
                         nodeData.quans_z,
                         nodeData.quans_w);
                 debug_log("send phon event finish");
+                last_quans_x = nodeData.quans_x;
+                last_quans_y = nodeData.quans_y;
+                last_quans_z = nodeData.quans_z;
+                last_quans_w = nodeData.quans_w;
             }
         } else if (nodeData.type == REPORT_TYPE_SENSOR) {
             timeoutCount = 0;// timeout count reset to 0
@@ -475,8 +485,12 @@ public class ControllerService extends Service {
           debug_log("no data to read, block timeout, timeoutCount:"+timeoutCount);
           if (timeoutCount > POLL_TIMEOUT_COUNT) {
               //recenter
-              sendPhoneEventControllerOrientationEvent(0, 0, 0, 1);
-              debug_log("send fake data(w=1,x&y&z=0) which timeout count is more than 5");
+//            sendPhoneEventControllerOrientationEvent(0, 0, 0, 1);
+              sendPhoneEventControllerOrientationEvent(last_quans_x,
+                      last_quans_y,
+                      last_quans_z,
+                      last_quans_w);
+              debug_log("send last data which timeout count is more than 5");
           }
       } else if(nodeData.type == GET_INVALID_DATA){
           Log.e(TAG, "get invalid data ");
