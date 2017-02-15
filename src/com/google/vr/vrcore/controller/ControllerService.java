@@ -745,7 +745,7 @@ public class ControllerService extends Service {
 
                     }else{
                         //if bt is closed
-                        Log.d(TAG,"bt adapter is null ,sleep 3s");
+                        debug_log("bt adapter is null ,sleep 3s");
                         if (mServerSocket != null) {
                             try {
                                 mServerSocket.close();
