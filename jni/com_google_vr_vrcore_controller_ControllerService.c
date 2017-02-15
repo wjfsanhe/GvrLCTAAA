@@ -41,7 +41,7 @@ static int hidraw_fd = -1;
 static const char values_str[] = "01";
 static int out_fd = 0;
 #endif
-static jclass clsBt_node_data = NULL;
+//static jclass clsBt_node_data = NULL;
 
 int is_file_existed(const char *file_path){
 	if(file_path == NULL){
@@ -124,12 +124,13 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
 /*
  * if return 0 ,it means fd is useness, so java thread should close fd
  */
-JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeReadFile(JNIEnv *env, jobject jclass){
+JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeReadFile(JNIEnv *env, jobject jc){
 #ifdef DEBUG
 	ALOGD("call nativeReadFile, hidraw_fd:%d, out_fd:%d\n", hidraw_fd, out_fd);
 #endif
 	if(hidraw_fd <0) return 0;
 	unsigned char buf[IQIYI_HIDRAW_BUFFER_SIZE];
+	jclass clsBt_node_data = NULL;
 
 	// first to find class ,before read, because read can be blocked
 	clsBt_node_data = (*env)->FindClass(env, "com/google/vr/vrcore/controller/Bt_node_data");

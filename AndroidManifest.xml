@@ -33,6 +33,7 @@
         </service>
         <receiver android:name=".controller.ControllerRec">
             <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="com.longcheer.net.test.daydream" />
                 <action android:name="com.longcheer.net.test.gethandversion" />
                 <action android:name="android.bluetooth.device.action.ACL_CONNECTED"/>

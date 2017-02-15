@@ -54,7 +54,7 @@ public class ControllerRec extends BroadcastReceiver {
         }else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
             Log.i(TAG,"ACTION_ACL_CONNECTED");
             //only iqiyi iDream joystick start Service
-            if (false) {
+            if (true) {
 
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 if (device != null) {

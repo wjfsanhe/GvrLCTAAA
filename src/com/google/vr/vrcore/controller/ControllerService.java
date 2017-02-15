@@ -515,6 +515,7 @@ public class ControllerService extends Service {
             try {
                 boolean needOpenFile = true;
                 int timeoutCount = 0;
+                int getHandVersionCount = 0;
                 while (!isCancel) {
                     // since ACTION_ACL_CONNECTED sometimes delays more than 20s. we do not use this to verify
                     if (false) {
@@ -538,12 +539,21 @@ public class ControllerService extends Service {
                     }
                     setControllerListenerConnected();
 
+                    //we use getHandVersionCount to record, if still need get hand version, we get once every 10 times
                     if(needGetHandVersion){
-                        int result = getHandDeviceVersionInfo();
-                        if(result < 0){
-                            Log.e(TAG,"when connect hand device,get hand device version err");
-                            needGetHandVersion = false;
+                        if (getHandVersionCount == 0) {
+                            int result = getHandDeviceVersionInfo();
+                            if (result < 0) {
+                                Log.e(TAG, "when connect hand device,get hand device version err");
+                                needGetHandVersion = false;
+                            }
                         }
+                        getHandVersionCount++;
+                        if(getHandVersionCount > 100){
+                            getHandVersionCount = 0;
+                        }
+                    }else{
+                        getHandVersionCount = 0;
                     }
                     Bt_node_data nodeData = nativeReadFile();
                     if (nodeData == null) {
