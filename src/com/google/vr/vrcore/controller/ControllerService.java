@@ -565,7 +565,7 @@ public class ControllerService extends Service {
                         }
                         nativeCloseFile();
                         needOpenFile = true;
-                        resetHandDeviceVersionInfo();// clean hand device version
+                        //resetHandDeviceVersionInfo();// clean hand device version
 //                        controllerServiceSleep(4, 3000);
                         continue;
                     }
