@@ -555,6 +555,7 @@ public class ControllerService extends Service {
                         }
                         nativeCloseFile();
                         needOpenFile = true;
+                        resetHandDeviceVersionInfo();// clean hand device version
 //                        controllerServiceSleep(4, 3000);
                         continue;
                     }
@@ -796,12 +797,17 @@ public class ControllerService extends Service {
     }
 
     private void recordHandDeviceVersionInfo(int appVersion, int deviceVersion, int deviceType){
-        String version = null;
-        SystemProperties.set("sys.iqiyi.hand.appVersion", appVersion+"");
-        SystemProperties.set("sys.iqiyi.hand.deviceVersion", deviceVersion+"");
-        SystemProperties.set("sys.iqiyi.hand.deviceType", deviceType+"");
-        debug_log("record hand device version, appVersion:"+appVersion+", deviceVersion:"+deviceVersion+", deviceType:"+deviceType);
+        SystemProperties.set("sys.iqiyi.hand.appVersion", String.format("%06x", appVersion & 0xffffff));
+        SystemProperties.set("sys.iqiyi.hand.deviceVersion", String.format("%04x", deviceVersion & 0xffff));
+        SystemProperties.set("sys.iqiyi.hand.deviceType", String.format("%04x", deviceType & 0xffff));
+//        debug_log("record hand device version, appVersion:"+appVersion+", deviceVersion:"+deviceVersion+", deviceType:"+deviceType);
         needGetHandVersion = false;
+    }
+
+    private void resetHandDeviceVersionInfo(){
+        SystemProperties.set("sys.iqiyi.hand.appVersion", "0");
+        SystemProperties.set("sys.iqiyi.hand.deviceVersion", "0");
+        SystemProperties.set("sys.iqiyi.hand.deviceType", "0");
     }
 
     /*
