@@ -38,6 +38,8 @@
                 <action android:name="com.longcheer.net.test.gethandversion" />
                 <action android:name="com.longcheer.net.test.resetquaternion" />
                 <action android:name="com.longcheer.net.test.calibration" />
+                <action android:name="com.longcheer.net.handota.start" />
+                <action android:name="com.longcheer.net.handota.stop" />
                 <action android:name="android.bluetooth.device.action.ACL_CONNECTED"/>
                 <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED"/>
             </intent-filter>

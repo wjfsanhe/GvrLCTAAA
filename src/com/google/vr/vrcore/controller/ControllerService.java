@@ -112,6 +112,8 @@ public class ControllerService extends Service {
 
     private int dataChannel = RAW_DATA_CHANNEL_NONE;
 
+    private static int hand_device_ota_status = -1;
+
 
     private LocalBroadcastManager localBroadcastManager;
     EventReceiver eventReceiver = new EventReceiver();
@@ -131,7 +133,7 @@ public class ControllerService extends Service {
     private float last_quans_w;
 
     // when connected hand device, we get hand version once
-    private boolean needGetHandVersion = true;
+    private boolean needGetHandVersion = false;
 
 
 
@@ -284,6 +286,8 @@ public class ControllerService extends Service {
             int type = intent.getIntExtra(ControllerRec.REQUEST_CALIBRATION_TYPE, -1);
             int mode = intent.getIntExtra(ControllerRec.REQUEST_CALIBRATION_MODE, -1);
             requestHandDeviceCalibration(type, mode);
+        } else if (intent.getBooleanExtra(ControllerRec.HAND_OTA_ACTION, false)) {
+            hand_device_ota_status = intent.getIntExtra(ControllerRec.HAND_OTA_STATUS, -1);
         }
         return Service.START_REDELIVER_INTENT;
     }
@@ -557,22 +561,6 @@ public class ControllerService extends Service {
                     }
                     setControllerListenerConnected();
 
-                    //we use getHandVersionCount to record, if still need get hand version, we get once every 10 times
-                    if(needGetHandVersion){
-                        if (getHandVersionCount == 0) {
-                            int result = getHandDeviceVersionInfo();
-                            if (result < 0) {
-                                Log.e(TAG, "when connect hand device,get hand device version err");
-                                needGetHandVersion = false;
-                            }
-                        }
-                        getHandVersionCount++;
-                        if(getHandVersionCount > 100){
-                            getHandVersionCount = 0;
-                        }
-                    }else{
-                        getHandVersionCount = 0;
-                    }
                     Bt_node_data nodeData = nativeReadFile();
                     if (nodeData == null) {
                         Log.e(TAG,
@@ -590,6 +578,22 @@ public class ControllerService extends Service {
                     //record timeoutCount
                     timeoutCount = disposeNodeData(RAW_DATA_CHANNEL_JOYSTICK, nodeData, timeoutCount);
 
+                    //we use getHandVersionCount to record, if still need get hand version, we get once every 10 times
+                    if(needGetHandVersion){
+                        if (getHandVersionCount == 0) {
+                            int result = getHandDeviceVersionInfo();
+                            if (result < 0) {
+                                Log.e(TAG, "when connect hand device,get hand device version err");
+                                needGetHandVersion = false;
+                            }
+                        }
+                        getHandVersionCount++;
+                        if(getHandVersionCount > 100){
+                            getHandVersionCount = 0;
+                        }
+                    }else{
+                        getHandVersionCount = 0;
+                    }
                 }
                 nativeCloseFile();
                 Log.d(TAG, "natvie Close File");
@@ -808,17 +812,29 @@ public class ControllerService extends Service {
      */
     //default powerLevel 80, ms:5(500ms)
     public int controlJoystickVibrate(){
+        if(hand_device_ota_status == ControllerRec.STATUS_HAND_OTA_STARTING){
+            Log.w(TAG,"hand device is still ota, can't control hand device");
+            return -1;
+        }
         int res = nativeWriteFile(JOYSTICK_CONTROL_TYPE, 80, 5);
         debug_log("controlJoystickVibrate defaultvalue res:"+res);
         return res;
     }
     public int controlJoystickVibrate(int powerLevel, int millisceonds){
+        if(hand_device_ota_status == ControllerRec.STATUS_HAND_OTA_STARTING){
+            Log.w(TAG,"hand device is still ota, can't control hand device");
+            return -1;
+        }
         int res = nativeWriteFile(JOYSTICK_CONTROL_TYPE, powerLevel, millisceonds);
         debug_log("controlJoystickVibrate res:"+res);
         return res;
     }
 
     private int getHandDeviceVersionInfo(){
+        if(hand_device_ota_status == ControllerRec.STATUS_HAND_OTA_STARTING){
+            Log.w(TAG,"hand device is still ota, can't control hand device");
+            return -1;
+        }
         int res = nativeWriteFile(JOYSTICK_REQUEST_TYPE, JOYSTICK_REQUEST_VERSION, 0);
         debug_log("get hand device version info, res is :" +res);
         return res;
@@ -839,12 +855,20 @@ public class ControllerService extends Service {
     }
 
     private int requestHandDeviceResetQuternion(){
+        if(hand_device_ota_status == ControllerRec.STATUS_HAND_OTA_STARTING){
+            Log.w(TAG,"hand device is still ota, can't control hand device");
+            return -1;
+        }
         int res = nativeWriteFile(JOYSTICK_RESET_QUATERNION_TYPE, 0, 0);
         Log.d(TAG,"requestHandDeviceResetQuaternion res:"+res);
         return res;
     }
 
     private int requestHandDeviceCalibration(int type, int mode){
+        if(hand_device_ota_status == ControllerRec.STATUS_HAND_OTA_STARTING){
+            Log.w(TAG,"hand device is still ota, can't control hand device");
+            return -1;
+        }
         int res = -1;
         if((JOYSTICK_HILLCREST_CALIBRATION_TYPE == type || JOYSTICK_TOUCH_CALIBRATION_TYPE == type)
                 && (JOYSTICK_ENTER_MODE == mode || JOYSTICK_EXIT_MODE == mode)) {
@@ -858,6 +882,10 @@ public class ControllerService extends Service {
 
     // data1 sometimes is mode
     private int controlHandDevice(int type, int data1, int data2) {
+        if(hand_device_ota_status == ControllerRec.STATUS_HAND_OTA_STARTING){
+            Log.w(TAG,"hand device is still ota, can't control hand device");
+            return -1;
+        }
         int res = -1;
         switch (type) {
             case JOYSTICK_CONTROL_TYPE:
