@@ -62,7 +62,7 @@ public class ControllerRec extends BroadcastReceiver {
 
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 if (device != null) {
-                    Log.d("mshuai", device.getName() + " ACTION_ACL_CONNECTED");
+                    Log.d(TAG, device.getName() + " ACTION_ACL_CONNECTED");
 
                     String dName = device.getName();
                     if (dName != null && dName.contains("QIYI")) {
@@ -79,10 +79,10 @@ public class ControllerRec extends BroadcastReceiver {
 
         } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
             Log.i(TAG,"ACTION_ACL_DISCONNECTED");
-            if (false) {
+            if (true) {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 if (device != null) {
-                    Log.d("mshuai", device.getName() + " ACTION_ACL_DISCONNECTED");
+                    Log.d(TAG, device.getName() + " ACTION_ACL_DISCONNECTED");
                     String dName = device.getName();
                     if (dName != null && dName.contains("QIYI")) {
                         i.putExtra(ControllerService.BLUETOOTH_DISCONNECTED, true);

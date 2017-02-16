@@ -68,6 +68,8 @@ public class ControllerService extends Service {
 
     private static BluetoothInputDevice mBtInputDeviceService = null;
     private static BluetoothDevice device;
+    private static String device_name = null;
+    private static String device_address = null;
     private BluetoothAdapter mAdapter;
     private boolean isBtInputDeviceConnected = false;
 
@@ -94,6 +96,11 @@ public class ControllerService extends Service {
     private static final int RAW_DATA_CHANNEL_NONE = -1;
     private static final int RAW_DATA_CHANNEL_JOYSTICK = 0;
     private static final int RAW_DATA_CHANNEL_EMULATOR = 1;
+
+    private static final String ACTION_HAVE_GOT_HAND_VERSION_INFO   = "com.longcheer.net.action.gotHandVersionInfo";
+    private static final String HAND_VERSION_INFO_NAME              = "hand_version_info_name";
+    private static final String HAND_VERSION_INFO_ADDRESS           = "hand_version_info_address";
+    private static final String HAND_VERSION_INFO_APPVERSION        = "hand_version_info_appversion";
 
     private String iDreamDeviceVersion = null;
     private String iDreamDeviceType = null;
@@ -258,7 +265,9 @@ public class ControllerService extends Service {
             isCancel = false;
             device = intent.getParcelableExtra(ControllerService.BLUETOOTH_DEVICE_OBJECT);
             if(device!=null){
-                debug_log("get device name is:"+device.getName());
+                device_name = device.getName();
+                device_address = device.getAddress();
+                Log.i(TAG,"get device name is:"+device.getName() + ", address:"+device_address);
             }else{
                 debug_log("get device is null");
             }
@@ -273,6 +282,8 @@ public class ControllerService extends Service {
                 isCancel = true;
             }
             device=null;
+            device_name = null;
+            device_address = null;
             isBtInputDeviceConnected = false;
 			//AIDLControllerUtil.mBatterLevel = "";
             batterLevelEvent(-1);
@@ -840,10 +851,44 @@ public class ControllerService extends Service {
         return res;
     }
 
-    private void recordHandDeviceVersionInfo(int appVersion, int deviceVersion, int deviceType){
+    private void sendBroadcastForHandDeviceOTA(int appVersion){
+        Intent intent = new Intent();
+        intent.setAction(ACTION_HAVE_GOT_HAND_VERSION_INFO);
+        intent.putExtra(HAND_VERSION_INFO_NAME, device_name);
+        intent.putExtra(HAND_VERSION_INFO_ADDRESS, device_address);
+        intent.putExtra(HAND_VERSION_INFO_APPVERSION, appVersion);
+        localBroadcastManager.sendBroadcast(intent);
+        Log.i(TAG,"sendBroadcastForHandDeviceOTA, name:"+device_name+", address:"+device_address);
+    }
+    private void recordHandDeviceVersionInfo(final int appVersion, int deviceVersion, int deviceType){
         SystemProperties.set("sys.iqiyi.hand.appVersion", String.format("%06x", appVersion & 0xffffff));
         SystemProperties.set("sys.iqiyi.hand.deviceVersion", String.format("%04x", deviceVersion & 0xffff));
         SystemProperties.set("sys.iqiyi.hand.deviceType", String.format("%04x", deviceType & 0xffff));
+
+        Log.i(TAG,"record hand device version info && send a broadcast for ota");
+
+        //since we get hand version info before bt broadcast, sometimes device name or address are null.
+        // so we should wait 5 * 0.8s. if timeout, we waive this time.
+        new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                // TODO Auto-generated method stub
+                int count = 0;
+                while (device_name == null || device_address == null) {
+                    count++;
+                    try {
+                        Thread.sleep(800);
+                    } catch (Exception exception) {
+                    }
+                    if (count > 5) {
+                        Log.w(TAG, "we haven't got device name or address, return");
+                        return;
+                    }
+                }
+                sendBroadcastForHandDeviceOTA(appVersion);
+            }
+        }).start();
 //        debug_log("record hand device version, appVersion:"+appVersion+", deviceVersion:"+deviceVersion+", deviceType:"+deviceType);
         needGetHandVersion = false;
     }
