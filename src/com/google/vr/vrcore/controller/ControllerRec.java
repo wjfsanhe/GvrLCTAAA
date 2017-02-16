@@ -17,8 +17,14 @@ public class ControllerRec extends BroadcastReceiver {
     private static int count = 0;
     public static final String DAYDREAM_TEST = "com.longcheer.net.test.daydream";
     public static final String GETHANDVERSION_TEST = "com.longcheer.net.test.gethandversion";
+    public static final String RESET_QUATERNION_TEST = "com.longcheer.net.test.resetquaternion";
+    public static final String REQUEST_CALIBRATION_TEST = "com.longcheer.net.test.calibration";
 
     public static final String TEST_GET_HAND_VERSION = "test_get_handDevice_version_info";
+    public static final String TEST_RESET_QUATERNION = "test_reset_handDevice_quaternion";
+    public static final String TEST_REQUEST_CALIBRATION = "test_handDevice_calibration";
+    public static final String REQUEST_CALIBRATION_TYPE = "calibration_type";
+    public static final String REQUEST_CALIBRATION_MODE = "calibration_mode";
     @Override
     public void onReceive(final Context context, Intent intent) {
         final String action = intent.getAction();
@@ -40,16 +46,6 @@ public class ControllerRec extends BroadcastReceiver {
                 Log.d(TAG, "Action boot completed received..");
             }
             i.putExtra(ControllerService.BOOT_COMPLETE_FLAG, true);
-            context.startService(i);
-        }else if(DAYDREAM_TEST.equals(action)){
-            Log.d(TAG,"start joystick vibrate");
-            i.putExtra("test_vibrate", true);
-            i.setPackage(context.getPackageName());
-            context.startService(i);
-        }else if(GETHANDVERSION_TEST.equals(action)){
-            Log.d(TAG,"test get hand version ");
-            i.putExtra(TEST_GET_HAND_VERSION, true);
-            i.setPackage(context.getPackageName());
             context.startService(i);
         }else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
             Log.i(TAG,"ACTION_ACL_CONNECTED");
@@ -88,6 +84,33 @@ public class ControllerRec extends BroadcastReceiver {
                     }
                 }
             }
+        }else if(DAYDREAM_TEST.equals(action)){
+            Log.d(TAG,"start joystick vibrate");
+            i.putExtra("test_vibrate", true);
+            i.setPackage(context.getPackageName());
+            context.startService(i);
+        }else if(GETHANDVERSION_TEST.equals(action)){
+            Log.d(TAG,"test get hand version ");
+            i.putExtra(TEST_GET_HAND_VERSION, true);
+            i.setPackage(context.getPackageName());
+            context.startService(i);
+        }else if(RESET_QUATERNION_TEST.equals(action)){
+            // am broadcast -a com.longcheer.net.test.resetquaternion
+            Log.d(TAG,"test reset quaternion ");
+            i.putExtra(TEST_RESET_QUATERNION, true);
+            i.setPackage(context.getPackageName());
+            context.startService(i);
+        }else if(REQUEST_CALIBRATION_TEST.equals(action)){
+            // am broadcast -a com.longcheer.net.test.calibration -ei calibration_type 3 -ei calibration_mode 0
+            int type = intent.getExtras().getInt(REQUEST_CALIBRATION_TYPE, -1);
+            int mode = intent.getExtras().getInt(REQUEST_CALIBRATION_MODE, -1);
+            Log.d(TAG,"test calibration type:"+type+", mode:"+mode);
+            if(type <0 || mode < 0) return;
+            i.putExtra(TEST_REQUEST_CALIBRATION, true);
+            i.putExtra(REQUEST_CALIBRATION_TYPE, type);
+            i.putExtra(REQUEST_CALIBRATION_MODE, mode);
+            i.setPackage(context.getPackageName());
+            context.startService(i);
         }
     }
 }

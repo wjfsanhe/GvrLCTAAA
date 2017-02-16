@@ -23,7 +23,12 @@ public class AIDLControllerService extends Service {
 
     public static boolean DEBUG = false;
 
-    public static String ACTION_GET_HAND_DEVICE_VERSION_INFO = "GET_HAND_DEVICE_VERSION_INFO_ACTION";
+    public static final String CONTROL_HAND_DEVICE_TYPE = "control_hand_device_type";
+    public static final String CONTROL_HAND_DEVICE_DATA1 = "control_hand_device_data1";
+    public static final String CONTROL_HAND_DEVICE_DATA2 = "control_hand_device_data2";
+
+    public static final String ACTION_GET_HAND_DEVICE_VERSION_INFO = "GET_HAND_DEVICE_VERSION_INFO_ACTION";
+    public static final String ACTION_CONTROL_HAND_DEVICE = "CONTROL_HAND_DEVICE_ACTION";
 
     //add by zhangyawen
     LocalBroadcastManager localBroadcastManager;
@@ -167,6 +172,15 @@ public class AIDLControllerService extends Service {
                 Log.d("[EEE]","[get] enableHomeEvent = "+ControllerService.enableHomeKeyEvent);
             }
             return ControllerService.enableHomeKeyEvent;
+        }
+        @Override
+        public void control_handDevice(int type, int data1, int data2){
+            Intent intent = new Intent();
+            intent.putExtra(CONTROL_HAND_DEVICE_TYPE, type);
+            intent.putExtra(CONTROL_HAND_DEVICE_DATA1, data1);
+            intent.putExtra(CONTROL_HAND_DEVICE_DATA2, data2);
+            intent.setAction(ACTION_CONTROL_HAND_DEVICE);
+            localBroadcastManager.sendBroadcast(intent);
         }
         @Override
         public void registerListener(AIDLListener listener){

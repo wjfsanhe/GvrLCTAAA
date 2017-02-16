@@ -71,23 +71,29 @@ public class ControllerService extends Service {
     private BluetoothAdapter mAdapter;
     private boolean isBtInputDeviceConnected = false;
 
-    public static int JOYSTICK_CONTROL_TYPE = 1;
-    public static int JOYSTICK_REQUEST_TYPE = 2;
+    public static final int JOYSTICK_CONTROL_TYPE                 = 0x01;
+    public static final int JOYSTICK_REQUEST_TYPE                 = 0x02;
+    public static final int JOYSTICK_HILLCREST_CALIBRATION_TYPE   = 0x03;
+    public static final int JOYSTICK_TOUCH_CALIBRATION_TYPE       = 0x04;
+    public static final int JOYSTICK_RESET_QUATERNION_TYPE        = 0x05;
 
-    public static int JOYSTICK_REQUEST_VERSION = 1;
+    public static final int JOYSTICK_REQUEST_VERSION = 1;
 
-    public static int GET_DATA_TIMEOUT = -1;
-    public static int GET_INVALID_DATA = -2;
-    public static int REPORT_TYPE_ORIENTATION = 1;
-    public static int REPORT_TYPE_SENSOR = 2;
-    public static int REPORT_TYPE_VERSION = 3;
-    public static int REPORT_TYPE_SHAKE = 4;
+    public static final int JOYSTICK_ENTER_MODE      = 1;
+    public static final int JOYSTICK_EXIT_MODE       = 0;
 
-    private static int POLL_TIMEOUT_COUNT = 100;
+    public static final int GET_DATA_TIMEOUT = -1;
+    public static final int GET_INVALID_DATA = -2;
+    public static final int REPORT_TYPE_ORIENTATION = 1;
+    public static final int REPORT_TYPE_SENSOR = 2;
+    public static final int REPORT_TYPE_VERSION = 3;
+    public static final int REPORT_TYPE_SHAKE = 4;
 
-    private static int RAW_DATA_CHANNEL_NONE = -1;
-    private static int RAW_DATA_CHANNEL_JOYSTICK = 0;
-    private static int RAW_DATA_CHANNEL_EMULATOR = 1;
+    private static final int POLL_TIMEOUT_COUNT = 100;
+
+    private static final int RAW_DATA_CHANNEL_NONE = -1;
+    private static final int RAW_DATA_CHANNEL_JOYSTICK = 0;
+    private static final int RAW_DATA_CHANNEL_EMULATOR = 1;
 
     private String iDreamDeviceVersion = null;
     private String iDreamDeviceType = null;
@@ -155,6 +161,7 @@ public class ControllerService extends Service {
         filter.addAction("CLOSE_VIBRATOR_ACTION");
         filter.addAction(AIDLControllerService.ACTION_GET_HAND_DEVICE_VERSION_INFO);
         filter.addAction("ENABLE_HOME_KEY_EVNET_ACTION");
+        filter.addAction(AIDLControllerService.ACTION_CONTROL_HAND_DEVICE);
         Log.d(TAG,"registerReceiver");
         localBroadcastManager.registerReceiver(eventReceiver,filter);
 
@@ -223,6 +230,11 @@ public class ControllerService extends Service {
                 controlJoystickVibrate(0, 0);
             }else if (AIDLControllerService.ACTION_GET_HAND_DEVICE_VERSION_INFO.equals(action)){
                 getHandDeviceVersionInfo();
+            }else if (AIDLControllerService.ACTION_CONTROL_HAND_DEVICE.equals(action)){
+                int type = intent.getIntExtra(AIDLControllerService.CONTROL_HAND_DEVICE_TYPE, -1);
+                int data1 = intent.getIntExtra(AIDLControllerService.CONTROL_HAND_DEVICE_DATA1, -1);
+                int data2 = intent.getIntExtra(AIDLControllerService.CONTROL_HAND_DEVICE_DATA2, -1);
+                controlHandDevice(type, data1, data2);
             }
         }
     }
@@ -266,6 +278,12 @@ public class ControllerService extends Service {
             controlJoystickVibrate(80, 5);
         }else if(intent.getBooleanExtra(ControllerRec.TEST_GET_HAND_VERSION, false)){
             getHandDeviceVersionInfo();
+        }else if(intent.getBooleanExtra(ControllerRec.TEST_RESET_QUATERNION, false)){
+            requestHandDeviceResetQuternion();
+        }else if(intent.getBooleanExtra(ControllerRec.TEST_REQUEST_CALIBRATION, false)){
+            int type = intent.getIntExtra(ControllerRec.REQUEST_CALIBRATION_TYPE, -1);
+            int mode = intent.getIntExtra(ControllerRec.REQUEST_CALIBRATION_MODE, -1);
+            requestHandDeviceCalibration(type, mode);
         }
         return Service.START_REDELIVER_INTENT;
     }
@@ -820,13 +838,47 @@ public class ControllerService extends Service {
         SystemProperties.set("sys.iqiyi.hand.deviceType", "0");
     }
 
-    /*
-     * -1 is not ok
-     * 0 is ok
-     */
-    public int requestIDreamDeviceInfo(int type){
-        int res = nativeWriteFile(JOYSTICK_REQUEST_TYPE, 0x01, 0);
-        debug_log("requestIDreamDeviceInfo res:"+res);
+    private int requestHandDeviceResetQuternion(){
+        int res = nativeWriteFile(JOYSTICK_RESET_QUATERNION_TYPE, 0, 0);
+        Log.d(TAG,"requestHandDeviceResetQuaternion res:"+res);
+        return res;
+    }
+
+    private int requestHandDeviceCalibration(int type, int mode){
+        int res = -1;
+        if((JOYSTICK_HILLCREST_CALIBRATION_TYPE == type || JOYSTICK_TOUCH_CALIBRATION_TYPE == type)
+                && (JOYSTICK_ENTER_MODE == mode || JOYSTICK_EXIT_MODE == mode)) {
+            res = nativeWriteFile(type, mode, 0);
+            Log.e("myController","requestHandDeviceCalibration nativeWrite");
+        }
+        Log.e("myController", "requestHandDeviceCalibration type:" + type + ", mode:" + mode
+                + ", res:" + res);
+        return res;
+    }
+
+    // data1 sometimes is mode
+    private int controlHandDevice(int type, int data1, int data2) {
+        int res = -1;
+        switch (type) {
+            case JOYSTICK_CONTROL_TYPE:
+                res = controlJoystickVibrate(data1, data2);
+                break;
+            case JOYSTICK_REQUEST_TYPE:
+                res = getHandDeviceVersionInfo();
+                break;
+            case JOYSTICK_HILLCREST_CALIBRATION_TYPE:
+            case JOYSTICK_TOUCH_CALIBRATION_TYPE:
+                res = requestHandDeviceCalibration(type, data1);
+                break;
+            case JOYSTICK_RESET_QUATERNION_TYPE:
+                res = requestHandDeviceResetQuternion();
+                break;
+            default:
+                Log.w(TAG, "get invaild type data");
+                break;
+        }
+        Log.d(TAG, "controllHandDevice type:" + type + ", data1 or mode:" + data1 + ", data2:"
+                + data2 + ", res:" + res);
         return res;
     }
 
