@@ -102,6 +102,9 @@ public class ControllerService extends Service {
     private static final String HAND_VERSION_INFO_ADDRESS           = "hand_version_info_address";
     private static final String HAND_VERSION_INFO_APPVERSION        = "hand_version_info_appversion";
 
+    private static final String HAND_VERSION_ZERO                   = "0";
+    private static final String HAND_VERSION_READY_TO_RAED          = "1";
+
     private String iDreamDeviceVersion = null;
     private String iDreamDeviceType = null;
 
@@ -273,6 +276,7 @@ public class ControllerService extends Service {
             }
             // we use broadcast to check if bt device is connected
             isBtInputDeviceConnected = true;
+            resetHandDeviceVersionInfo();// reset recorded hand version info.
             startGetNodeDataThread();
             //start read hidrawx node
         }else if(intent.getBooleanExtra(BLUETOOTH_DISCONNECTED,false)){
@@ -567,7 +571,8 @@ public class ControllerService extends Service {
                             continue;
                         }
                         needOpenFile = false;
-                        needGetHandVersion = true;
+//                        resetHandDeviceVersionInfo();// clean hand device version
+//                        needGetHandVersion = true;
                         Log.d(TAG, "natvie Open File Success");
                     }
                     setControllerListenerConnected();
@@ -857,7 +862,7 @@ public class ControllerService extends Service {
         intent.putExtra(HAND_VERSION_INFO_NAME, device_name);
         intent.putExtra(HAND_VERSION_INFO_ADDRESS, device_address);
         intent.putExtra(HAND_VERSION_INFO_APPVERSION, appVersion);
-        localBroadcastManager.sendBroadcast(intent);
+        sendBroadcast(intent);
         Log.i(TAG,"sendBroadcastForHandDeviceOTA, name:"+device_name+", address:"+device_address);
     }
     private void recordHandDeviceVersionInfo(final int appVersion, int deviceVersion, int deviceType){
@@ -894,9 +899,10 @@ public class ControllerService extends Service {
     }
 
     private void resetHandDeviceVersionInfo(){
-        SystemProperties.set("sys.iqiyi.hand.appVersion", "0");
-        SystemProperties.set("sys.iqiyi.hand.deviceVersion", "0");
-        SystemProperties.set("sys.iqiyi.hand.deviceType", "0");
+        SystemProperties.set("sys.iqiyi.hand.appVersion", HAND_VERSION_READY_TO_RAED);
+        SystemProperties.set("sys.iqiyi.hand.deviceVersion", HAND_VERSION_READY_TO_RAED);
+        SystemProperties.set("sys.iqiyi.hand.deviceType", HAND_VERSION_READY_TO_RAED);
+        needGetHandVersion = true;
     }
 
     private int requestHandDeviceResetQuternion(){
