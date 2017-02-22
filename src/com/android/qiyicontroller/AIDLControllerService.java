@@ -64,7 +64,7 @@ public class AIDLControllerService extends Service {
         public void onEvent(MessageEvent event){
             int messageType = event.getMessageType();
             if(messageType == MessageEvent.QUANS_DATA_EVENT) {
-                //Log.d("zyc", "<<<onEvent x:" + event.getX() + " y:" + event.getY() + " z:" + event.getZ() + " w:" + event.getW());
+                //Log.d("[PPP]", "<<<onEvent x:" + event.getX() + " y:" + event.getY() + " z:" + event.getZ() + " w:" + event.getW());
                 quansDataEventService(event.getX(), event.getY(), event.getZ(), event.getW());
             }else if(messageType == MessageEvent.SHORT_CLICK_BACK_EVENT){
                 shortClickBackEventService(event.getBackState());
@@ -298,8 +298,9 @@ public class AIDLControllerService extends Service {
             AIDLListener l = mListenerList.getBroadcastItem(i);
             if (l != null) {
                 try{
-                    //Log.d(TAG,"quans data l.quansDataEvent  x = "+x+" y = "+y+" z = "+z+" w = "+w);
+                    //Log.d("[PPP]","quans data l.quansDataEvent  x = "+x+" y = "+y+" z = "+z+" w = "+w);
                     l.quansDataEvent(x, y, z, w);
+                    //Log.d("[PPP]","quansDataEvent [after]");
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }

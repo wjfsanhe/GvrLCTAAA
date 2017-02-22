@@ -977,6 +977,9 @@ public class ControllerService extends Service {
         controllerOrientationEvent.qw = w;
 
         //add by zhangyawen for quansData jar (controllerService.java)
+/*        debug_log("[PPP] X:" + controllerOrientationEvent.qx + ", Y:"
+                + controllerOrientationEvent.qy + ",Z:" + controllerOrientationEvent.qz + ",W:"
+                + controllerOrientationEvent.qw);*/
         quanDataEvent(controllerOrientationEvent.qx,
                 controllerOrientationEvent.qy,
                 controllerOrientationEvent.qz,
@@ -1019,7 +1022,7 @@ public class ControllerService extends Service {
 
         //add by zhangyawen
         if (DEBUG) {
-            Log.d("[YYY]","keymask = "+keymask);
+            Log.d("[KKK]","keymask = "+keymask);
         }
         ButtonEvent(keymask);
         //end
@@ -1215,6 +1218,8 @@ public class ControllerService extends Service {
     private boolean isOutting = false;
     private boolean isVolumeOn = false;
     private boolean isWorking = false;
+    private boolean isRecentering = false;
+    private boolean isOnce = true;
 /*    private boolean isVolumeUpOn = false;
     private boolean isVolumeDownOn = false;*/
     private int mLastKeyMask = 0;
@@ -1237,6 +1242,10 @@ public class ControllerService extends Service {
     public static final int APP_BUTTON_DOWN = 200;
     public static final int APP_BUTTON = 201;
     public static final int APP_BUTTON_UP = 202;
+    //long click menu key
+    public static final int MENU_RECENTERING = 204;
+    public static final int MENU_RECENTERED = 205;
+
     public static final int APP_BUTTON_CANCEL = -2;
     public static final String APP_BUTTON_EVENT_ACTION = "APP_BUTTON_KEY_ACTION";
 
@@ -1293,6 +1302,9 @@ public class ControllerService extends Service {
     //disable home key event for customer request
     public static boolean enableHomeKeyEvent = true;
 
+    //disable menu key event for customer request
+    public static boolean enableMenuKeyEvent = true;
+
     //timer1
     private Runnable runnable = new Runnable() {
         @Override
@@ -1309,11 +1321,19 @@ public class ControllerService extends Service {
         }
     };
 
-    //timer2
+    //timer3
     private Runnable runnableForBack = new Runnable() {
         @Override
         public void run() {
             isOutting = true;
+        }
+    };
+
+    //timer4
+    private Runnable runnableForMenu = new Runnable() {
+        @Override
+        public void run() {
+            isRecentering = true;
         }
     };
 
@@ -1459,8 +1479,31 @@ public class ControllerService extends Service {
                     TriggerAndClickEvent(TRIGGER_BUTTON);
                 }
             } else if ((keymask&0x10) != 0) {
-                //appButton key event
+                // differ click or longclick for home key(1000ms)
                 if (keymask != mLastKeyMask) {
+                    handler.postDelayed(runnableForMenu, DEFINE_LONG_TIME_FOR_HOME);
+                    appButtonEvent(APP_BUTTON_DOWN);
+                    mLastKeyMask = keymask;
+                    if (DEBUG) {
+                        Log.d("[AAA]", "appButtonEvent Buttondown");
+                    }
+                } else {
+                    if (isRecentering) {
+                        // set Recentering state
+                        if (isOnce) {
+                            appButtonEvent(MENU_RECENTERING);
+                            isOnce = false;
+                            if (DEBUG) {
+                                Log.d("[AAA]", "App longclick Recentering");
+                            }
+                        }
+                    } else {
+                        //do nothing
+                    }
+                    appButtonEvent(APP_BUTTON);
+                }
+                //appButton key event
+/*                if (keymask != mLastKeyMask) {
                     appButtonEvent(APP_BUTTON_DOWN);
                     mLastKeyMask = keymask;
                     if (DEBUG) {
@@ -1468,7 +1511,7 @@ public class ControllerService extends Service {
                     }
                 } else {
                     appButtonEvent(APP_BUTTON);
-                }
+                }*/
             } else if ((keymask&0x20) != 0) {
                 // volume up key(500ms)
                 if (keymask != mLastKeyMask) {
@@ -1555,6 +1598,15 @@ public class ControllerService extends Service {
                 if (DEBUG) {
                     Log.d("[ZZZZ]", "Home longclick Recentered");
                 }
+            } else if(isRecentering){
+                // set Recentered state
+                isRecentering = false;
+                isOnce = true;
+                appButtonEvent(MENU_RECENTERED);
+                appButtonEvent(APP_BUTTON_UP);
+                if (DEBUG) {
+                    Log.d("[AAA]", "App longclick Recentered");
+                }
             } else if (isOutting) {
                 // set Out of app state
                 isOutting = false;
@@ -1589,9 +1641,10 @@ public class ControllerService extends Service {
                     }
                 }
                 if ((mLastKeyMask&0x10) != 0) {
+                    handler.removeCallbacks(runnableForMenu);
                     appButtonEvent(APP_BUTTON_UP);
                     if (DEBUG) {
-                        Log.d("[ZZZ]", "appButtonEvent ButtonUp");
+                        Log.d("[AAA]", "appButtonEvent ButtonUp");
                     }
                 }
                 if ((mLastKeyMask&0x20) != 0 ) {
