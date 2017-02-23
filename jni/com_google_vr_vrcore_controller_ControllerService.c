@@ -52,8 +52,67 @@ int is_file_existed(const char *file_path){
 	}
 	return FILE_NOT_EXIST;
 }
+#if 0
+JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeOpenFile
+  (JNIEnv *env, jobject jclass) {
+	char deviceFile[PATH_MAX];
+	int fd = -1;
+	int ret = -1;
+	DIR * devDir;
+	struct dirent * devDirEntry;
+	struct hidraw_devinfo info;
 
+	devDir = opendir("/dev");
+	ALOGD("mshuai Open /dev \n");
+	if (!devDir)
+		return -1;
+	ALOGD("mshuai Open /dev success\n");
+	while ((devDirEntry = readdir(devDir)) != NULL) {
+		ALOGD("mshuai dev dir entry name:%s\n", devDirEntry->d_name);
+		if (strstr(devDirEntry->d_name, "hidraw-iqiyi")) {
+			char rawDevice[PATH_MAX];
+			strncpy(rawDevice, devDirEntry->d_name, PATH_MAX);
+			snprintf(deviceFile, PATH_MAX, "/dev/%s", devDirEntry->d_name);
+			fd = open(deviceFile, O_RDWR);
+			if (fd < 0) {
+							ALOGE("Open %s failed, %s\n", deviceFile, strerror(errno));
+				continue;
+			} else {
+				ALOGD("Open %s Success!\n", deviceFile);
+				/* Get Raw Info */
+				int res = ioctl(fd, HIDIOCGRAWINFO, &info);
+				if (res < 0) {
+					ALOGE(
+							"get hidraw info err, can't verify if it is iQIYI hand");
+					continue;
+				} else {
+					// here we get IQIYI hand device
+					if (IQIYI_HAND_VENDOR_ID == (unsigned short) info.vendor
+							&& IQIYI_HAND_PRODUCTION_ID
+									== (unsigned short) info.product) {
+						ALOGD(
+								"we get IQIYI hand device, service build time is: %s,%s\n", __DATE__, __TIME__);
+						ret = 0;
+						hidraw_fd = fd;
+						break;
+					} else {
+						ALOGD(
+								"not IQIYI hand device, get hidraw info, vendor: %d, %d\n", info.vendor, info.product);
+						if (fd >= 0) {
+							ALOGD("Close device %s\n", deviceFile);
+							close(fd);
+						}
+						continue;
+					}
+				}
+			}
+		}
+	}
+	closedir(devDir);
+	return ret;
+}
 
+#else
 JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeOpenFile
   (JNIEnv *env, jobject jclass) {
 	int ret = -1; // not -1, 0, 1, 2
@@ -106,6 +165,7 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
 //	clsBt_node_data = (*env)->FindClass(env, "com/google/vr/vrcore/controller/bt_node_data");
 	return ret;
 }
+#endif
 JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeCloseFile
   (JNIEnv *env, jobject jclass)  {
 	if(hidraw_fd >=0){
