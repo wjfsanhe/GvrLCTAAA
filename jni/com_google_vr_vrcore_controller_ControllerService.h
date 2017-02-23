@@ -21,6 +21,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <dlfcn.h>
+#include <dirent.h>
 #include <linux/ioctl.h>
 #include <linux/time.h>
 #include <linux/hidraw.h>

@@ -255,6 +255,7 @@ public class ControllerService extends Service {
     public void onDestroy() {
         Log.d("myControllerService", "onDestroy");
         localBroadcastManager.unregisterReceiver(eventReceiver);
+        isCancel = true;
         super.onDestroy();
     }
 
@@ -311,7 +312,8 @@ public class ControllerService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         Log.d("myControllerService", "onBind " + intent.getAction());
-        this.startService(new Intent(this, ControllerService.class));
+        Intent i = new Intent(this, ControllerService.class);
+        this.startService(i);
         if (ControllerServiceConsts.BIND_INTENT_ACTION.equals(intent.getAction())) {
             return controllerService.asBinder();
         }
