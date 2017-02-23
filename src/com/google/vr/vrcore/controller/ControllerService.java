@@ -597,7 +597,7 @@ public class ControllerService extends Service {
                     timeoutCount = disposeNodeData(RAW_DATA_CHANNEL_JOYSTICK, nodeData, timeoutCount);
 
                     //we use getHandVersionCount to record, if still need get hand version, we get once every 10 times
-                    if(false){//needGetHandVersion){
+                    if(needGetHandVersion){
                         if (getHandVersionCount == 0) {
                             int result = getHandDeviceVersionInfo();
                             if (result < 0) {
