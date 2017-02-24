@@ -909,9 +909,10 @@ public class ControllerService extends Service {
         SystemProperties.set("sys.iqiyi.hand.appVersion", String.format("%06x", appVersion & 0xffffff));
         SystemProperties.set("sys.iqiyi.hand.deviceVersion", String.format("%04x", deviceVersion & 0xffff));
         SystemProperties.set("sys.iqiyi.hand.deviceType", String.format("%04x", deviceType & 0xffff));
-
+        Log.i(TAG,"record hand device version info");
+        needGetHandVersion = false;
+/*
         Log.i(TAG,"record hand device version info && send a broadcast for ota");
-
         //since we get hand version info before bt broadcast, sometimes device name or address are null.
         // so we should wait 5 * 0.8s. if timeout, we waive this time.
         new Thread(new Runnable() {
@@ -933,9 +934,8 @@ public class ControllerService extends Service {
                 }
                 sendBroadcastForHandDeviceOTA(appVersion);
             }
-        }).start();
+        }).start();*/
 //        debug_log("record hand device version, appVersion:"+appVersion+", deviceVersion:"+deviceVersion+", deviceType:"+deviceType);
-        needGetHandVersion = false;
     }
 
     private void resetHandDeviceVersionInfo(){
