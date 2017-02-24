@@ -133,7 +133,6 @@ public class ControllerService extends Service {
     private static boolean mVibrateClose = false;
 
 
-    private BluetoothServerSocket mServerSocket;
     private BluetoothAdapter mBluetoothAdapter;
 
     private InputStream inputStream;
@@ -258,6 +257,9 @@ public class ControllerService extends Service {
     public void onDestroy() {
         Log.d("myControllerService", "onDestroy");
         localBroadcastManager.unregisterReceiver(eventReceiver);
+        if (mBtInputDeviceService != null) {
+            mAdapter.closeProfileProxy(BluetoothProfile.INPUT_DEVICE, mBtInputDeviceService);
+        }
         isCancel = true;
         super.onDestroy();
     }
@@ -297,6 +299,7 @@ public class ControllerService extends Service {
             batterLevelEvent(-1);
         }else if(intent.getBooleanExtra("test_vibrate", false)){//for test vibrate
             controlJoystickVibrate(80, 5);
+            stopSelf();
         }else if(intent.getBooleanExtra(ControllerRec.TEST_GET_HAND_VERSION, false)){
             getHandDeviceVersionInfo();
         }else if(intent.getBooleanExtra(ControllerRec.TEST_RESET_QUATERNION, false)){
@@ -731,6 +734,7 @@ public class ControllerService extends Service {
         public void run() {
             android.os.Process
             .setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
+            BluetoothServerSocket mServerSocket = null;
             BluetoothSocket socket = null;
 
             while (!isCancel) {
@@ -772,7 +776,7 @@ public class ControllerService extends Service {
                                     bytes = inputStream.read(buffer);
                                     if(bytes <0) break;
                                 }catch(IOException e){
-                                    e.printStackTrace();
+//                                    e.printStackTrace();
                                     break;
                                 }
                                 debug_log("hidraw data:" + toHexString(buffer, bytes));
@@ -815,6 +819,22 @@ public class ControllerService extends Service {
                         dataChannel = RAW_DATA_CHANNEL_NONE;//reset dataChannel
                     }
 //                    controllerServiceSleep(7, 3000);
+                }
+            }
+            if (socket != null) {
+                try {
+                    socket.close();
+                    socket = null;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (mServerSocket != null) {
+                try {
+                    mServerSocket.close();
+                    mServerSocket = null;
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         }
