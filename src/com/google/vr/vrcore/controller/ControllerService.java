@@ -102,6 +102,9 @@ public class ControllerService extends Service {
     private static final String HAND_VERSION_INFO_ADDRESS           = "hand_version_info_address";
     private static final String HAND_VERSION_INFO_APPVERSION        = "hand_version_info_appversion";
 
+    private static final String ACTION_READY_FOR_OTA                = "com.longcheer.net.action.readyForOTA";
+    private static final String SERVICE_READY_FOR_OTA               = "service_ready_for_ota";
+
     private static final String HAND_VERSION_ZERO                   = "0";
     private static final String HAND_VERSION_READY_TO_RAED          = "1";
 
@@ -304,6 +307,9 @@ public class ControllerService extends Service {
             requestHandDeviceCalibration(type, mode);
         } else if (intent.getBooleanExtra(ControllerRec.HAND_OTA_ACTION, false)) {
             hand_device_ota_status = intent.getIntExtra(ControllerRec.HAND_OTA_STATUS, -1);
+            if(hand_device_ota_status == ControllerRec.STATUS_HAND_OTA_STARTING){
+                sendBroadcastToHandOTA(true);
+            }
         }
         return Service.START_REDELIVER_INTENT;
     }
@@ -599,6 +605,10 @@ public class ControllerService extends Service {
                     //we use getHandVersionCount to record, if still need get hand version, we get once every 10 times
                     if(needGetHandVersion){
                         if (getHandVersionCount == 0) {
+                            //reset record data when get new version
+                            nodeData.appVersion = 1;
+                            nodeData.deviceType = 1;
+                            nodeData.deviceVersion = 1;
                             int result = getHandDeviceVersionInfo();
                             if (result < 0) {
                                 Log.e(TAG, "when connect hand device,get hand device version err");
@@ -856,6 +866,14 @@ public class ControllerService extends Service {
         int res = nativeWriteFile(JOYSTICK_REQUEST_TYPE, JOYSTICK_REQUEST_VERSION, 0);
         debug_log("get hand device version info, res is :" +res);
         return res;
+    }
+
+    private void sendBroadcastToHandOTA(boolean ready){
+        Intent intent = new Intent();
+        intent.setAction(ACTION_READY_FOR_OTA);
+        intent.putExtra(SERVICE_READY_FOR_OTA, ready);
+        sendBroadcast(intent);
+        Log.i(TAG,"sendBroadcastToHandOTA, ready:"+ready);
     }
 
     private void sendBroadcastForHandDeviceOTA(int appVersion){
