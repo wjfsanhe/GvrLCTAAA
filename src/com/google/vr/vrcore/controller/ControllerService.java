@@ -1017,9 +1017,9 @@ public class ControllerService extends Service {
         controllerOrientationEvent.qw = w;
 
         //add by zhangyawen for quansData jar (controllerService.java)
-/*        debug_log("[PPP] X:" + controllerOrientationEvent.qx + ", Y:"
+        debug_log("[PPP] X:" + controllerOrientationEvent.qx + ", Y:"
                 + controllerOrientationEvent.qy + ",Z:" + controllerOrientationEvent.qz + ",W:"
-                + controllerOrientationEvent.qw);*/
+                + controllerOrientationEvent.qw);
         quanDataEvent(controllerOrientationEvent.qx,
                 controllerOrientationEvent.qy,
                 controllerOrientationEvent.qz,
@@ -1254,6 +1254,7 @@ public class ControllerService extends Service {
     //add by zhangyawen for system event
     private boolean isDone = false;
     private boolean isReseting = false;
+    private boolean isNotShort = false;
     private boolean isOnlyOnce = true;
     private boolean isOutting = false;
     private boolean isVolumeOn = false;
@@ -1266,6 +1267,7 @@ public class ControllerService extends Service {
     private int mLastBatterLevel = -1;
     private static final int DELAY_TIME = 500;
     private static final int DEFINE_LONG_TIME_FOR_HOME = 1*1000;
+    private static final int DEFINE_NOT_SHORT_TIME_FOR_HOME = 500;
     private static final int DEFINE_LONG_TIME_FOR_BACK = 1*1000;
     private static final int DEFINE_LONG_TIME_FOR_VOLUME = 500;
 
@@ -1358,6 +1360,12 @@ public class ControllerService extends Service {
         @Override
         public void run() {
             isReseting = true;
+        }
+    };
+    private Runnable runnableForNotShort = new Runnable() {
+        @Override
+        public void run() {
+            isNotShort = true;
         }
     };
 
@@ -1465,10 +1473,12 @@ public class ControllerService extends Service {
                 // differ click or longclick for home key(1000ms)
                 if (keymask != mLastKeyMask) {
                     handler.postDelayed(runnableForHome, DEFINE_LONG_TIME_FOR_HOME);
+                    handler.postDelayed(runnableForNotShort, DEFINE_NOT_SHORT_TIME_FOR_HOME);
                     mLastKeyMask = keymask;
                     if (!enableHomeKeyEvent) {
                         HomeKeyLongClickEvent(HOME_DOWN);
                     }
+                    Log.d("[HHH]", "Home Down");
                 } else {
                     if (isReseting) {
                         // set Recentering state
@@ -1476,7 +1486,7 @@ public class ControllerService extends Service {
                             HomeKeyLongClickEvent(HOME_RECENTERING);
                             isOnlyOnce = false;
                             if (DEBUG) {
-                                Log.d("[ZZZZ]", "Home longclick Recentering");
+                                Log.d("[HHH]", "Home Recentering");
                             }
                         }
                     } else {
@@ -1627,17 +1637,27 @@ public class ControllerService extends Service {
             }
 
         } else {
+            Log.d("[SOS]","isReseting = "+isReseting+" isNotShort = "+isNotShort
+                            +" mLastKeyMask = "+mLastKeyMask);
             if (isReseting) {
                 // set Recentered state
                 isReseting = false;
+                isNotShort = false;
                 isOnlyOnce = true;
                 HomeKeyLongClickEvent(HOME_RECENTERED);
                 if (!enableHomeKeyEvent) {
                     HomeKeyLongClickEvent(HOME_UP);
                 }
                 if (DEBUG) {
-                    Log.d("[ZZZZ]", "Home longclick Recentered");
+                    Log.d("[HHH]", "Home Recentered");
                 }
+            } else if(isNotShort){
+                isNotShort = false;
+                handler.removeCallbacks(runnableForHome);
+                if (!enableHomeKeyEvent) {
+                    HomeKeyLongClickEvent(HOME_UP);
+                }
+                Log.d("[HHH]", "Home isNotShort");
             } else if(isRecentering){
                 // set Recentered state
                 isRecentering = false;
@@ -1655,13 +1675,16 @@ public class ControllerService extends Service {
             } else {
                 if ((mLastKeyMask&0x08) != 0) {
                     handler.removeCallbacks(runnableForHome);
+                    handler.removeCallbacks(runnableForNotShort);
+                    Log.d("[HHH]","Home Up");
                     if (DEBUG) {
-                        android.util.Log.d("[EEE]","enableHomeKeyEvent = "+enableHomeKeyEvent);
+                        android.util.Log.d("[HHH]","enableHomeKeyEvent = "+enableHomeKeyEvent);
                     }
                     if (enableHomeKeyEvent) {
                         simulationButtonSystemEvent(mLastKeyMask);
                     }else{
                         HomeKeyLongClickEvent(HOME_UP);
+
                     }
 
                 }
