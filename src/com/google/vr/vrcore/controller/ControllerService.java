@@ -1482,7 +1482,7 @@ public class ControllerService extends Service {
                 // differ click or longclick for home key(1000ms)
                 if (keymask != mLastKeyMask) {
                     handler.postDelayed(runnableForHome, DEFINE_LONG_TIME_FOR_HOME);
-                    handler.postDelayed(runnableForNotShort, DEFINE_NOT_SHORT_TIME_FOR_HOME);
+                    //handler.postDelayed(runnableForNotShort, DEFINE_NOT_SHORT_TIME_FOR_HOME);
                     mLastKeyMask = keymask;
                     if (DEBUG) {
                         Log.d("[HHH]","enableHomeKeyEvent = "+enableHomeKeyEvent);
@@ -1647,7 +1647,7 @@ public class ControllerService extends Service {
             if (isReseting) {
                 // set Recentered state
                 isReseting = false;
-                isNotShort = false;
+                //isNotShort = false;
                 isOnlyOnce = true;
                 HomeKeyLongClickEvent(HOME_RECENTERED);
                 if (DEBUG) {
@@ -1660,7 +1660,7 @@ public class ControllerService extends Service {
                     }
                 }
 
-            } else if(isNotShort){
+            } /*else if(isNotShort){
                 isNotShort = false;
                 handler.removeCallbacks(runnableForHome);
                 if (DEBUG) {
@@ -1672,7 +1672,7 @@ public class ControllerService extends Service {
                         Log.d("[HHH]", "[500ms] Home Up");
                     }
                 }
-            } else if(isRecentering){
+            }*/ else if(isRecentering){
                 // set Recentered state
                 isRecentering = false;
                 isOnce = true;
@@ -1689,7 +1689,7 @@ public class ControllerService extends Service {
             } else {
                 if ((mLastKeyMask&0x08) != 0) {
                     handler.removeCallbacks(runnableForHome);
-                    handler.removeCallbacks(runnableForNotShort);
+                    //handler.removeCallbacks(runnableForNotShort);
 
                     if (enableHomeKeyEvent) {
                         simulationButtonSystemEvent(mLastKeyMask);
