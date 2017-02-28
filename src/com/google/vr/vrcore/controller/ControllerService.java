@@ -56,7 +56,7 @@ public class ControllerService extends Service {
     public final static String BLUETOOTH_CONNECTED_SUCCESS ="bluetooth_connected";
     public final static String BLUETOOTH_DISCONNECTED = "bluetooth_disconnected";
     public final static String BLUETOOTH_DEVICE_OBJECT = "bluetooth_device";
-    private final static boolean DEBUG = false;
+    private final static boolean DEBUG = true;
 
     //runAsDaemonService means start when boot, and not allow stop
     public final static boolean runAsDaemonService = true;
@@ -1467,7 +1467,16 @@ public class ControllerService extends Service {
         }
     }
 
-    private void ButtonEvent( int keymask){
+    /**
+     * 
+     * function: send key event of VRController to jar for VR app by AIDL
+     *           Does not support multiple keys, late optimization
+     * @param keymask: the value of the key
+     *               {"none":0x00; "click":0x01; "back":0x02; "trigger":0x04;
+     *                "home":0x08; "app":0x10; "volume up":0x20; "volume down":0x40 }
+     */
+    private void ButtonEvent(final int keymask){
+        //Log.d("[QQQ]","[Before]mLastKeyMask = "+mLastKeyMask);
         if (keymask != 0) {
             if ((keymask&0x08) != 0) {
                 // differ click or longclick for home key(1000ms)
@@ -1475,10 +1484,16 @@ public class ControllerService extends Service {
                     handler.postDelayed(runnableForHome, DEFINE_LONG_TIME_FOR_HOME);
                     handler.postDelayed(runnableForNotShort, DEFINE_NOT_SHORT_TIME_FOR_HOME);
                     mLastKeyMask = keymask;
+                    if (DEBUG) {
+                        Log.d("[HHH]","enableHomeKeyEvent = "+enableHomeKeyEvent);
+                    }
+
                     if (!enableHomeKeyEvent) {
                         HomeKeyLongClickEvent(HOME_DOWN);
+                        if (DEBUG) {
+                            Log.d("[HHH]", "Home Down");
+                        }
                     }
-                    Log.d("[HHH]", "Home Down");
                 } else {
                     if (isReseting) {
                         // set Recentering state
@@ -1552,16 +1567,6 @@ public class ControllerService extends Service {
                     }
                     appButtonEvent(APP_BUTTON);
                 }
-                //appButton key event
-/*                if (keymask != mLastKeyMask) {
-                    appButtonEvent(APP_BUTTON_DOWN);
-                    mLastKeyMask = keymask;
-                    if (DEBUG) {
-                        Log.d("[ZZZ]", "appButtonEvent Buttondown");
-                    }
-                } else {
-                    appButtonEvent(APP_BUTTON);
-                }*/
             } else if ((keymask&0x20) != 0) {
                 // volume up key(500ms)
                 if (keymask != mLastKeyMask) {
@@ -1645,19 +1650,28 @@ public class ControllerService extends Service {
                 isNotShort = false;
                 isOnlyOnce = true;
                 HomeKeyLongClickEvent(HOME_RECENTERED);
-                if (!enableHomeKeyEvent) {
-                    HomeKeyLongClickEvent(HOME_UP);
-                }
                 if (DEBUG) {
                     Log.d("[HHH]", "Home Recentered");
                 }
+                if (!enableHomeKeyEvent) {
+                    HomeKeyLongClickEvent(HOME_UP);
+                    if (DEBUG) {
+                        Log.d("[HHH]", "[1000ms] Home Up");
+                    }
+                }
+
             } else if(isNotShort){
                 isNotShort = false;
                 handler.removeCallbacks(runnableForHome);
+                if (DEBUG) {
+                    Log.d("[HHH]", "Home isNotShort");
+                }
                 if (!enableHomeKeyEvent) {
                     HomeKeyLongClickEvent(HOME_UP);
+                    if (DEBUG) {
+                        Log.d("[HHH]", "[500ms] Home Up");
+                    }
                 }
-                Log.d("[HHH]", "Home isNotShort");
             } else if(isRecentering){
                 // set Recentered state
                 isRecentering = false;
@@ -1676,15 +1690,17 @@ public class ControllerService extends Service {
                 if ((mLastKeyMask&0x08) != 0) {
                     handler.removeCallbacks(runnableForHome);
                     handler.removeCallbacks(runnableForNotShort);
-                    Log.d("[HHH]","Home Up");
-                    if (DEBUG) {
-                        android.util.Log.d("[HHH]","enableHomeKeyEvent = "+enableHomeKeyEvent);
-                    }
+
                     if (enableHomeKeyEvent) {
                         simulationButtonSystemEvent(mLastKeyMask);
+                        if (DEBUG) {
+                            Log.d("[HHH]","[android] Home Key");
+                        }
                     }else{
                         HomeKeyLongClickEvent(HOME_UP);
-
+                        if (DEBUG) {
+                            Log.d("[HHH]","[0ms]Home Up");
+                        }
                     }
 
                 }
@@ -1733,6 +1749,7 @@ public class ControllerService extends Service {
             }
             mLastKeyMask = keymask;
         }
+        //Log.d("[QQQ]","[After]mLastKeyMask = "+mLastKeyMask);
     }
 
     private void batterLevelEvent(int level){
