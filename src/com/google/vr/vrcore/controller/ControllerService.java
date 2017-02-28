@@ -56,7 +56,7 @@ public class ControllerService extends Service {
     public final static String BLUETOOTH_CONNECTED_SUCCESS ="bluetooth_connected";
     public final static String BLUETOOTH_DISCONNECTED = "bluetooth_disconnected";
     public final static String BLUETOOTH_DEVICE_OBJECT = "bluetooth_device";
-    private final static boolean DEBUG = true;
+    private final static boolean DEBUG = false;
 
     //runAsDaemonService means start when boot, and not allow stop
     public final static boolean runAsDaemonService = true;
@@ -1468,7 +1468,7 @@ public class ControllerService extends Service {
     }
 
     /**
-     * 
+     *
      * function: send key event of VRController to jar for VR app by AIDL
      *           Does not support multiple keys, late optimization
      * @param keymask: the value of the key
