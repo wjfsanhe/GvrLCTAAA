@@ -1642,8 +1642,10 @@ public class ControllerService extends Service {
             }
 
         } else {
-            Log.d("[SOS]","isReseting = "+isReseting+" isNotShort = "+isNotShort
-                            +" mLastKeyMask = "+mLastKeyMask);
+            if (DEBUG) {
+                Log.d("[SOS]","isReseting = "+isReseting+" isNotShort = "+isNotShort
+                        +" mLastKeyMask = "+mLastKeyMask);
+            }
             if (isReseting) {
                 // set Recentered state
                 isReseting = false;
