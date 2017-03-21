@@ -192,20 +192,20 @@ public class ControllerService extends Service {
             // TODO Auto-generated method stub
             String action = intent.getAction();
             if("OPEN_VIBRATOR_ACTION".equals(action)) {
-                controlJoystickVibrate(80, 5);
+                controlJoystickVibrate(2, 5);
             }else if("OPEN_VIBRATOR_TIME_ACTION".equals(action)) {
                 long time = intent.getLongExtra("time", -1);
-                controlJoystickVibrate(80, (int)time);
+                controlJoystickVibrate(2, (int)time);
             }else if("OPEN_VIBRATOR_MODE_ACTION".equals(action)) {
                 long time = intent.getLongExtra("time", -1);
                 int mode = intent.getIntExtra("mode", -1);
                 int power = 0;
                 if(mode == 0){
-                    power = 100;
+                    power = 2;
                 }else if(mode == 1){
-                    power = 150;
+                    power = 4;
                 }else if(mode == 2){
-                    power = 200;
+                    power = 5;
                 }
                 controlJoystickVibrate(power, (int)time);
             }else if("OPEN_VIBRATOR_REPEAT_ACTION".equals(action)){
@@ -223,7 +223,7 @@ public class ControllerService extends Service {
                                 if (DEBUG) {
                                     Log.d("[GGG]", "time = " + time + " mVibrateClose:" + mVibrateClose);
                                 }
-                                controlJoystickVibrate(80, (int)time);
+                                controlJoystickVibrate(2, (int)time);
                                 try {
                                     if (DEBUG) {
                                         Log.d("[GGG]", "Thread.sleep  time = " + time);
@@ -298,7 +298,7 @@ public class ControllerService extends Service {
 			//AIDLControllerUtil.mBatterLevel = "";
             batterLevelEvent(-1);
         }else if(intent.getBooleanExtra("test_vibrate", false)){//for test vibrate
-            controlJoystickVibrate(80, 5);
+            controlJoystickVibrate(2, 5);
             stopSelf();
         }else if(intent.getBooleanExtra(ControllerRec.TEST_GET_HAND_VERSION, false)){
             getHandDeviceVersionInfo();
@@ -858,13 +858,13 @@ public class ControllerService extends Service {
      * -1 is not ok
      * 0 is ok
      */
-    //default powerLevel 80, ms:5(500ms)
+    //default powerLevel 2, ms:5(500ms)
     public int controlJoystickVibrate(){
         if(hand_device_ota_status == ControllerRec.STATUS_HAND_OTA_STARTING){
             Log.w(TAG,"hand device is still ota, can't control hand device");
             return -1;
         }
-        int res = nativeWriteFile(JOYSTICK_CONTROL_TYPE, 80, 5);
+        int res = nativeWriteFile(JOYSTICK_CONTROL_TYPE, 2, 5);
         debug_log("controlJoystickVibrate defaultvalue res:"+res);
         return res;
     }
@@ -874,7 +874,7 @@ public class ControllerService extends Service {
             return -1;
         }
         int res = nativeWriteFile(JOYSTICK_CONTROL_TYPE, powerLevel, millisceonds);
-        debug_log("controlJoystickVibrate res:"+res);
+        debug_log("controlJoystickVibrate res:"+res+" ; powerLevel = "+powerLevel);
         return res;
     }
 
@@ -980,7 +980,8 @@ public class ControllerService extends Service {
         int res = -1;
         switch (type) {
             case JOYSTICK_CONTROL_TYPE:
-                res = controlJoystickVibrate(data1, data2);
+                //data1: 0~7
+                //res = controlJoystickVibrate(data1, data2);
                 break;
             case JOYSTICK_REQUEST_TYPE:
                 res = getHandDeviceVersionInfo();
