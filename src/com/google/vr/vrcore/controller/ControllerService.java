@@ -1271,6 +1271,8 @@ public class ControllerService extends Service {
     private static final int DEFINE_LONG_TIME_FOR_BACK = 1*1000;
     private static final int DEFINE_LONG_TIME_FOR_VOLUME = 500;
 
+    private static final int DEFINE_LONG_TIME_NOT_CONTROL_VOLUME = 1*1000;
+
     //short click back key
     public static final int BACK_BUTTON_DOWN = 100;
     public static final int BACK_BUTTON = 101;
@@ -1389,6 +1391,16 @@ public class ControllerService extends Service {
         @Override
         public void run() {
             isVolumeOn = true;
+        }
+    };
+
+    private Runnable notControlVolume = new Runnable() {
+        @Override
+        public void run() {
+            if (isVolumeOn) {
+                isVolumeOn = false;
+                isWorking = false;
+            }
         }
     };
 
@@ -1577,6 +1589,10 @@ public class ControllerService extends Service {
                     handler.postDelayed(runnableForVolume, DEFINE_LONG_TIME_FOR_VOLUME);
                     mLastKeyMask = keymask;
                 } else {
+                    //for BT disconnect suddenly
+                    handler.removeCallbacks(notControlVolume);
+                    handler.postDelayed(notControlVolume,DEFINE_LONG_TIME_NOT_CONTROL_VOLUME);
+                    //end
                     if (isVolumeOn && !isWorking) {
                         //volume up on
                         isWorking = true;
@@ -1591,7 +1607,7 @@ public class ControllerService extends Service {
                                     simulationButtonSystemEvent(mLastKeyMask);
                                     try {
                                         if (DEBUG) {
-                                            Log.d("[ZZZ]", "Thread.sleep time = 50 ms");
+                                            Log.d("[ZZZ]", "Thread.sleep time = 200 ms");
                                         }
                                         Thread.sleep(200);
                                     }catch (Exception exception){
@@ -1613,6 +1629,10 @@ public class ControllerService extends Service {
                     handler.postDelayed(runnableForVolume, DEFINE_LONG_TIME_FOR_VOLUME);
                     mLastKeyMask = keymask;
                 } else {
+                    //for BT disconnect suddenly
+                    handler.removeCallbacks(notControlVolume);
+                    handler.postDelayed(notControlVolume,DEFINE_LONG_TIME_NOT_CONTROL_VOLUME);
+                    //end
                     if (isVolumeOn && !isWorking) {
                         //volume down on
                         isWorking = true;
@@ -1623,11 +1643,11 @@ public class ControllerService extends Service {
                         new Thread(){
                             public void run(){
                                 while(isVolumeOn){
-                                    // send volume down event every 50 ms
+                                    // send volume down event every 200 ms
                                     simulationButtonSystemEvent(mLastKeyMask);
                                     try {
                                         if (DEBUG) {
-                                            Log.d("[ZZZ]", "Thread.sleep time = 50 ms");
+                                            Log.d("[ZZZ]", "Thread.sleep time = 200 ms");
                                         }
                                         Thread.sleep(200);
                                     }catch (Exception exception){
