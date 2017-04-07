@@ -1294,10 +1294,15 @@ public class ControllerService extends Service {
     public static final int APP_BUTTON_CANCEL = -2;
     public static final String APP_BUTTON_EVENT_ACTION = "APP_BUTTON_KEY_ACTION";
 
-    //Trigger/Click key
+    //Trigger key
     public static final int TRIGGER_BUTTON_DOWN = 300;
     public static final int TRIGGER_BUTTON = 301;
     public static final int TRIGGER_BUTTON_UP = 302;
+    //Click key
+    public static final int CLICK_BUTTON_DOWN = 400;
+    public static final int CLICK_BUTTON = 401;
+    public static final int CLICK_BUTTON_UP = 402;
+
     public static final int TRIGGER_BUTTON_CANCEL = -3;
     public static final String TRIGGER_BUTTON_EVENT_ACTION = "TRIGGER_BUTTON_KEY_ACTION";
 
@@ -1545,13 +1550,24 @@ public class ControllerService extends Service {
                         }
                     }
                 }
-            } else if ((keymask&0x01) !=0 || (keymask&0x04) != 0) {
-                //trigger/click key event
+            } else if ((keymask&0x01) !=0 /*|| (keymask&0x04) != 0*/) {
+                //click key event
+                if (keymask != mLastKeyMask) {
+                    TriggerAndClickEvent(CLICK_BUTTON_DOWN);
+                    mLastKeyMask = keymask;
+                    if (DEBUG) {
+                        Log.d("[ZZZ]", "ClickEvent Buttondown");
+                    }
+                } else {
+                    TriggerAndClickEvent(CLICK_BUTTON);
+                }
+            } else if ((keymask&0x04) != 0){
+                //trigger key event
                 if (keymask != mLastKeyMask) {
                     TriggerAndClickEvent(TRIGGER_BUTTON_DOWN);
                     mLastKeyMask = keymask;
                     if (DEBUG) {
-                        Log.d("[ZZZ]", "TriggerAndClickEvent Buttondown");
+                        Log.d("[ZZZ]", "TriggerEvent Buttondown");
                     }
                 } else {
                     TriggerAndClickEvent(TRIGGER_BUTTON);
@@ -1735,11 +1751,18 @@ public class ControllerService extends Service {
                         Log.d("[ZZZ]", "Back shortclick ButtonUp");
                     }
                 }
-                if ((mLastKeyMask&0x01) !=0 || (mLastKeyMask&0x04) != 0) {
+                if ((mLastKeyMask&0x01) !=0 /*|| (mLastKeyMask&0x04) != 0*/) {
+                    TriggerAndClickEvent(CLICK_BUTTON_UP);
+                    sendSystemEvent(SYSTEM_EVENT_ENTER_ID);
+                    if (DEBUG) {
+                        Log.d("[ZZZ]", "ClickEvent ButtonUp");
+                    }
+                }
+                if((mLastKeyMask&0x04) != 0){
                     TriggerAndClickEvent(TRIGGER_BUTTON_UP);
                     sendSystemEvent(SYSTEM_EVENT_ENTER_ID);
                     if (DEBUG) {
-                        Log.d("[ZZZ]", "TriggerAndClickEvent ButtonUp");
+                        Log.d("[ZZZ]", "TriggerEvent ButtonUp");
                     }
                 }
                 if ((mLastKeyMask&0x10) != 0) {
