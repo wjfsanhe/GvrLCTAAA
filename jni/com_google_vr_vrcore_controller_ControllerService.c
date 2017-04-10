@@ -424,21 +424,29 @@ JNIEXPORT jint Java_com_google_vr_vrcore_controller_ControllerService_nativeWrit
 	ALOGD("call nativeWriteFile, hidraw_fd:%d\n", hidraw_fd);
 #endif
 	if(hidraw_fd <0) return -1;
-	unsigned char buf[4];
+	unsigned char buf[3];
+    if(data1 < 0 || data1 > 7){
+        ALOGD("data1 is not crrectly %d\n",data1);
+        data1 = 0;
+    }
+	//buf[0] = 0x07;//report id
+	//buf[1] = (char)type;//type
+	//buf[2] = (char)data1;
+	//buf[3] = (char)data2;
+    buf[0] = 0x07;//report id
+    buf[1] = ((byte)type) | ((byte)data1<<5);
+    buf[2] = (char)data2;
 
-	buf[0] = 0x07;//report id
-	buf[1] = (char)type;//type
-	buf[2] = (char)data1;
-	buf[3] = (char)data2;
 
 #ifdef DEBUG
-		ALOGD("write hidraw node %02X,%02X,%02X,%02X,\n",
-				buf[0],buf[1],buf[2],buf[3]);
+		ALOGD("write hidraw node %02X,%02X,%02X\n",
+				buf[0],buf[1],buf[2]);
 #endif
-	result = write(hidraw_fd, buf, 4);
+	result = write(hidraw_fd, buf, 3);
 	if(result < 0){
 		return -1;
 	}
 //	lseek(hidraw_fd, 0, SEEK_SET);
 		return 0;
 }
+
