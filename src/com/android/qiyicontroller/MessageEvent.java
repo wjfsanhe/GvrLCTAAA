@@ -107,6 +107,7 @@ public class MessageEvent {
     }
 
     public MessageEvent(int messageType,int level,String str){
+        this.messageType = messageType;
         this.level = level;
     }
 
