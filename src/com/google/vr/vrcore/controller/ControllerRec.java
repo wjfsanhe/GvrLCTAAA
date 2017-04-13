@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.RemoteException;
+import android.os.SystemProperties;
 import android.util.Log;
 
 /**
@@ -66,6 +67,7 @@ public class ControllerRec extends BroadcastReceiver {
 
                     String dName = device.getName();
                     if (dName != null && dName.contains("QIYI")) {
+                        SystemProperties.set("sys.iqiyi.hand.connect", "true");
                         i.putExtra(ControllerService.BLUETOOTH_CONNECTED_SUCCESS, true);
                         i.putExtra(ControllerService.BLUETOOTH_DEVICE_OBJECT, device);
                         context.startService(i);
@@ -85,6 +87,7 @@ public class ControllerRec extends BroadcastReceiver {
                     Log.d(TAG, device.getName() + " ACTION_ACL_DISCONNECTED");
                     String dName = device.getName();
                     if (dName != null && dName.contains("QIYI")) {
+                        SystemProperties.set("sys.iqiyi.hand.connect", "false");
                         i.putExtra(ControllerService.BLUETOOTH_DISCONNECTED, true);
                         context.startService(i);
                         // delay 3s, wait for create hidrawx node
