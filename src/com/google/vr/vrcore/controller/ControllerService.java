@@ -132,6 +132,7 @@ public class ControllerService extends Service {
     EventReceiver eventReceiver = new EventReceiver();
     private static boolean mVibrateClose = false;
 
+    private boolean waitForRecenter = false;
 
     private BluetoothAdapter mBluetoothAdapter;
 
@@ -585,6 +586,10 @@ public class ControllerService extends Service {
 //                        resetHandDeviceVersionInfo();// clean hand device version
 //                        needGetHandVersion = true;
                         Log.d(TAG, "natvie Open File Success");
+                        android.util.Log.d("[POP]","[Success] waitForRecenter = "+waitForRecenter);
+                        if (waitForRecenter) {
+                            requestHandDeviceResetQuternion();
+                        }
                     }
                     setControllerListenerConnected();
 
@@ -952,6 +957,8 @@ public class ControllerService extends Service {
         }
         int res = nativeWriteFile(JOYSTICK_RESET_QUATERNION_TYPE, 0, 0);
         Log.d(TAG,"requestHandDeviceResetQuaternion res:"+res);
+        android.util.Log.d("[POP]","[requestHandDevice] res = "+res);
+        waitForRecenter = (res == 0)? false:true;
         return res;
     }
 
