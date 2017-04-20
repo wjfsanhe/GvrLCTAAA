@@ -283,7 +283,15 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 		touch_y = ((float) buf[17]) / 200.0f;
 		data_keymask = buf[18];
 		data_battery = (int) buf[19];
-		data_battery = (int)(data_battery/255.0f*100);
+		/* Transform battery level from 0~255 to 0~100 */
+		if(data_battery < 100){
+		    data_battery = 0;
+		}else if(data_battery >= 230){
+		    data_battery = 100;
+		}else{
+		    data_battery = (int)(100 * (data_battery - 100) / (float)(230 - 100));
+		}
+		//ALOGD("data_battery after %d",data_battery);
 #if 0//def DEBUG
 		ALOGD("type2 %02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X\n",
 				buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],buf[10],buf[11],buf[12],buf[13],buf[14],buf[15],buf[16]);
