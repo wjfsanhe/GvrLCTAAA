@@ -32,10 +32,12 @@
 #define FILE_EXIST 0
 #define FILE_NOT_EXIST -1
 
+#define DEVICE_ORDER_NUMBER 5
+
 
 typedef unsigned char byte;
 
-const char *device[3] = {"/dev/hidraw-iqiyi0", "/dev/hidraw-iqiyi1","/dev/hidraw-iqiyi2"};
+const char *device[DEVICE_ORDER_NUMBER] = {"/dev/hidraw-iqiyi0", "/dev/hidraw-iqiyi1","/dev/hidraw-iqiyi2", "/dev/hidraw-iqiyi3", "/dev/hidraw-iqiyi4"};
 static int hidraw_fd = -1;
 #ifdef DEBUG
 static const char values_str[] = "01";
@@ -121,7 +123,7 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
 #ifdef DEBUG
 	ALOGD("call native_open_file");
 #endif
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < DEVICE_ORDER_NUMBER; i++) {
 		// at first check if file is existed
 		if(FILE_NOT_EXIST == is_file_existed(device[i])){
 //			ALOGD("file %s is not existed", device[i]);
