@@ -1300,6 +1300,7 @@ public class ControllerService extends Service {
 
     public static final int APP_BUTTON_CANCEL = -2;
     public static final String APP_BUTTON_EVENT_ACTION = "APP_BUTTON_KEY_ACTION";
+    public static final String ACTION_APP_BUTTON_LONG_CLICK = "com.longcheer.net.action.AppButtonLongClick";
 
     //Trigger key
     public static final int TRIGGER_BUTTON_DOWN = 300;
@@ -1594,8 +1595,13 @@ public class ControllerService extends Service {
                         if (isOnce) {
                             appButtonEvent(MENU_RECENTERING);
                             isOnce = false;
+                            //add by zhangyawen for customer requirement to sendBroadcast for app button long click
+                            Intent intent = new Intent();
+                            intent.setAction(ACTION_APP_BUTTON_LONG_CLICK);
+                            sendBroadcast(intent);
+                            //end
                             if (DEBUG) {
-                                Log.d("[AAA]", "App longclick Recentering");
+                                Log.d("[AAA]", "App longclick Recentering and send broadcast");
                             }
                         }
                     } else {
