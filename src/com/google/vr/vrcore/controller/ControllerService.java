@@ -147,8 +147,9 @@ public class ControllerService extends Service {
 
     // when connected hand device, we get hand version once
     private boolean needGetHandVersion = false;
-
-
+    // add: multi key press screen shot
+    private boolean mMultiKeyPressFlag = false;
+    // end: multi key press screen shot
 
     public static void debug_log(String log){
         // setprop log.tag.TAG DEBUG ,we can print log
@@ -1335,6 +1336,13 @@ public class ControllerService extends Service {
     public static final int SYSTEM_EVENT_VOLUME_UP_ID = 7;
     public static final int SYSTEM_EVENT_VOLUME_DOWN_ID = 8;
 
+    //add :multi key press screen shot
+    public static final int SYSTEM_EVENT_VOLUME_DOWN_PRESS_ID = 9;
+    public static final int SYSTEM_EVENT_VOLUME_DOWN_RELEASE_ID = 10;
+    public static final int SYSTEM_EVENT_POWER_PRESS_ID = 11;
+    public static final int SYSTEM_EVENT_POWER_RELEASE_ID = 12;
+    //end:multi key press screen shot
+
     //touch event
    // private  float swipe_Horizontal_YMax = 0.9f;
     //private  float swipe_Horizontal_YMin = 0.1f;
@@ -1504,6 +1512,13 @@ public class ControllerService extends Service {
     private void ButtonEvent(final int keymask){
         //Log.d("[QQQ]","[Before]mLastKeyMask = "+mLastKeyMask);
         if (keymask != 0) {
+            //add: multi key press screen shot
+            if(!mMultiKeyPressFlag && ((keymask & 0x14) == 0x14)) {
+                sendSystemEvent(SYSTEM_EVENT_VOLUME_DOWN_PRESS_ID);
+                sendSystemEvent(SYSTEM_EVENT_POWER_PRESS_ID);
+                mMultiKeyPressFlag = true;
+            }
+            //end:multi key press screen shot
             if ((keymask&0x08) != 0) {
                 // differ click or longclick for home key(1000ms)
                 if (keymask != mLastKeyMask) {
@@ -1571,6 +1586,12 @@ public class ControllerService extends Service {
                 }
             } else if ((keymask&0x04) != 0){
                 //trigger key event
+
+                //add :multi key press screen shot
+                if (mMultiKeyPressFlag){
+                    return;
+                 }
+                //end:multi key press screen shot
                 if (keymask != mLastKeyMask) {
                     TriggerAndClickEvent(TRIGGER_BUTTON_DOWN);
                     mLastKeyMask = keymask;
@@ -1582,6 +1603,11 @@ public class ControllerService extends Service {
                 }
             } else if ((keymask&0x10) != 0) {
                 // differ click or longclick for home key(1000ms)
+                //add:multi key press screen shot
+                if(mMultiKeyPressFlag){
+                    return;
+                }
+                //end:multi key press screen shot
                 if (keymask != mLastKeyMask) {
                     handler.postDelayed(runnableForMenu, DEFINE_LONG_TIME_FOR_HOME);
                     appButtonEvent(APP_BUTTON_DOWN);
@@ -1696,6 +1722,17 @@ public class ControllerService extends Service {
                 Log.d("[SOS]","isReseting = "+isReseting+" isNotShort = "+isNotShort
                         +" mLastKeyMask = "+mLastKeyMask);
             }
+            //add :multi key press screen shot
+            if (mMultiKeyPressFlag){
+                sendSystemEvent(SYSTEM_EVENT_VOLUME_DOWN_RELEASE_ID);
+                sendSystemEvent(SYSTEM_EVENT_POWER_RELEASE_ID);
+                mMultiKeyPressFlag = false;
+                handler.removeCallbacks(runnableForMenu);
+                isRecentering = false;
+                mLastKeyMask = keymask;
+                return;
+            }
+            //end:multi key press screen shot
             if (isReseting) {
                 // set Recentered state
                 isReseting = false;
@@ -2102,6 +2139,24 @@ public class ControllerService extends Service {
                             inst.sendKeyDownUpSync(KeyEvent.KEYCODE_VOLUME_DOWN);
                             logInfo = "KeyEvent.KEYCODE_VOLUME_DOWN";
                             break;
+                        //add:multi key press screen shot
+                        case SYSTEM_EVENT_VOLUME_DOWN_PRESS_ID:
+                            inst.sendKeySync(new KeyEvent(KeyEvent.ACTION_DOWN,
+                                    KeyEvent.KEYCODE_VOLUME_DOWN));
+                            break;
+                        case SYSTEM_EVENT_VOLUME_DOWN_RELEASE_ID:
+                            inst.sendKeySync(new KeyEvent(KeyEvent.ACTION_UP,
+                                    KeyEvent.KEYCODE_VOLUME_DOWN));
+                            break;
+                        case SYSTEM_EVENT_POWER_PRESS_ID:
+                            inst.sendKeySync(new KeyEvent(KeyEvent.ACTION_DOWN,
+                                    KeyEvent.KEYCODE_POWER));
+                            break;
+                        case SYSTEM_EVENT_POWER_RELEASE_ID:
+                            inst.sendKeySync(new KeyEvent(KeyEvent.ACTION_UP,
+                                    KeyEvent.KEYCODE_POWER));
+                            break;
+                        //end:multi key press screen shot
                         default:
                             logInfo = "This behavior does not match system event ! ";
                             break;
