@@ -46,7 +46,7 @@ include $(BUILD_PACKAGE)
 
 ####################################
 include $(CLEAR_VARS)
-LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES := gvrlctservice_common:libs/gvrlctservice_common_old.aar
+LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES := gvrlctservice_common:libs/gvrlctservice_common_1.0.3.aar
 LOCAL_MODULE_TAGS := optional
 include $(BUILD_MULTI_PREBUILT)
 #####################################

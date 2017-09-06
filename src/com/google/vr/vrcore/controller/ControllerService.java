@@ -20,9 +20,9 @@ import android.util.Log;
 import com.android.qiyicontroller.AIDLControllerService;
 import com.android.qiyicontroller.EventInstance;
 import com.android.qiyicontroller.MessageEvent;
+import com.google.vr.vrcore.controller.api.ControllerEventPacket;
 import com.google.vr.vrcore.controller.api.ControllerAccelEvent;
 import com.google.vr.vrcore.controller.api.ControllerButtonEvent;
-//import com.google.vr.vrcore.controller.api.ControllerEventPacket;
 import com.google.vr.vrcore.controller.api.ControllerGyroEvent;
 import com.google.vr.vrcore.controller.api.ControllerOrientationEvent;
 import com.google.vr.vrcore.controller.api.ControllerServiceConsts;
@@ -72,7 +72,7 @@ public class ControllerService extends Service {
     private static String device_address = null;
     private BluetoothAdapter mAdapter;
     private boolean isBtInputDeviceConnected = false;
-
+    public static final int GVR_API_VERSION_DIVIDE                =12;
     public static final int JOYSTICK_CONTROL_TYPE                 = 0x01;
     public static final int JOYSTICK_REQUEST_TYPE                 = 0x02;
     public static final int JOYSTICK_HILLCREST_CALIBRATION_TYPE   = 0x03;
@@ -1009,13 +1009,22 @@ public class ControllerService extends Service {
                 + data2 + ", res:" + res);
         return res;
     }
+     //start:add for daydream version after 1.0.3
+     /** old code
+     private final ControllerTouchEvent controllerTouchEvent = new ControllerTouchEvent();
+     private final ControllerGyroEvent controllerGyroEvent = new ControllerGyroEvent();
+     private final ControllerAccelEvent controllerAccelEvent = new ControllerAccelEvent();
+     private static final ControllerOrientationEvent controllerOrientationEvent = new ControllerOrientationEvent();
+     private static final ControllerButtonEvent controllerButtonEvent = new ControllerButtonEvent();
+     **/
+     private ControllerEventPacket controllerEventPacket = new ControllerEventPacket();
+     private ControllerTouchEvent controllerTouchEvent = controllerEventPacket.addTouchEvent();
+     private ControllerGyroEvent controllerGyroEvent = controllerEventPacket.addGyroEvent();
+     private ControllerAccelEvent controllerAccelEvent = controllerEventPacket.addAccelEvent();
+     private ControllerOrientationEvent controllerOrientationEvent = controllerEventPacket.addOrientationEvent();
+     private ControllerButtonEvent controllerButtonEvent = controllerEventPacket.addButtonEvent();
+     //end:add for daydream version after 1.0.3
 
-
-    private final ControllerTouchEvent controllerTouchEvent = new ControllerTouchEvent();
-    private final ControllerGyroEvent controllerGyroEvent = new ControllerGyroEvent();
-    private final ControllerAccelEvent controllerAccelEvent = new ControllerAccelEvent();
-    private static final ControllerOrientationEvent controllerOrientationEvent = new ControllerOrientationEvent();
-    private static final ControllerButtonEvent controllerButtonEvent = new ControllerButtonEvent();
 //    private static final ControllerEventPacket cep = new ControllerEventPacket();
     private void sendPhoneEventControllerOrientationEvent(float x, float y, float z, float w){
 
@@ -1039,8 +1048,10 @@ public class ControllerService extends Service {
         controllerOrientationEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
             if(controllerListener!=null){
-//                controllerListener.deprecatedOnControllerOrientationEvent(controllerOrientationEvent); //must be send
-              controllerListener.onControllerOrientationEvent(controllerOrientationEvent); //must be send
+                controllerListener.deprecatedOnControllerOrientationEvent(controllerOrientationEvent);
+                if(controllerListener.getApiVersion()>GVR_API_VERSION_DIVIDE){
+                    controllerListener.onControllerEventPacket(controllerEventPacket);
+                }
             } else {
                 debug_log("when send orientation event, controllerListener is null");
             }
@@ -1055,9 +1066,10 @@ public class ControllerService extends Service {
     private void sendButtonEvent(){
         try {
             if (controllerListener != null) {
-//                controllerListener.deprecatedOnControllerButtonEvent(controllerButtonEvent);
-                 controllerListener.onControllerButtonEvent(controllerButtonEvent);
-
+                controllerListener.deprecatedOnControllerButtonEvent(controllerButtonEvent);
+                if(controllerListener.getApiVersion()>GVR_API_VERSION_DIVIDE){
+                    controllerListener.onControllerEventPacket(controllerEventPacket);
+                }
             } else {
                 debug_log("when send button event, controllerListener is null");
             }
@@ -1142,8 +1154,10 @@ public class ControllerService extends Service {
         controllerGyroEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
             if (controllerListener != null) {
-//                controllerListener.deprecatedOnControllerGyroEvent(controllerGyroEvent); // probably not used
-                 controllerListener.onControllerGyroEvent(controllerGyroEvent); //probably not used
+                controllerListener.deprecatedOnControllerGyroEvent(controllerGyroEvent);
+                if(controllerListener.getApiVersion()>GVR_API_VERSION_DIVIDE){
+                    controllerListener.onControllerEventPacket(controllerEventPacket);
+                }
             } else {
                 debug_log("when send Gyro event, controllerListener is null");
             }
@@ -1158,8 +1172,10 @@ public class ControllerService extends Service {
         controllerAccelEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
             if (controllerListener != null) {
-//                controllerListener.deprecatedOnControllerAccelEvent(controllerAccelEvent); //probably not used
-              controllerListener.onControllerAccelEvent(controllerAccelEvent); //probably not used
+                controllerListener.deprecatedOnControllerAccelEvent(controllerAccelEvent);
+                if(controllerListener.getApiVersion()>GVR_API_VERSION_DIVIDE){
+                    controllerListener.onControllerEventPacket(controllerEventPacket);
+                }
             } else {
                 debug_log("when send Accel event, controllerListener is null");
             }
@@ -1210,8 +1226,10 @@ public class ControllerService extends Service {
         controllerTouchEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
             if (controllerListener != null) {
-//                controllerListener.deprecatedOnControllerTouchEvent(controllerTouchEvent);
-              controllerListener.onControllerTouchEvent(controllerTouchEvent);
+                controllerListener.deprecatedOnControllerTouchEvent(controllerTouchEvent);
+                if(controllerListener.getApiVersion()>GVR_API_VERSION_DIVIDE){
+                    controllerListener.onControllerEventPacket(controllerEventPacket);
+                }
             } else {
                 debug_log("when send Touch event, controllerListener is null");
             }
@@ -1222,7 +1240,7 @@ public class ControllerService extends Service {
     }
 
 
-    public static void OnPhoneEvent() throws RemoteException {
+    public /*static*/ void OnPhoneEvent() throws RemoteException {
         if(controllerListener == null){
             Log.e("myControllerService","controllerListener is null");
             return;
@@ -1254,9 +1272,10 @@ public class ControllerService extends Service {
         controllerOrientationEvent.qw = (float) 0.99995;
 
         controllerOrientationEvent.timestampNanos = SystemClock.currentThreadTimeMillis();
-
-//        controllerListener.deprecatedOnControllerOrientationEvent(controllerOrientationEvent); //must be send
-        controllerListener.onControllerOrientationEvent(controllerOrientationEvent); //must be send
+        controllerListener.deprecatedOnControllerOrientationEvent(controllerOrientationEvent);
+        if(controllerListener.getApiVersion()>GVR_API_VERSION_DIVIDE){
+            controllerListener.onControllerEventPacket(controllerEventPacket);
+        }
     }
 
 
