@@ -45,6 +45,10 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.content.IntentFilter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+//add for daydream app adjust volume
+import android.media.AudioManager;
+
+
 /**
  * Created by mashuai on 2016/9/29.
  */
@@ -150,6 +154,8 @@ public class ControllerService extends Service {
     // add: multi key press screen shot
     private boolean mMultiKeyPressFlag = false;
     // end: multi key press screen shot
+    //add for daydream app adjust volume
+    private AudioManager mAudioManager;
 
     public static void debug_log(String log){
         // setprop log.tag.TAG DEBUG ,we can print log
@@ -160,7 +166,7 @@ public class ControllerService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-
+        mAudioManager = (AudioManager)getBaseContext().getSystemService(Context.AUDIO_SERVICE);
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         if (!mAdapter.getProfileProxy(getBaseContext(), mServiceListener,
                 BluetoothProfile.INPUT_DEVICE)) {
@@ -2151,12 +2157,14 @@ public class ControllerService extends Service {
                             logInfo = "KeyEvent.KEYCODE_HOME";
                             break;
                         case SYSTEM_EVENT_VOLUME_UP_ID:
-                            inst.sendKeyDownUpSync(KeyEvent.KEYCODE_VOLUME_UP);
-                            logInfo = "KeyEvent.KEYCODE_VOLUME_UP";
+                            mAudioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
+                            //inst.sendKeyDownUpSync(KeyEvent.KEYCODE_VOLUME_UP);
+                            logInfo = "KeyEvent.KEYCODE_VOLUME_UP adjustStreamVolume raise";
                             break;
                         case SYSTEM_EVENT_VOLUME_DOWN_ID:
-                            inst.sendKeyDownUpSync(KeyEvent.KEYCODE_VOLUME_DOWN);
-                            logInfo = "KeyEvent.KEYCODE_VOLUME_DOWN";
+                            mAudioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
+                            //inst.sendKeyDownUpSync(KeyEvent.KEYCODE_VOLUME_DOWN);
+                            logInfo = "KeyEvent.KEYCODE_VOLUME_DOWN adjustStreamVolume lower";
                             break;
                         //add:multi key press screen shot
                         case SYSTEM_EVENT_VOLUME_DOWN_PRESS_ID:
