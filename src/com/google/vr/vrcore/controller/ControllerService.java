@@ -153,6 +153,9 @@ public class ControllerService extends Service {
     private boolean needGetHandVersion = false;
     // add: multi key press screen shot
     private boolean mMultiKeyPressFlag = false;
+    // add: update click and trigger at same time
+    boolean mClickAndTriggerPressedFlag = false;
+
     // end: multi key press screen shot
     //add for daydream app adjust volume
     private AudioManager mAudioManager;
@@ -1535,7 +1538,6 @@ public class ControllerService extends Service {
      *                "home":0x08; "app":0x10; "volume up":0x20; "volume down":0x40 }
      */
     private void ButtonEvent(final int keymask){
-        //Log.d("[QQQ]","[Before]mLastKeyMask = "+mLastKeyMask);
         if (keymask != 0) {
             //add: multi key press screen shot
             if(!mMultiKeyPressFlag && ((keymask & 0x14) == 0x14)) {
@@ -1598,9 +1600,33 @@ public class ControllerService extends Service {
                         }
                     }
                 }
-            } else if ((keymask&0x01) !=0 /*|| (keymask&0x04) != 0*/) {
-                //click key event
+            } else if ((keymask&0x01) !=0 && (keymask&0x04) != 0){
+                //click key event and trigger key event at same time
                 if (keymask != mLastKeyMask) {
+                    if((mLastKeyMask&0x01) !=0){
+                        TriggerAndClickEvent(CLICK_BUTTON);
+                        TriggerAndClickEvent(TRIGGER_BUTTON_DOWN);
+                        mLastKeyMask = keymask;
+                    }else if((mLastKeyMask&0x04) !=0){
+                        TriggerAndClickEvent(TRIGGER_BUTTON);
+                        TriggerAndClickEvent(CLICK_BUTTON_DOWN);
+                        mLastKeyMask = keymask;
+                    } else{
+                        TriggerAndClickEvent(CLICK_BUTTON_DOWN);
+                        TriggerAndClickEvent(TRIGGER_BUTTON_DOWN);
+                        mLastKeyMask = keymask;
+                    }
+                    if (DEBUG) {
+                        Log.d("[ZZZ]", "ClickEvent and trigger Buttondown");
+                    }
+                } else {
+                    TriggerAndClickEvent(CLICK_BUTTON);
+                    TriggerAndClickEvent(TRIGGER_BUTTON);
+                }
+                mClickAndTriggerPressedFlag = true;
+            } else if ((keymask&0x01) !=0) {
+                //click key event
+                if (keymask != mLastKeyMask && !mClickAndTriggerPressedFlag) {
                     TriggerAndClickEvent(CLICK_BUTTON_DOWN);
                     mLastKeyMask = keymask;
                     if (DEBUG) {
@@ -1608,6 +1634,11 @@ public class ControllerService extends Service {
                     }
                 } else {
                     TriggerAndClickEvent(CLICK_BUTTON);
+                }
+                if(mClickAndTriggerPressedFlag){
+                    TriggerAndClickEvent(TRIGGER_BUTTON_UP);
+                    mClickAndTriggerPressedFlag = false;
+                    mLastKeyMask = keymask;
                 }
             } else if ((keymask&0x04) != 0){
                 //trigger key event
@@ -1617,7 +1648,7 @@ public class ControllerService extends Service {
                     return;
                  }
                 //end:multi key press screen shot
-                if (keymask != mLastKeyMask) {
+                if (keymask != mLastKeyMask && !mClickAndTriggerPressedFlag) {
                     TriggerAndClickEvent(TRIGGER_BUTTON_DOWN);
                     mLastKeyMask = keymask;
                     if (DEBUG) {
@@ -1626,6 +1657,12 @@ public class ControllerService extends Service {
                 } else {
                     TriggerAndClickEvent(TRIGGER_BUTTON);
                 }
+                if(mClickAndTriggerPressedFlag){
+                    TriggerAndClickEvent(CLICK_BUTTON_UP);
+                    mClickAndTriggerPressedFlag = false;
+                    mLastKeyMask = keymask;
+                }
+
             } else if ((keymask&0x10) != 0) {
                 // differ click or longclick for home key(1000ms)
                 //add:multi key press screen shot
@@ -1832,6 +1869,7 @@ public class ControllerService extends Service {
                     if (DEBUG) {
                         Log.d("[ZZZ]", "ClickEvent ButtonUp");
                     }
+                    mClickAndTriggerPressedFlag = false;
                 }
                 if((mLastKeyMask&0x04) != 0){
                     TriggerAndClickEvent(TRIGGER_BUTTON_UP);
@@ -1839,6 +1877,7 @@ public class ControllerService extends Service {
                     if (DEBUG) {
                         Log.d("[ZZZ]", "TriggerEvent ButtonUp");
                     }
+                    mClickAndTriggerPressedFlag = false;
                 }
                 if ((mLastKeyMask&0x10) != 0) {
                     handler.removeCallbacks(runnableForMenu);
