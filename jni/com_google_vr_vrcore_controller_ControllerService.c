@@ -12,7 +12,7 @@
 #endif
 #define LOG_TAG "ControllerService_jni"
 
-//#define DEBUG 0
+// #define DEBUG 0
 
 #define JOYSTICK_TO_HOST 8
 #define HOST_TO_JOYSTICK 7
@@ -34,6 +34,7 @@
 
 #define DEVICE_ORDER_NUMBER 5
 
+#define IQIYI_HID_DIR	"/dev"
 
 typedef unsigned char byte;
 
@@ -115,14 +116,97 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
 }
 
 #else
+static int open_exiting_hid(const char *path)
+{
+	int fd = -1;
+	struct hidraw_devinfo info;
+
+	// at first check if file is existed
+	if(FILE_NOT_EXIST == is_file_existed(path)) {
+		ALOGD("file %s is not existed", path);
+		return 0;
+	}
+
+	fd = open(path, O_RDWR);
+	if (fd < 0) {
+		ALOGE("Open %s failed, %s\n", path, strerror(errno));
+		return 0;
+	} else {
+#ifdef DEBUG
+		ALOGD("Open %s Success!\n", path);
+#endif
+		/* Get Raw Info */
+		int res = ioctl(fd, HIDIOCGRAWINFO, &info);
+		if (res < 0) {
+			ALOGE("get hidraw info err, can't verify if it is iQIYI hand");
+			close(fd);
+			return 0;
+		} else {
+			// here we get IQIYI hand device
+			if (IQIYI_HAND_VENDOR_ID == (unsigned short) info.vendor
+					&& IQIYI_HAND_PRODUCTION_ID ==  (unsigned short) info.product)  {
+#ifdef DEBUG
+				ALOGD("we get IQIYI hand device, service build time is: %s,%s\n",__DATE__, __TIME__);
+#endif
+				hidraw_fd = fd;
+			} else {
+#ifdef DEBUG
+				ALOGD("not IQIYI hand device, get hidraw info, vendor: %d, %d\n", info.vendor, info.product);
+#endif
+				if(fd >=0) {
+#ifdef DEBUG
+					ALOGD("Close device %s\n", path);
+#endif
+					close(fd);
+				}
+				return 0;
+			}
+		}
+	}
+
+	return 1;
+}
+
 JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeOpenFile
   (JNIEnv *env, jobject jclass) {
 	int ret = -1; // not -1, 0, 1, 2
+#if 0
 	int fd = -1;
 	struct hidraw_devinfo info;
+#endif
+
 #ifdef DEBUG
 	ALOGD("call native_open_file");
 #endif
+	char devname[32];
+	DIR *busdir;
+	struct dirent *de;
+	int done = 0;
+	busdir = opendir(IQIYI_HID_DIR);
+	if (busdir == 0) {
+		ret = -1;
+#ifdef DEBUG
+		ALOGD("error open dir");
+#endif
+		return ret;
+	}
+
+	while (((de = readdir(busdir))  !=  0)  && ( !done)) {
+#ifdef DEBUG
+		ALOGD("error d_name is %s", de->d_name);
+#endif
+		if(strncmp(de->d_name,  "hidraw",  6) != 0) continue;
+
+		snprintf(devname, sizeof(devname), IQIYI_HID_DIR "/%s", de->d_name);
+#ifdef DEBUG
+		ALOGD("error devname is %d", devname);
+#endif
+		done = open_exiting_hid(devname);
+	}
+	closedir(busdir);
+	ret = 0;
+
+#if 0
 	for (int i = 0; i < DEVICE_ORDER_NUMBER; i++) {
 		// at first check if file is existed
 		if(FILE_NOT_EXIST == is_file_existed(device[i])){
@@ -161,6 +245,8 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
 			}
 		}
 	}
+#endif
+
 #ifdef DEBUG
 	out_fd = open("/sys/class/gpio/gpio126/value", O_RDWR);
 #endif
