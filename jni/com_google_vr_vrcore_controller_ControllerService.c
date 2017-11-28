@@ -123,13 +123,17 @@ static int open_exiting_hid(const char *path)
 
 	// at first check if file is existed
 	if(FILE_NOT_EXIST == is_file_existed(path)) {
+#ifdef DEBUG
 		ALOGD("file %s is not existed", path);
+#endif
 		return 0;
 	}
 
 	fd = open(path, O_RDWR);
 	if (fd < 0) {
+#ifdef DEBUG
 		ALOGE("Open %s failed, %s\n", path, strerror(errno));
+#endif
 		return 0;
 	} else {
 #ifdef DEBUG
@@ -138,7 +142,9 @@ static int open_exiting_hid(const char *path)
 		/* Get Raw Info */
 		int res = ioctl(fd, HIDIOCGRAWINFO, &info);
 		if (res < 0) {
+#ifdef DEBUG
 			ALOGE("get hidraw info err, can't verify if it is iQIYI hand");
+#endif
 			close(fd);
 			return 0;
 		} else {
