@@ -86,6 +86,10 @@ public class AIDLControllerService extends Service {
                 touchDataEventService(event.getTouchX(),event.getTouchY());
             }else if (messageType == MessageEvent.VERSION_INFO_EVENT){
                 handDeviceVersionInfoEventService(event.getData1(),event.getData2(),event.getData3());
+            }else if (messageType == MessageEvent.CONNECT_STATE_EVENT){
+                connectStateService(event.getConnectState());
+            }else if(messageType == MessageEvent.MESSAGE_TO_CLIENT_EVENT){
+                messageToClientService(event.getToClientMessage());
             }
         }
     };
@@ -181,6 +185,15 @@ public class AIDLControllerService extends Service {
             intent.putExtra(CONTROL_HAND_DEVICE_DATA2, data2);
             intent.setAction(ACTION_CONTROL_HAND_DEVICE);
             localBroadcastManager.sendBroadcast(intent);
+        }
+        @Override
+        //add for new spread feature
+        public void setParameters(String keyValue){
+        }
+        @Override
+	//add for new spread feature
+        public String getParameters(String key){
+            return null;
         }
         @Override
         public void registerListener(AIDLListener listener){
@@ -308,7 +321,40 @@ public class AIDLControllerService extends Service {
         }
         mListenerList.finishBroadcast();
     }
-
+    private synchronized void connectStateService(int state){
+        final int N = mListenerList.beginBroadcast();
+        for (int i = 0; i < N; i++) {
+            AIDLListener l = mListenerList.getBroadcastItem(i);
+            if (l != null) {
+                try{
+                    if (DEBUG) {
+                        Log.d(TAG, "[connect state]  state = " + state);
+                    }
+                    l.connectStateEvent(state);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        mListenerList.finishBroadcast();
+    }
+    private synchronized void messageToClientService(String message){
+        final int N = mListenerList.beginBroadcast();
+        for (int i = 0; i < N; i++) {
+            AIDLListener l = mListenerList.getBroadcastItem(i);
+            if (l != null) {
+                try{
+                    if (DEBUG) {
+                        Log.d(TAG, "[messageToClient message]  message = " + message);
+                    }
+                    l.messageToClientEvent(message);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        mListenerList.finishBroadcast();
+    }
     //add by zhangyawen
     private synchronized void gyroDataEventService(float x, float y, float z){
         final int N = mListenerList.beginBroadcast();

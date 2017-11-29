@@ -76,6 +76,11 @@ public class ControllerService extends Service {
     private static String device_address = null;
     private BluetoothAdapter mAdapter;
     private boolean isBtInputDeviceConnected = false;
+
+    public static final int CONNECT_STATE_INVALID = -1;
+    public static final int CONNECT_STATE_DISCONNECTED = 0;
+    public static final int CONNECT_STATE_CONNECTED = 1;
+
     public static final int GVR_API_VERSION_DIVIDE                =12;
     public static final int JOYSTICK_CONTROL_TYPE                 = 0x01;
     public static final int JOYSTICK_REQUEST_TYPE                 = 0x02;
@@ -601,6 +606,9 @@ public class ControllerService extends Service {
                             requestHandDeviceResetQuternion();
                         }
                     }
+                    //for svr app
+                    connectStateEvent(CONNECT_STATE_CONNECTED);
+                    //for draydream app
                     setControllerListenerConnected();
 
                     Bt_node_data nodeData = nativeReadFile();
@@ -608,6 +616,9 @@ public class ControllerService extends Service {
                         Log.e(TAG,
                                 "do not get hidraw data from native, schedule next open data node");
                         if (dataChannel == RAW_DATA_CHANNEL_JOYSTICK) {
+                            //for svr app
+                            connectStateEvent(CONNECT_STATE_DISCONNECTED);
+                            //for draydream app
                             setControllerListenerDisconnected();
                             dataChannel = RAW_DATA_CHANNEL_NONE;//reset dataChannel
                         }
@@ -647,6 +658,9 @@ public class ControllerService extends Service {
             finally {
                 isCancel = true;
                 Log.d(TAG, "finally, set Controller state DISCONNECTED");
+                //for svr app
+                connectStateEvent(CONNECT_STATE_DISCONNECTED);
+                //for draydream app
                 setControllerListenerDisconnected();
             }
         }
@@ -796,6 +810,9 @@ public class ControllerService extends Service {
                                 }
                                 debug_log("hidraw data:" + toHexString(buffer, bytes));
 //                                Log.e(TAG, "read value = " + new String(buffer, 0, bytes, "utf-8"));
+                                //for svr app
+                                connectStateEvent(CONNECT_STATE_CONNECTED);
+                                //for draydream app
                                 setControllerListenerConnected();
                                 nodeData = decodeRFCommRawData(buffer);
                                 disposeNodeData(RAW_DATA_CHANNEL_EMULATOR, nodeData, 0);
@@ -830,6 +847,9 @@ public class ControllerService extends Service {
                 } finally {
                     Log.e(TAG, "socket disconnected, reconnect again");
                     if (dataChannel == RAW_DATA_CHANNEL_EMULATOR) {
+                        //for svr app
+                        connectStateEvent(CONNECT_STATE_DISCONNECTED);
+                        //for draydream app
                         setControllerListenerDisconnected();
                         dataChannel = RAW_DATA_CHANNEL_NONE;//reset dataChannel
                     }
@@ -1956,7 +1976,14 @@ public class ControllerService extends Service {
         Log.d(TAG,"appButtonEvent.sendBroadcast(intent)");*/
         EventInstance.getInstance().post(new MessageEvent(MessageEvent.APP_BUTTON_EVENT,state));
     }
-
+    //state : 0 disconnect,1 connected,-1 invalid
+    private void connectStateEvent(int state){
+        EventInstance.getInstance().post(new MessageEvent(MessageEvent.CONNECT_STATE_EVENT, state));
+    }
+    //common function for spread feature
+    private void messageToClient(String message){
+        EventInstance.getInstance().post(new MessageEvent(MessageEvent.MESSAGE_TO_CLIENT_EVENT, message));
+    }
     private void quanDataEvent(float x,float y,float z,float w){
         /*Intent intent = new Intent();
         intent.putExtra("quans",new float[]{x,y,z,w});

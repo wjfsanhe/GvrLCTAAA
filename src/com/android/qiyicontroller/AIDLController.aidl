@@ -21,12 +21,15 @@ interface AIDLController {
       void getHandDeviceVersionInfo();
       void enable_home_key(boolean isEnable);
       boolean get_enable_home_key();
-		/*
-		* type:                             data1
-   		* 3 is hillcrest calibration        1 is enter, 0 is exit
-   		* 4 is touch calibration            1 is enter, 0 is exit
-   		* 5 is reset quaternion
-   		*/
-  		void control_handDevice(int type, int data1, int data2);
-
+      /*
+          * type:                             data1
+          * 3 is hillcrest calibration        1 is enter, 0 is exit
+          * 4 is touch calibration            1 is enter, 0 is exit
+          * 5 is reset quaternion
+      */
+      void control_handDevice(int type, int data1, int data2);
+      //return key=value
+      String getParameters(String key);
+      //keyValue: key=value
+      void setParameters(String keyValue);
 }

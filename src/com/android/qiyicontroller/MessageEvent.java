@@ -19,7 +19,10 @@ public class MessageEvent {
     public final static int TOUCH_DATA_EVENT = 9;
     //end
     public final static int VERSION_INFO_EVENT = 10;
-
+    //add for connect state
+    public final static int CONNECT_STATE_EVENT = 11;
+    //add for spread feature
+    public final static int MESSAGE_TO_CLIENT_EVENT = 12;
     private int messageType;
     private float quans_x;
     private float quans_y;
@@ -33,6 +36,8 @@ public class MessageEvent {
     private int event;
     private int parameter;
     private int recentering;
+    private int connect_state;
+    private String messageToClient;
 
     private int data1;
     private int data2;
@@ -103,12 +108,19 @@ public class MessageEvent {
             this.appstate = state;
         }else if(messageType == LONG_CLICK_HOME_EVENT){
             this.recentering = state;
+        } else if(messageType == CONNECT_STATE_EVENT){
+            this.connect_state = state;
         }
     }
 
     public MessageEvent(int messageType,int level,String str){
         this.messageType = messageType;
         this.level = level;
+    }
+
+    public MessageEvent(int messageType,String message){
+        this.messageType = messageType;
+        this.messageToClient = message;
     }
 
     public int getMessageType(){
@@ -205,5 +217,11 @@ public class MessageEvent {
     }
     public int getData3(){
         return data3;
+    }
+    public int getConnectState(){
+        return connect_state;
+    }
+    public String getToClientMessage(){
+        return messageToClient;
     }
 }

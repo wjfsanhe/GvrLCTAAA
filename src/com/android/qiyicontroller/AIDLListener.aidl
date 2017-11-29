@@ -30,5 +30,8 @@ interface AIDLListener {
       void touchDataEvent(float x, float y);
 
       void handDeviceVersionInfoEvent(int appVersion,int deviceVersion,int deviceType);
-
+      // state : 0 disconnect,1 connected,-1 invalid
+      void connectStateEvent(int state);
+      //message callback to client,common channel
+      void messageToClientEvent(String message);
 }
