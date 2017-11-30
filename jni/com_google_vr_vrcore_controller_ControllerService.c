@@ -188,6 +188,7 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
 	DIR *busdir;
 	struct dirent *de;
 	int done = 0;
+
 	busdir = opendir(IQIYI_HID_DIR);
 	if (busdir == 0) {
 		ret = -1;
@@ -210,7 +211,12 @@ JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_na
 		done = open_exiting_hid(devname);
 	}
 	closedir(busdir);
-	ret = 0;
+
+	if (done > 0) {
+		ret = 0;
+	} else {
+		ret = -1;
+	}
 
 #if 0
 	for (int i = 0; i < DEVICE_ORDER_NUMBER; i++) {
