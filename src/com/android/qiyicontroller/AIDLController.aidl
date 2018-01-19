@@ -32,4 +32,7 @@ interface AIDLController {
       String getParameters(String key);
       //keyValue: key=value
       void setParameters(String keyValue);
+      void registerAIDLListener(AIDLListener listener,String client);
+      void unRegisterAIDLListener(AIDLListener listener,String client);
+      void updateAirMouseControllerState(boolean enable);
 }

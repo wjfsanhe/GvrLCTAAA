@@ -40,6 +40,8 @@ public class AIDLControllerService extends Service {
     private float[] quans = new float[]{0,0,0,1};
     //end
 
+    private AIDLListener mAirMouseListener;
+    private boolean mAirMouseControllerState = false;
     @Override
     public void onCreate(){
         super.onCreate();
@@ -65,28 +67,123 @@ public class AIDLControllerService extends Service {
             int messageType = event.getMessageType();
             if(messageType == MessageEvent.QUANS_DATA_EVENT) {
                 //Log.d("[PPP]", "<<<onEvent x:" + event.getX() + " y:" + event.getY() + " z:" + event.getZ() + " w:" + event.getW());
-                quansDataEventService(event.getX(), event.getY(), event.getZ(), event.getW());
+                if(mAirMouseControllerState && mAirMouseListener != null){
+                    try{
+                        mAirMouseListener.quansDataEvent(event.getX(), event.getY(), event.getZ(), event.getW());
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }else{
+                    quansDataEventService(event.getX(), event.getY(), event.getZ(), event.getW());
+                }
             }else if(messageType == MessageEvent.SHORT_CLICK_BACK_EVENT){
-                shortClickBackEventService(event.getBackState());
+                if(mAirMouseControllerState && mAirMouseListener != null){
+                    try{
+                        mAirMouseListener.shortClickBackEvent(event.getBackState());
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }else{
+                    shortClickBackEventService(event.getBackState());
+                }
             }else if(messageType == MessageEvent.BATTERY_LEVEL_EVENT){
-                batterLevelEventService(event.getLevel());
+                if(mAirMouseControllerState && mAirMouseListener != null){
+                    try{
+                        mAirMouseListener.batterLevelEvent(event.getLevel());
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }else{
+                    batterLevelEventService(event.getLevel());
+                }
             }else if(messageType == MessageEvent.TRIGGER_BUTTON_EVENT){
-                clickAndTriggerEventService(event.getTriggerstate());
+                if(mAirMouseControllerState && mAirMouseListener != null){
+                    try{
+                        mAirMouseListener.clickAndTriggerEvent(event.getTriggerstate());
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }else{
+                    clickAndTriggerEventService(event.getTriggerstate());
+                }
             }else if(messageType == MessageEvent.APP_BUTTON_EVENT){
-                clickAppButtEventService(event.getAppstate());
+                if(mAirMouseControllerState && mAirMouseListener != null){
+                    try{
+                        mAirMouseListener.clickAppButtonEvent(event.getAppstate());
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }else{
+                    clickAppButtEventService(event.getAppstate());
+                }
             }else if(messageType == MessageEvent.SHAKE_EVENT){
-                shakeEventService(event.getTimestamp(),event.getEvent(),event.getParameter());
+                if(mAirMouseControllerState && mAirMouseListener != null){
+                    try{
+                        mAirMouseListener.shakeEvent(event.getTimestamp(),event.getEvent(),event.getParameter());
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }else{
+                    shakeEventService(event.getTimestamp(),event.getEvent(),event.getParameter());
+                }
             }else if(messageType == MessageEvent.LONG_CLICK_HOME_EVENT){
-                longClickHomeEventService(event.getHomeState());
+                if(mAirMouseControllerState && mAirMouseListener != null){
+                    try{
+                        mAirMouseListener.longClickHomeEvent(event.getHomeState());
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }else{
+                    longClickHomeEventService(event.getHomeState());
+                }
             }else if(messageType == MessageEvent.GYRO_DATA_EVENT){
-                gyroDataEventService(event.getGyroX(), event.getGyroY(), event.getGyroZ());
+                if(mAirMouseControllerState && mAirMouseListener != null){
+                    try{
+                        mAirMouseListener.gyroDataEvent(event.getGyroX(), event.getGyroY(), event.getGyroZ());
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }else{
+                    gyroDataEventService(event.getGyroX(), event.getGyroY(), event.getGyroZ());
+                }
             }else if(messageType == MessageEvent.ACCEL_DATA_EVENT){
-                accelDataEventService(event.getAccelX(),event.getAccelY(),event.getAccelZ());
+                if(mAirMouseControllerState && mAirMouseListener != null){
+                    try{
+                        mAirMouseListener.accelDataEvent(event.getAccelX(),event.getAccelY(),event.getAccelZ());
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }else{
+                    accelDataEventService(event.getAccelX(),event.getAccelY(),event.getAccelZ());
+                }
             }else if(messageType == MessageEvent.TOUCH_DATA_EVENT){
-                touchDataEventService(event.getTouchX(),event.getTouchY());
+                if(mAirMouseControllerState && mAirMouseListener != null){
+                    try{
+                        mAirMouseListener.touchDataEvent(event.getTouchX(),event.getTouchY());
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }else{
+                    touchDataEventService(event.getTouchX(),event.getTouchY());
+                }
             }else if (messageType == MessageEvent.VERSION_INFO_EVENT){
-                handDeviceVersionInfoEventService(event.getData1(),event.getData2(),event.getData3());
+                if(mAirMouseControllerState && mAirMouseListener != null){
+                    try{
+                        mAirMouseListener.handDeviceVersionInfoEvent(event.getData1(),event.getData2(),event.getData3());
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }else{
+                    handDeviceVersionInfoEventService(event.getData1(),event.getData2(),event.getData3());
+                }
             }else if (messageType == MessageEvent.CONNECT_STATE_EVENT){
+                if(mAirMouseControllerState && mAirMouseListener != null){
+                    try{
+                        mAirMouseListener.connectStateEvent(event.getConnectState());
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
                 connectStateService(event.getConnectState());
             }else if(messageType == MessageEvent.MESSAGE_TO_CLIENT_EVENT){
                 messageToClientService(event.getToClientMessage());
@@ -203,6 +300,21 @@ public class AIDLControllerService extends Service {
         @Override
         public void unRegisterListener(AIDLListener listener){
             mListenerList.unregister(listener);
+        }
+	@Override
+        public void registerAIDLListener(AIDLListener listener,String client){
+            Log.d(TAG,"registerAIDLListener"+" client = "+client);
+            mAirMouseListener = listener;
+        }
+        @Override
+        public void unRegisterAIDLListener(AIDLListener listener,String client){
+            Log.d(TAG,"unRegisterAIDLListener"+" client = "+client);
+            mAirMouseListener = null;
+        }
+        @Override
+        public void updateAirMouseControllerState(boolean enable){
+           Log.d(TAG,"updateAirMouseControllerState"+" enable = "+enable);
+           mAirMouseControllerState = enable;
         }
     };
 

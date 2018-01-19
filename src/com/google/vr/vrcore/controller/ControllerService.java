@@ -1511,13 +1511,13 @@ public class ControllerService extends Service {
             if (DEBUG) {
                 Log.d("[ZZZ]", "back");
             }
-            sendSystemEvent(SYSTEM_EVENT_BACK_ID);
+            //sendSystemEvent(SYSTEM_EVENT_BACK_ID);
         }else if ((keymask&0x04) != 0) {
             //trigger
             if (DEBUG) {
                 Log.d("[ZZZ]", "trigger");
             }
-            sendSystemEvent(SYSTEM_EVENT_ENTER_ID);
+            //sendSystemEvent(SYSTEM_EVENT_ENTER_ID);
         }else if ((keymask&0x08) != 0) {
             //home
             if (DEBUG) {
