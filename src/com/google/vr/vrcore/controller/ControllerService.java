@@ -2223,12 +2223,14 @@ public class ControllerService extends Service {
                             logInfo = "KeyEvent.KEYCODE_HOME";
                             break;
                         case SYSTEM_EVENT_VOLUME_UP_ID:
-                            mAudioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
+                            //mAudioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
+                            mAudioManager.adjustSuggestedStreamVolume(AudioManager.ADJUST_RAISE,AudioManager.STREAM_MUSIC, AudioManager.FLAG_SHOW_UI);
                             //inst.sendKeyDownUpSync(KeyEvent.KEYCODE_VOLUME_UP);
                             logInfo = "KeyEvent.KEYCODE_VOLUME_UP adjustStreamVolume raise";
                             break;
                         case SYSTEM_EVENT_VOLUME_DOWN_ID:
-                            mAudioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
+                            //mAudioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
+                            mAudioManager.adjustSuggestedStreamVolume(AudioManager.ADJUST_LOWER,AudioManager.STREAM_MUSIC, AudioManager.FLAG_SHOW_UI);
                             //inst.sendKeyDownUpSync(KeyEvent.KEYCODE_VOLUME_DOWN);
                             logInfo = "KeyEvent.KEYCODE_VOLUME_DOWN adjustStreamVolume lower";
                             break;
