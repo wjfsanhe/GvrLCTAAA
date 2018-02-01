@@ -2192,12 +2192,12 @@ public class ControllerService extends Service {
                 try {
                     switch (systemEventId){
                         case SYSTEM_EVENT_BACK_ID:
-                            inst.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK);
+                            //inst.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK);
                             logInfo = "KeyEvent.KEYCODE_BACK";
                             break;
 
                         case SYSTEM_EVENT_ENTER_ID:
-                            inst.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER);
+                            //inst.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER);
                             logInfo = "KeyEvent.KEYCODE_ENTER";
                             break;
 
