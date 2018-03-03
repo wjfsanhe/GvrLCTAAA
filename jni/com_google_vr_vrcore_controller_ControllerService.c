@@ -1,18 +1,11 @@
-
 #include "com_google_vr_vrcore_controller_ControllerService.h"
 
-#define IQIYI_HIDRAW_BUFFER_SIZE 32
-#define OPEN_ERR_DEVICE -1
-#define OPEN_SUCCESS_DEVICE_0 0
-#define OPEN_SUCCESS_DEVICE_1 1
-#define OPEN_SUCCESS_DEVICE_2 2
+//#define DEBUG 0
 
 #ifdef LOG_TAG
 #undef LOG_TAG
 #endif
 #define LOG_TAG "ControllerService_jni"
-
-// #define DEBUG 0
 
 #define JOYSTICK_TO_HOST 8
 #define HOST_TO_JOYSTICK 7
@@ -25,247 +18,98 @@
 #define REPORT_TYPE_SHAKE		4
 
 #define POLL_TIMEOUT_TIME 12
-
-#define IQIYI_HAND_VENDOR_ID  0x1915
-#define IQIYI_HAND_PRODUCTION_ID 0xeeee
-
-#define FILE_EXIST 0
-#define FILE_NOT_EXIST -1
-
-#define DEVICE_ORDER_NUMBER 5
-
-#define IQIYI_HID_DIR	"/dev"
+#define IQIYI_HIDRAW_BUFFER_SIZE 32
 
 typedef unsigned char byte;
 
-const char *device[DEVICE_ORDER_NUMBER] = {"/dev/hidraw-iqiyi0", "/dev/hidraw-iqiyi1","/dev/hidraw-iqiyi2", "/dev/hidraw-iqiyi3", "/dev/hidraw-iqiyi4"};
 static int hidraw_fd = -1;
+static const char IDREAM_CONTROLLER_NAME[] = "0005:1915:EEEE";
+static const char UHID_PATH[] = "/sys/devices/virtual/misc/uhid/";
+
 #ifdef DEBUG
 static const char values_str[] = "01";
 static int out_fd = 0;
 #endif
-//static jclass clsBt_node_data = NULL;
 
-int is_file_existed(const char *file_path){
-	if(file_path == NULL){
-		return FILE_NOT_EXIST;
-	}
-	if(access(file_path, F_OK) == 0){
-		return FILE_EXIST;
-	}
-	return FILE_NOT_EXIST;
-}
-#if 0
-JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeOpenFile
-  (JNIEnv *env, jobject jclass) {
-	char deviceFile[PATH_MAX];
-	int fd = -1;
-	int ret = -1;
-	DIR * devDir;
-	struct dirent * devDirEntry;
-	struct hidraw_devinfo info;
-
-	devDir = opendir("/dev");
-	ALOGD("mshuai Open /dev \n");
-	if (!devDir)
-		return -1;
-	ALOGD("mshuai Open /dev success\n");
-	while ((devDirEntry = readdir(devDir)) != NULL) {
-		ALOGD("mshuai dev dir entry name:%s\n", devDirEntry->d_name);
-		if (strstr(devDirEntry->d_name, "hidraw-iqiyi")) {
-			char rawDevice[PATH_MAX];
-			strncpy(rawDevice, devDirEntry->d_name, PATH_MAX);
-			snprintf(deviceFile, PATH_MAX, "/dev/%s", devDirEntry->d_name);
-			fd = open(deviceFile, O_RDWR);
-			if (fd < 0) {
-							ALOGE("Open %s failed, %s\n", deviceFile, strerror(errno));
-				continue;
-			} else {
-				ALOGD("Open %s Success!\n", deviceFile);
-				/* Get Raw Info */
-				int res = ioctl(fd, HIDIOCGRAWINFO, &info);
-				if (res < 0) {
-					ALOGE(
-							"get hidraw info err, can't verify if it is iQIYI hand");
-					continue;
-				} else {
-					// here we get IQIYI hand device
-					if (IQIYI_HAND_VENDOR_ID == (unsigned short) info.vendor
-							&& IQIYI_HAND_PRODUCTION_ID
-									== (unsigned short) info.product) {
-						ALOGD(
-								"we get IQIYI hand device, service build time is: %s,%s\n", __DATE__, __TIME__);
-						ret = 0;
-						hidraw_fd = fd;
-						break;
-					} else {
-						ALOGD(
-								"not IQIYI hand device, get hidraw info, vendor: %d, %d\n", info.vendor, info.product);
-						if (fd >= 0) {
-							ALOGD("Close device %s\n", deviceFile);
-							close(fd);
-						}
-						continue;
-					}
-				}
-			}
-		}
-	}
-	closedir(devDir);
-	return ret;
-}
-
-#else
-static int open_exiting_hid(const char *path)
+int getiQiyiHidrawName(char* hidraw)
 {
-	int fd = -1;
-	struct hidraw_devinfo info;
+    DIR *dpdf;
+    struct dirent *epdf;
+    char hidraw_path[255];
 
-	// at first check if file is existed
-	if(FILE_NOT_EXIST == is_file_existed(path)) {
-#ifdef DEBUG
-		ALOGD("file %s is not existed", path);
-#endif
-		return 0;
-	}
+    dpdf = opendir(UHID_PATH);
+    if (dpdf == NULL) {
+        return -1;
+    }
 
-	fd = open(path, O_RDWR);
-	if (fd < 0) {
-#ifdef DEBUG
-		ALOGE("Open %s failed, %s\n", path, strerror(errno));
-#endif
-		return 0;
-	} else {
-#ifdef DEBUG
-		ALOGD("Open %s Success!\n", path);
-#endif
-		/* Get Raw Info */
-		int res = ioctl(fd, HIDIOCGRAWINFO, &info);
-		if (res < 0) {
-#ifdef DEBUG
-			ALOGE("get hidraw info err, can't verify if it is iQIYI hand");
-#endif
-			close(fd);
-			return 0;
-		} else {
-			// here we get IQIYI hand device
-			if (IQIYI_HAND_VENDOR_ID == (unsigned short) info.vendor
-					&& IQIYI_HAND_PRODUCTION_ID ==  (unsigned short) info.product)  {
-#ifdef DEBUG
-				ALOGD("we get IQIYI hand device, service build time is: %s,%s\n",__DATE__, __TIME__);
-#endif
-				hidraw_fd = fd;
-			} else {
-#ifdef DEBUG
-				ALOGD("not IQIYI hand device, get hidraw info, vendor: %d, %d\n", info.vendor, info.product);
-#endif
-				if(fd >=0) {
-#ifdef DEBUG
-					ALOGD("Close device %s\n", path);
-#endif
-					close(fd);
-				}
-				return 0;
-			}
-		}
-	}
+    while ((epdf = readdir(dpdf)) != NULL){
+        if(!strncmp(IDREAM_CONTROLLER_NAME, epdf->d_name, strlen(IDREAM_CONTROLLER_NAME))) {
+            strcpy(hidraw_path, UHID_PATH);
+            strcat(hidraw_path, epdf->d_name);
+            strcat(hidraw_path, "/hidraw/");
+            break;
+        }
+    }
+    closedir(dpdf);
+    dpdf = NULL;
 
-	return 1;
+    dpdf = opendir(hidraw_path);
+    if (dpdf == NULL) {
+        return -1;
+    }
+    while ((epdf = readdir(dpdf)) != NULL){
+        if(!strncmp("hidraw", epdf->d_name, strlen("hidraw"))) {
+            stpcpy(hidraw, "/dev/");
+            strcat(hidraw, epdf->d_name);
+            break;
+        }
+    }
+    closedir(dpdf);
+    dpdf = NULL;
+
+    return 0;
 }
 
 JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeOpenFile
   (JNIEnv *env, jobject jclass) {
-	int ret = -1; // not -1, 0, 1, 2
-#if 0
-	int fd = -1;
-	struct hidraw_devinfo info;
-#endif
+    char devname[255];
+    int fd = -1;
 
 #ifdef DEBUG
 	ALOGD("call native_open_file");
 #endif
-	char devname[32];
-	DIR *busdir;
-	struct dirent *de;
-	int done = 0;
 
-	busdir = opendir(IQIYI_HID_DIR);
-	if (busdir == 0) {
-		ret = -1;
+    if(getiQiyiHidrawName(devname) < 0){
 #ifdef DEBUG
-		ALOGD("error open dir");
+        ALOGD("No iDream controller connected!");
 #endif
-		return ret;
-	}
+        return -1;
+    }
 
-	while (((de = readdir(busdir))  !=  0)  && ( !done)) {
+    ALOGD("iDream controller node:%s", devname);
+    if(access(devname, F_OK | R_OK | W_OK ) == -1 ) {
 #ifdef DEBUG
-		ALOGD("error d_name is %s", de->d_name);
+        ALOGD("iDream controller can't be accessed!");
 #endif
-		if(strncmp(de->d_name,  "hidraw",  6) != 0) continue;
+        return -1;
+	}
 
-		snprintf(devname, sizeof(devname), IQIYI_HID_DIR "/%s", de->d_name);
+    fd = open(devname, O_RDWR);
+    if(fd < 0){
 #ifdef DEBUG
-		ALOGD("error devname is %d", devname);
+        ALOGD("Fail to open iDream controller device!");
 #endif
-		done = open_exiting_hid(devname);
-	}
-	closedir(busdir);
+        return -1;
+    }
 
-	if (done > 0) {
-		ret = 0;
-	} else {
-		ret = -1;
-	}
-
-#if 0
-	for (int i = 0; i < DEVICE_ORDER_NUMBER; i++) {
-		// at first check if file is existed
-		if(FILE_NOT_EXIST == is_file_existed(device[i])){
-//			ALOGD("file %s is not existed", device[i]);
-			continue;
-		}
-		fd = open(device[i], O_RDWR);
-		if (fd < 0) {
-//			ALOGE("Open %s failed, %s\n", device[i], strerror(errno));
-			continue;
-		} else {
-			ALOGD("Open %s Success!\n", device[i]);
-			/* Get Raw Info */
-			int res = ioctl(fd, HIDIOCGRAWINFO, &info);
-			if (res < 0) {
-				ALOGE("get hidraw info err, can't verify if it is iQIYI hand");
-				continue;
-			} else {
-				// here we get IQIYI hand device
-				if (IQIYI_HAND_VENDOR_ID == (unsigned short) info.vendor
-						&& IQIYI_HAND_PRODUCTION_ID
-								== (unsigned short) info.product) {
-					ALOGD("we get IQIYI hand device, service build time is: %s,%s\n",__DATE__, __TIME__);
-					ret = 0;
-					hidraw_fd = fd;
-					break;
-				} else {
-					ALOGD(
-							"not IQIYI hand device, get hidraw info, vendor: %d, %d\n", info.vendor, info.product);
-					if(fd >=0){
-						ALOGD("Close device %s\n", device[i]);
-						close(fd);
-					}
-					continue;
-				}
-			}
-		}
-	}
-#endif
-
+    hidraw_fd = fd;
 #ifdef DEBUG
 	out_fd = open("/sys/class/gpio/gpio126/value", O_RDWR);
 #endif
 //	clsBt_node_data = (*env)->FindClass(env, "com/google/vr/vrcore/controller/bt_node_data");
-	return ret;
+	return 0;
 }
-#endif
+
 JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeCloseFile
   (JNIEnv *env, jobject jclass)  {
 	if(hidraw_fd >=0){

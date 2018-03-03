@@ -4,7 +4,6 @@
 #define _Included_com_google_vr_vrcore_controller_ControllerService
 
 
-
 #include <jni.h>
 #include <utils/Log.h>
 #include <stdio.h>
@@ -26,14 +25,10 @@
 #include <linux/time.h>
 #include <linux/hidraw.h>
 
-
-int is_file_exist(const char *file_path);
-
 JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeOpenFile(JNIEnv *, jclass);
-
 JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeCloseFile(JNIEnv *, jclass);
-
 JNIEXPORT jobject JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeReadFile(JNIEnv *, jclass);
-
 JNIEXPORT jint JNICALL Java_com_google_vr_vrcore_controller_ControllerService_nativeWriteFile(JNIEnv *, jclass, jint, jint, jint);
+
+
 #endif

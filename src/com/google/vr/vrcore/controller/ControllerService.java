@@ -590,8 +590,7 @@ public class ControllerService extends Service {
                         }
                     }
                     if (needOpenFile) {
-                        int res = nativeOpenFile();
-                        if (res < 0) {
+                        if (nativeOpenFile() < 0) {
                             needOpenFile = true;
 //                            Log.e(TAG, "native open file failed");
                             controllerServiceSleep(2, 800);
