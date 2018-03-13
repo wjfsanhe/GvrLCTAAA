@@ -161,6 +161,9 @@ public class ControllerService extends Service {
     // add: update click and trigger at same time
     boolean mClickAndTriggerPressedFlag = false;
 
+    // add: Enable air mouse state
+    boolean mAirMouseState = false;
+
     // end: multi key press screen shot
     //add for daydream app adjust volume
     private AudioManager mAudioManager;
@@ -192,6 +195,7 @@ public class ControllerService extends Service {
         filter.addAction(AIDLControllerService.ACTION_GET_HAND_DEVICE_VERSION_INFO);
         filter.addAction("ENABLE_HOME_KEY_EVNET_ACTION");
         filter.addAction(AIDLControllerService.ACTION_CONTROL_HAND_DEVICE);
+        filter.addAction("ENABLE_HAND_DEVICES");
         Log.d(TAG,"registerReceiver");
         localBroadcastManager.registerReceiver(eventReceiver,filter);
 
@@ -265,6 +269,9 @@ public class ControllerService extends Service {
                 int data1 = intent.getIntExtra(AIDLControllerService.CONTROL_HAND_DEVICE_DATA1, -1);
                 int data2 = intent.getIntExtra(AIDLControllerService.CONTROL_HAND_DEVICE_DATA2, -1);
                 controlHandDevice(type, data1, data2);
+            }else if("ENABLE_HAND_DEVICES".equals(action)){
+                boolean status = intent.getBooleanExtra("enable", false);
+                mAirMouseState = status;
             }
         }
     }
@@ -1075,13 +1082,13 @@ public class ControllerService extends Service {
 
         controllerOrientationEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
-            if(controllerListener!=null){
+            if((controllerListener!=null)&&(!mAirMouseState)){
                 controllerListener.deprecatedOnControllerOrientationEvent(controllerOrientationEvent);
                 if(controllerListener.getApiVersion()>GVR_API_VERSION_DIVIDE){
                     controllerListener.onControllerEventPacket(controllerEventPacket);
                 }
             } else {
-                debug_log("when send orientation event, controllerListener is null");
+                debug_log("when send orientation event, controllerListener is null or 2D AirMouse is enabled");
             }
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -1093,13 +1100,13 @@ public class ControllerService extends Service {
 
     private void sendButtonEvent(){
         try {
-            if (controllerListener != null) {
+            if((controllerListener!=null)&&(!mAirMouseState)){
                 controllerListener.deprecatedOnControllerButtonEvent(controllerButtonEvent);
                 if(controllerListener.getApiVersion()>GVR_API_VERSION_DIVIDE){
                     controllerListener.onControllerEventPacket(controllerEventPacket);
                 }
             } else {
-                debug_log("when send button event, controllerListener is null");
+                debug_log("when send button event, controllerListener is null or 2D AirMouse is enabled");
             }
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -1181,13 +1188,13 @@ public class ControllerService extends Service {
 
         controllerGyroEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
-            if (controllerListener != null) {
+            if((controllerListener!=null)&&(!mAirMouseState)){
                 controllerListener.deprecatedOnControllerGyroEvent(controllerGyroEvent);
                 if(controllerListener.getApiVersion()>GVR_API_VERSION_DIVIDE){
                     controllerListener.onControllerEventPacket(controllerEventPacket);
                 }
             } else {
-                debug_log("when send Gyro event, controllerListener is null");
+                debug_log("when send Gyro event, controllerListener is null or 2D AirMouse is enabled");
             }
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -1199,13 +1206,13 @@ public class ControllerService extends Service {
 
         controllerAccelEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
-            if (controllerListener != null) {
+            if((controllerListener!=null)&&(!mAirMouseState)){
                 controllerListener.deprecatedOnControllerAccelEvent(controllerAccelEvent);
                 if(controllerListener.getApiVersion()>GVR_API_VERSION_DIVIDE){
                     controllerListener.onControllerEventPacket(controllerEventPacket);
                 }
             } else {
-                debug_log("when send Accel event, controllerListener is null");
+                debug_log("when send Accel event, controllerListener is null or 2D AirMouse is enabled");
             }
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -1253,13 +1260,13 @@ public class ControllerService extends Service {
 
         controllerTouchEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
-            if (controllerListener != null) {
+            if((controllerListener!=null)&&(!mAirMouseState)){
                 controllerListener.deprecatedOnControllerTouchEvent(controllerTouchEvent);
                 if(controllerListener.getApiVersion()>GVR_API_VERSION_DIVIDE){
                     controllerListener.onControllerEventPacket(controllerEventPacket);
                 }
             } else {
-                debug_log("when send Touch event, controllerListener is null");
+                debug_log("when send Touch event, controllerListener is null or 2D AirMouse is enabled");
             }
 
         } catch (RemoteException e) {
@@ -1269,8 +1276,8 @@ public class ControllerService extends Service {
 
 
     public /*static*/ void OnPhoneEvent() throws RemoteException {
-        if(controllerListener == null){
-            Log.e("myControllerService","controllerListener is null");
+        if((controllerListener!=null)&&(!mAirMouseState)){
+            Log.e("myControllerService","controllerListener is null or 2D AirMouse is enabled");
             return;
         }
         if (button == ControllerButtonEvent.BUTTON_NONE) {

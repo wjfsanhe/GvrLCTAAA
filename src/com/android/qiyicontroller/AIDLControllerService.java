@@ -313,8 +313,12 @@ public class AIDLControllerService extends Service {
         }
         @Override
         public void updateAirMouseControllerState(boolean enable){
-           Log.d(TAG,"updateAirMouseControllerState"+" enable = "+enable);
+           Log.d(TAG,"UpdateAirMouseControllerState"+" enable = "+enable);
            mAirMouseControllerState = enable;
+           Intent intent = new Intent();
+           intent.putExtra("enable", enable);
+           intent.setAction("ENABLE_HAND_DEVICES");
+           localBroadcastManager.sendBroadcast(intent);
         }
     };
 
