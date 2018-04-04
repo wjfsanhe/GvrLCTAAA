@@ -42,6 +42,10 @@ public class AIDLControllerService extends Service {
 
     private AIDLListener mAirMouseListener;
     private boolean mAirMouseControllerState = false;
+    private int mControllerConnectState = -1;
+    public static final String KEY_CONTROLLER_CONNECT_STATE = "controller_state";
+    public static final String CONTROLLER_CONNECT_STATE_CONNECTED = "controller_state=connected";
+    public static final String CONTROLLER_CONNECT_STATE_DISCONNECTED = "controller_state=disconnected";
     @Override
     public void onCreate(){
         super.onCreate();
@@ -177,6 +181,7 @@ public class AIDLControllerService extends Service {
                     handDeviceVersionInfoEventService(event.getData1(),event.getData2(),event.getData3());
                 }
             }else if (messageType == MessageEvent.CONNECT_STATE_EVENT){
+                mControllerConnectState = event.getConnectState();
                 if(mAirMouseControllerState && mAirMouseListener != null){
                     try{
                         mAirMouseListener.connectStateEvent(event.getConnectState());
@@ -290,6 +295,12 @@ public class AIDLControllerService extends Service {
         @Override
 	//add for new spread feature
         public String getParameters(String key){
+            if(KEY_CONTROLLER_CONNECT_STATE.equals(key)){
+                if(mControllerConnectState == 1){
+                    return CONTROLLER_CONNECT_STATE_CONNECTED;
+                }
+                return CONTROLLER_CONNECT_STATE_DISCONNECTED;
+            }
             return null;
         }
         @Override
