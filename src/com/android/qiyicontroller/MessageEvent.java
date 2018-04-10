@@ -53,13 +53,17 @@ public class MessageEvent {
     private float touch_x;
     private float touch_y;
     //end
+    private int packnum;
+    private long test_timestamp;
 
-    public MessageEvent(int messageType,float x,float y,float z,float w){
+    public MessageEvent(int messageType,float x,float y,float z,float w, int package_number, long timestampnanos){
         this.messageType = messageType;
         this.quans_x = x;
         this.quans_y = y;
         this.quans_z = z;
         this.quans_w = w;
+        this.packnum = package_number;
+        this.test_timestamp = timestampnanos;
     }
 
     public MessageEvent(int messageType,float x,float y,float z){
@@ -141,6 +145,14 @@ public class MessageEvent {
 
     public float getW(){
         return quans_w;
+    }
+
+    public int getP(){
+        return packnum;
+    }
+
+    public long getT(){
+        return test_timestamp;
     }
 
     //add by zhangyawen

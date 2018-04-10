@@ -14,6 +14,8 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.SystemProperties;
+import android.os.Environment;
+
 //import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -36,6 +38,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.UUID;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 
 //add by zhangyawen
 import android.view.KeyEvent;
@@ -47,6 +55,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 //add for daydream app adjust volume
 import android.media.AudioManager;
+import java.text.DecimalFormat;
 
 
 /**
@@ -394,15 +403,11 @@ public class ControllerService extends Service {
     public final void registerListener(IControllerListener listener) {
         Log.d(TAG,"registerListener,set controllerListener");
         controllerListener = listener;
-
-//        isCancel = false;
-//        startGetNodeDataThread();
     }
 
     public final boolean unregisterListener(){
         Log.d(TAG,"unregisterListener, set controllerListener to null");
         controllerListener = null;
-//        isCancel = true;
         return true;
     }
 
@@ -414,8 +419,6 @@ public class ControllerService extends Service {
             if (profile != BluetoothProfile.INPUT_DEVICE) return;
 
             Log.i(TAG, "Profile proxy connected");
-
-//            isBtInputDeviceConnected = true;
             mBtInputDeviceService = (BluetoothInputDevice) proxy;
         }
 
@@ -433,15 +436,12 @@ public class ControllerService extends Service {
                     return;
                 }
             }
-//            isBtInputDeviceConnected = false;
             Log.i(TAG, "Profile proxy disconnected");
             mBtInputDeviceService = null;
         }
     };
 
     private boolean isCancel = false;
-
-    private String[] device_path = new String[]{"/dev/hidraw0", "/dev/hidraw1", "/dev/hidraw2"};// read 32Byte/time
 
     static{
         try{
@@ -499,7 +499,7 @@ public class ControllerService extends Service {
             e.printStackTrace();
         }
     }
-    private int  disposeNodeData(int channel, Bt_node_data nodeData, int timeoutCount){
+    private int  disposeNodeData(int channel, Bt_node_data nodeData, int timeoutCount, int package_number, long time_test){
         debug_log("disposeRawData channel is :"+channel +", dataChannel:"+dataChannel + "controllerListener is null?"+(controllerListener == null));
         if (nodeData.type == REPORT_TYPE_ORIENTATION) {// quans
         // debug_log("nodeData:x:" + nodeData.quans_x + ", y:"
@@ -510,7 +510,7 @@ public class ControllerService extends Service {
                 sendPhoneEventControllerOrientationEvent(nodeData.quans_x,
                         nodeData.quans_y,
                         nodeData.quans_z,
-                        nodeData.quans_w);
+                        nodeData.quans_w, package_number, time_test);
                 debug_log("send phon event finish");
                 last_quans_x = nodeData.quans_x;
                 last_quans_y = nodeData.quans_y;
@@ -567,8 +567,8 @@ public class ControllerService extends Service {
               sendPhoneEventControllerOrientationEvent(last_quans_x,
                       last_quans_y,
                       last_quans_z,
-                      last_quans_w);
-              debug_log("send last data which timeout count is more than 5");
+                      last_quans_w, package_number, time_test);
+              Log.e(TAG, "send last data which timeout count is more than 5");
           }
       } else if(nodeData.type == GET_INVALID_DATA){
           Log.e(TAG, "get invalid data ");
@@ -587,20 +587,17 @@ public class ControllerService extends Service {
                 boolean needOpenFile = true;
                 int timeoutCount = 0;
                 int getHandVersionCount = 0;
+                long timestampNanos = 0;
+                String FileName = Environment.getExternalStorageDirectory().getPath() + "/ServiceTimeElaps.txt";
+                File file = new File(FileName);
+                if (file.exists()) {
+                    file.delete();
+                }
+                DecimalFormat df = new DecimalFormat("0.000000");
                 while (!isCancel) {
-                    // since ACTION_ACL_CONNECTED sometimes delays more than 20s. we do not use this to verify
-                    if (false) {
-                        // if connect bt device is not hid device, sleep , and do next while
-                        if (!isBtInputDeviceConnected) {
-                            controllerServiceSleep(1, 300);
-                            continue;
-                        }
-                    }
                     if (needOpenFile) {
                         if (nativeOpenFile() < 0) {
-                            needOpenFile = true;
-//                            Log.e(TAG, "native open file failed");
-                            controllerServiceSleep(2, 800);
+                            controllerServiceSleep(2, 100);
                             continue;
                         }
                         needOpenFile = false;
@@ -619,8 +616,7 @@ public class ControllerService extends Service {
 
                     Bt_node_data nodeData = nativeReadFile();
                     if (nodeData == null) {
-                        Log.e(TAG,
-                                "do not get hidraw data from native, schedule next open data node");
+                        Log.e(TAG, "do not get hidraw data from native, schedule next open data node");
                         if (dataChannel == RAW_DATA_CHANNEL_JOYSTICK) {
                             //for svr app
                             connectStateEvent(CONNECT_STATE_DISCONNECTED);
@@ -630,12 +626,16 @@ public class ControllerService extends Service {
                         }
                         nativeCloseFile();
                         needOpenFile = true;
-                        //resetHandDeviceVersionInfo();// clean hand device version
-//                        controllerServiceSleep(4, 3000);
                         continue;
                     }
+                    timestampNanos = System.currentTimeMillis();
                     //record timeoutCount
-                    timeoutCount = disposeNodeData(RAW_DATA_CHANNEL_JOYSTICK, nodeData, timeoutCount);
+                    timeoutCount = disposeNodeData(RAW_DATA_CHANNEL_JOYSTICK, nodeData, timeoutCount, nodeData.pkgnum, timestampNanos);
+                    if(nodeData.type >= REPORT_TYPE_ORIENTATION) {
+                        String Content = "[21]:TS:"+"\t"+df.format(timestampNanos*0.001d)+"\t"+"PN:"+"\t"+nodeData.pkgnum+"\t"+
+                            "["+nodeData.type + "]" + "\n" ;
+                        appendToFile(FileName, Content);
+                    }
 
                     //we use getHandVersionCount to record, if still need get hand version, we get once every 10 times
                     if(needGetHandVersion){
@@ -704,6 +704,23 @@ public class ControllerService extends Service {
 
         return ret;
     }
+
+    private void appendToFile(String file, String conent) {
+        BufferedWriter out = null;
+        try {
+                out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true)));
+                out.write(conent);
+	    } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                        out.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+		}
+	}
+
     private Bt_node_data decodeRFCommRawData(byte[] buffer){
         Bt_node_data node_data = new Bt_node_data();
         buffer = deleteAt(buffer, 0);
@@ -743,10 +760,10 @@ public class ControllerService extends Service {
             byte keymask = buffer[17];
              int battery = (((int)buffer[18]) & 0x000000FF) + 100;
 
-             debug_log("mshuai, get data:gyro.x:" + sensor[0] + ", gyro.y:" +
+             debug_log("get data:gyro.x:" + sensor[0] + ", gyro.y:" +
              sensor[1] + ", gyro.z:" + sensor[2] + ", acc.x" + sensor[3] +
              ", acc.y:" + sensor[4] + ", acc.z:" + sensor[5]);
-             debug_log("mshuai, get touchx:" + touchX + ", touchy:" + touchY);
+             debug_log("get touchx:" + touchX + ", touchy:" + touchY);
              node_data.type = REPORT_TYPE_SENSOR;
              node_data.gyro_x = sensor[0];
              node_data.gyro_y = sensor[1];
@@ -821,7 +838,7 @@ public class ControllerService extends Service {
                                 //for draydream app
                                 setControllerListenerConnected();
                                 nodeData = decodeRFCommRawData(buffer);
-                                disposeNodeData(RAW_DATA_CHANNEL_EMULATOR, nodeData, 0);
+                                disposeNodeData(RAW_DATA_CHANNEL_EMULATOR, nodeData, 0, 0, 0);
                             }
                             Log.d(TAG,"read inputStream err, re accept");
                             if (socket != null) {
@@ -1061,7 +1078,7 @@ public class ControllerService extends Service {
      //end:add for daydream version after 1.0.3
 
 //    private static final ControllerEventPacket cep = new ControllerEventPacket();
-    private void sendPhoneEventControllerOrientationEvent(float x, float y, float z, float w){
+    private void sendPhoneEventControllerOrientationEvent(float x, float y, float z, float w, int package_number, long time_test){
 
 
         controllerOrientationEvent.qx = -x;
@@ -1076,11 +1093,13 @@ public class ControllerService extends Service {
         quanDataEvent(controllerOrientationEvent.qx,
                 controllerOrientationEvent.qy,
                 controllerOrientationEvent.qz,
-                controllerOrientationEvent.qw);
+                controllerOrientationEvent.qw,
+                package_number,
+                time_test);
         //end
         //Log.d("[QQQ]","x= "+controllerOrientationEvent.qx+" y = "+controllerOrientationEvent.qy+" z = "+controllerOrientationEvent.qz+" w = "+controllerOrientationEvent.qw);
 
-        controllerOrientationEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
+        controllerOrientationEvent.timestampNanos = time_test;//SystemClock.elapsedRealtimeNanos();
         try {
             if((controllerListener!=null)&&(!mAirMouseState)){
                 controllerListener.deprecatedOnControllerOrientationEvent(controllerOrientationEvent);
@@ -1168,7 +1187,7 @@ public class ControllerService extends Service {
         }
         controllerButtonEvent.down = buttonActionDown;
 
-        debug_log("mshuai, buttonevent button:" + button + ", isDown? :" + buttonActionDown + ", lastButtonStatus:" + lastButtonStatus);
+        debug_log("buttonevent button:" + button + ", isDown? :" + buttonActionDown + ", lastButtonStatus:" + lastButtonStatus);
         // if last time is not down, this time still not down ,do not send event
         if(lastButtonStatus != buttonActionDown) {
             sendButtonEvent();
@@ -1990,12 +2009,12 @@ public class ControllerService extends Service {
     private void messageToClient(String message){
         EventInstance.getInstance().post(new MessageEvent(MessageEvent.MESSAGE_TO_CLIENT_EVENT, message));
     }
-    private void quanDataEvent(float x,float y,float z,float w){
+    private void quanDataEvent(float x,float y,float z,float w, int package_number, long timestampNanos){
         /*Intent intent = new Intent();
         intent.putExtra("quans",new float[]{x,y,z,w});
         intent.setAction(QUAN_DATA_EVENT_ACTION);
         localBroadcastManager.sendBroadcast(intent);*/
-        EventInstance.getInstance().post(new MessageEvent(MessageEvent.QUANS_DATA_EVENT, x,y,z,w));
+        EventInstance.getInstance().post(new MessageEvent(MessageEvent.QUANS_DATA_EVENT, x,y,z,w, package_number, timestampNanos));
         //Log.d("[SYS]","quanDataEvent.sendBroadcast(intent)");
     }
 
@@ -2277,6 +2296,7 @@ public class ControllerService extends Service {
 }
 
 class Bt_node_data{
+    public int pkgnum;
     public byte keymask;
     public int type;
     public int bat_level;

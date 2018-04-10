@@ -96,13 +96,13 @@ public class ControllerRec extends BroadcastReceiver {
                 }
             }
         }else if(ACTION_HAND_OTA_START.equals(action)){
-            Log.d(TAG,"[mshuai]get hand device ota start command");
+            Log.d(TAG,"get hand device ota start command");
             i.putExtra(HAND_OTA_ACTION, true);
             i.putExtra(HAND_OTA_STATUS, STATUS_HAND_OTA_STARTING);
             i.setPackage(context.getPackageName());
             context.startService(i);
         }else if (ACTION_HAND_OTA_STOP.equals(action)){
-            Log.d(TAG,"[mshuai]get hand device ota stop command");
+            Log.d(TAG,"get hand device ota stop command");
             i.putExtra(HAND_OTA_ACTION, true);
             i.putExtra(HAND_OTA_STATUS, STATUS_HAND_OTA_STOPED);
             i.setPackage(context.getPackageName());
