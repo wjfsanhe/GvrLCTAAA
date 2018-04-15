@@ -185,19 +185,29 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 	ALOGD("[%d]:TS %ld.%06ld PN %05d [%d]: delta time:%ld\n", res, ts2.tv_sec, ts2.tv_nsec/1000, packetNum, buf[3], (ts2.tv_nsec-ts1.tv_nsec)/1000);
 #endif
 	//ALOGD("native read, data count is %d, buf[3]:%d,packetNum:%04X\n", res, (int)buf[3],*((short*) (buf+1)));
-	if(buf[0] == JOYSTICK_TO_HOST && buf[3] == REPORT_TYPE_ORIENTATION) {
+    jfieldID type = (*env)->GetFieldID(env, clsBt_node_data, "type", "I");
+    jfieldID pkgnum = (*env)->GetFieldID(env, clsBt_node_data, "pkgnum", "I");
+    if (type == NULL) {
+        ALOGE("getFieldID type failed");
+    } else {
+        (*env)->SetIntField(env, data_struct, type, buf[3]);
+    }
+    if(pkgnum == NULL) {
+        ALOGE("getFieldID pkgnum failed");
+    } else {
+        (*env)->SetIntField(env, data_struct, pkgnum, packetNum);
+    }
+    if(buf[0] == JOYSTICK_TO_HOST && buf[3] == REPORT_TYPE_ORIENTATION) {
 		float *qd;
 		qd = (float*)(buf+4);
 #if 0//def DEBUG
 		ALOGD("quans data(w,x,y,z):%f,%f,%f,%f\n",qd[0], qd[1], qd[2], qd[3]);
 #endif
 
-		jfieldID type = (*env)->GetFieldID(env, clsBt_node_data, "type", "I");
 		jfieldID quans_x = (*env)->GetFieldID(env, clsBt_node_data, "quans_x", "F");
 		jfieldID quans_y = (*env)->GetFieldID(env, clsBt_node_data, "quans_y", "F");
 		jfieldID quans_z = (*env)->GetFieldID(env, clsBt_node_data, "quans_z", "F");
 		jfieldID quans_w = (*env)->GetFieldID(env, clsBt_node_data, "quans_w", "F");
-		(*env)->SetIntField(env, data_struct, type, REPORT_TYPE_ORIENTATION);
 		(*env)->SetFloatField(env, data_struct, quans_x, qd[1]);
 		(*env)->SetFloatField(env, data_struct, quans_y, qd[2]);
 		(*env)->SetFloatField(env, data_struct, quans_z, qd[3]);
@@ -240,7 +250,6 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 		ALOGD("type2 %02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X\n",
 				buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],buf[10],buf[11],buf[12],buf[13],buf[14],buf[15],buf[16]);
 #endif
-		jfieldID type = (*env)->GetFieldID(env, clsBt_node_data, "type", "I");
 		jfieldID gyro_x = (*env)->GetFieldID(env, clsBt_node_data, "gyro_x",
 				"F");
 		jfieldID gyro_y = (*env)->GetFieldID(env, clsBt_node_data, "gyro_y",
@@ -259,11 +268,6 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 		jfieldID keymask = (*env)->GetFieldID(env, clsBt_node_data, "keymask",
 				"B");
 
-		if (type == NULL) {
-			ALOGE("getFieldID type failed");
-		} else {
-			(*env)->SetIntField(env, data_struct, type, REPORT_TYPE_SENSOR);
-		}
 		if (gyro_x == NULL) {
 			ALOGE("getFieldID gyro_x failed");
 		} else {
@@ -326,11 +330,9 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
 				buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],buf[10],buf[11],buf[12],buf[13],buf[14],buf[15],buf[16]);
 #endif
 		ALOGD("appversion:%d, deviceVerion:%d, deviceType:%d\n", appVersion, deviceVersion, deviceType);
-		jfieldID type = (*env)->GetFieldID(env, clsBt_node_data, "type", "I");
 		jfieldID aVersion = (*env)->GetFieldID(env, clsBt_node_data, "appVersion", "I");
 		jfieldID dVersion = (*env)->GetFieldID(env, clsBt_node_data, "deviceVersion", "I");
 		jfieldID dType = (*env)->GetFieldID(env, clsBt_node_data, "deviceType", "I");
-		(*env)->SetIntField(env, data_struct, type, REPORT_TYPE_VERSION);
 		(*env)->SetIntField(env, data_struct, aVersion, appVersion);
 		(*env)->SetIntField(env, data_struct, dVersion, deviceVersion);
 		(*env)->SetIntField(env, data_struct, dType, deviceType);
@@ -344,13 +346,9 @@ JNIEXPORT jobject Java_com_google_vr_vrcore_controller_ControllerService_nativeR
         shake_event = (int)buf[8];
         event_parameter = (int)buf[9];
         ALOGD("time_stamp:%d, shake_event:%d, event_parameter:%d\n", time_stamp, shake_event, event_parameter);
-        jfieldID type = (*env)->GetFieldID(env, clsBt_node_data, "type", "I");
 		jfieldID time = (*env)->GetFieldID(env, clsBt_node_data, "timeStamp", "I");
         jfieldID shake = (*env)->GetFieldID(env, clsBt_node_data, "shakeEvent", "I");
         jfieldID parameter = (*env)->GetFieldID(env, clsBt_node_data, "eventParameter", "I");
-        if(type != NULL){
-            (*env)->SetIntField(env, data_struct, type, REPORT_TYPE_SHAKE);
-        }
         if(time != NULL){
 		    (*env)->SetIntField(env, data_struct, time, time_stamp);
 		}

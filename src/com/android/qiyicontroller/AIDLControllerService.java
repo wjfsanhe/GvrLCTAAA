@@ -73,12 +73,12 @@ public class AIDLControllerService extends Service {
                 //Log.d("[PPP]", "<<<onEvent x:" + event.getX() + " y:" + event.getY() + " z:" + event.getZ() + " w:" + event.getW());
                 if(mAirMouseControllerState && mAirMouseListener != null){
                     try{
-                        mAirMouseListener.quansDataEvent(event.getX(), event.getY(), event.getZ(), event.getW());
+                        mAirMouseListener.quansDataEvent(event.getX(), event.getY(), event.getZ(), event.getW(), 0, 0);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
                 }else{
-                    quansDataEventService(event.getX(), event.getY(), event.getZ(), event.getW());
+                    quansDataEventService(event.getX(), event.getY(), event.getZ(), event.getW(), event.getP(), event.getT());
                 }
             }else if(messageType == MessageEvent.SHORT_CLICK_BACK_EVENT){
                 if(mAirMouseControllerState && mAirMouseListener != null){
@@ -432,14 +432,14 @@ public class AIDLControllerService extends Service {
         mListenerList.finishBroadcast();
     }
 
-    private synchronized void quansDataEventService(float x, float y, float z, float w){
+    private synchronized void quansDataEventService(float x, float y, float z, float w, int packnum, long timestampnanos){
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
             if (l != null) {
                 try{
                     //Log.d("[PPP]","quans data l.quansDataEvent  x = "+x+" y = "+y+" z = "+z+" w = "+w);
-                    l.quansDataEvent(x, y, z, w);
+                    l.quansDataEvent(x, y, z, w, packnum, timestampnanos);
                     //Log.d("[PPP]","quansDataEvent [after]");
                 } catch (RemoteException e) {
                     e.printStackTrace();
@@ -565,7 +565,7 @@ public class AIDLControllerService extends Service {
                     if (DEBUG) {
                         Log.d(TAG, "l.versionInfo  appVersion = " + appVersion + " deviceVersion = " + deviceVersion + " deviceType = " + deviceType);
                     }
-                    Log.d("mshuai", "l.versionInfo  appVersion = " + appVersion + " deviceVersion = " + deviceVersion + " deviceType = " + deviceType);
+                    Log.d(TAG, "l.versionInfo  appVersion = " + appVersion + " deviceVersion = " + deviceVersion + " deviceType = " + deviceType);
                     l.handDeviceVersionInfoEvent(appVersion,deviceVersion,deviceType);
                 } catch (RemoteException e) {
                     e.printStackTrace();
