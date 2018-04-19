@@ -1212,25 +1212,22 @@ public class ControllerService extends Service {
 
     private float preTouchX = 0;
     private float preTouchY = 0;
-    private void sendPhoneEventControllerTouchPadEvent(float touchX, float touchY){
-        simulationSystemEvent(touchX,touchY);
+    private void sendPhoneEventControllerTouchPadEvent(float touchX, float touchY) {
 
-        //add by zhangyawen
+//        simulationSystemEvent(touchX,touchY);
         touchDataEvent(touchX,touchY);
-        //end
 
         int action = ControllerTouchEvent.ACTION_NONE;
-
-        if(touchX !=0 || touchY != 0){
-            if(preTouchX != 0 || preTouchY != 0){
+        if(touchX !=0 || touchY != 0) {
+            if(preTouchX != 0 || preTouchY != 0) {
                 action = ControllerTouchEvent.ACTION_MOVE;
-            }else{
+            } else {
                 action = ControllerTouchEvent.ACTION_DOWN;
             }
-        }else {
-            if(preTouchX != 0 || preTouchY != 0){
+        } else {
+            if(preTouchX != 0 || preTouchY != 0) {
                 action = ControllerTouchEvent.ACTION_UP;
-            }else {
+            } else {
                 action = ControllerTouchEvent.ACTION_NONE;
                 return;
             }
@@ -1243,7 +1240,7 @@ public class ControllerService extends Service {
         if (action == ControllerTouchEvent.ACTION_UP) {
             controllerTouchEvent.x = preTouchX;
             controllerTouchEvent.y = preTouchY;
-        }else{
+        } else {
             controllerTouchEvent.x = touchX;
             controllerTouchEvent.y = touchY;
         }
@@ -1252,20 +1249,18 @@ public class ControllerService extends Service {
 
         controllerTouchEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
-            if((controllerListener!=null)&&(!mAirMouseState)){
+            if((controllerListener != null)&&(!mAirMouseState)) {
                 controllerListener.deprecatedOnControllerTouchEvent(controllerTouchEvent);
-                if(controllerListener.getApiVersion()>GVR_API_VERSION_DIVIDE){
+                if(controllerListener.getApiVersion()>GVR_API_VERSION_DIVIDE) {
                     controllerListener.onControllerEventPacket(controllerEventPacket);
                 }
             } else {
                 debug_log("when send Touch event, controllerListener is null or 2D AirMouse is enabled");
             }
-
         } catch (RemoteException e) {
             e.printStackTrace();
         }
     }
-
 
     public /*static*/ void OnPhoneEvent() throws RemoteException {
         if((controllerListener!=null)&&(!mAirMouseState)){
@@ -2015,14 +2010,12 @@ public class ControllerService extends Service {
         EventInstance.getInstance().post(new MessageEvent(MessageEvent.VERSION_INFO_EVENT, appVersion, deviceVersion, deviceType));
     }
 
-    private void simulationSystemEvent(float touchX, float touchY){
+    private void simulationSystemEvent(float touchX, float touchY) {
         //int witchEventId = matchEvent(touchX,touchY);
         int witchEventId = GetSwipeDirection(touchX,touchY);
-
-        if (DEBUG) {
-            Log.d("[YYY]","witchEventId = "+witchEventId);
+        if (witchEventId != SYSTEM_EVENT_NOT_DEFINED_ID) {
+            sendSystemEvent(witchEventId);
         }
-        sendSystemEvent(witchEventId);
 /*        if (witchEventId != SYSTEM_EVENT_NOT_DEFINED_ID) {
             if (!isDone) {
                 sendSystemEvent(witchEventId);
