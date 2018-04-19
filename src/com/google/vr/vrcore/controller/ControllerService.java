@@ -57,7 +57,6 @@ import android.content.Context;
 import android.media.AudioManager;
 import java.text.DecimalFormat;
 
-
 /**
  * Created by mashuai on 2016/9/29.
  */
@@ -70,9 +69,6 @@ public class ControllerService extends Service {
     public final static String BLUETOOTH_DISCONNECTED = "bluetooth_disconnected";
     public final static String BLUETOOTH_DEVICE_OBJECT = "bluetooth_device";
     private final static boolean DEBUG = false;
-
-    //runAsDaemonService means start when boot, and not allow stop
-    public final static boolean runAsDaemonService = true;
 
     private boolean lastButtonStatus = false;
     private int lastButton = 0;
@@ -90,7 +86,7 @@ public class ControllerService extends Service {
     public static final int CONNECT_STATE_DISCONNECTED = 0;
     public static final int CONNECT_STATE_CONNECTED = 1;
 
-    public static final int GVR_API_VERSION_DIVIDE                =12;
+    public static final int GVR_API_VERSION_DIVIDE                = 12;
     public static final int JOYSTICK_CONTROL_TYPE                 = 0x01;
     public static final int JOYSTICK_REQUEST_TYPE                 = 0x02;
     public static final int JOYSTICK_HILLCREST_CALIBRATION_TYPE   = 0x03;
@@ -126,25 +122,14 @@ public class ControllerService extends Service {
     private static final String HAND_VERSION_ZERO                   = "0";
     private static final String HAND_VERSION_READY_TO_RAED          = "1";
 
-    private String iDreamDeviceVersion = null;
-    private String iDreamDeviceType = null;
-
     private Handler handler = new Handler();
     private static int button = 0;
-
-
     private static int count = 0;
-
     private static int controllerId=0;
-
     private Thread getNodeDataThread = null;
-
     private Thread getRFCommDataThread = null;
-
     private int dataChannel = RAW_DATA_CHANNEL_NONE;
-
     private static int hand_device_ota_status = -1;
-
 
     private LocalBroadcastManager localBroadcastManager;
     EventReceiver eventReceiver = new EventReceiver();
@@ -155,7 +140,6 @@ public class ControllerService extends Service {
     private BluetoothAdapter mBluetoothAdapter;
 
     private InputStream inputStream;
-    private OutputStream outputStream;
 
     // for save last quans data
     private float last_quans_x;
@@ -208,9 +192,7 @@ public class ControllerService extends Service {
         Log.d(TAG,"registerReceiver");
         localBroadcastManager.registerReceiver(eventReceiver,filter);
 
-        if(runAsDaemonService){
-            startGetNodeDataThread();//begin to run thread
-        }
+        startGetNodeDataThread();//begin to run thread
         Log.d("myControllerService", "onCreate");
     }
 
@@ -222,33 +204,33 @@ public class ControllerService extends Service {
             String action = intent.getAction();
             if("OPEN_VIBRATOR_ACTION".equals(action)) {
                 controlJoystickVibrate(3, 5);
-            }else if("OPEN_VIBRATOR_TIME_ACTION".equals(action)) {
+            } else if("OPEN_VIBRATOR_TIME_ACTION".equals(action)) {
                 long time = intent.getLongExtra("time", -1);
                 controlJoystickVibrate(3, (int)time);
-            }else if("OPEN_VIBRATOR_MODE_ACTION".equals(action)) {
+            } else if("OPEN_VIBRATOR_MODE_ACTION".equals(action)) {
                 long time = intent.getLongExtra("time", -1);
                 int mode = intent.getIntExtra("mode", -1);
                 int power = 0;
                 if(mode == 0){
                     power = 3;
-                }else if(mode == 1){
+                } else if(mode == 1) {
                     power = 5;
-                }else if(mode == 2){
+                } else if(mode == 2) {
                     power = 7;
                 }
                 controlJoystickVibrate(power, (int)time);
-            }else if("OPEN_VIBRATOR_REPEAT_ACTION".equals(action)){
+            } else if("OPEN_VIBRATOR_REPEAT_ACTION".equals(action)) {
                 mVibrateClose = false;
                 if (DEBUG) {
                     Log.d("[GGG]","<<<<mVibrateClose:"+mVibrateClose);
                 }
                 long[] pattern = intent.getLongArrayExtra("pattern");
                 int repeat = intent.getIntExtra("repeat", -1);
-                if(pattern.length > 0 && repeat < pattern.length){
+                if(pattern.length > 0 && repeat < pattern.length) {
                     final long time = pattern[repeat];
                     new Thread(){
-                        public void run(){
-                            while(!mVibrateClose){
+                        public void run() {
+                            while(!mVibrateClose) {
                                 if (DEBUG) {
                                     Log.d("[GGG]", "time = " + time + " mVibrateClose:" + mVibrateClose);
                                 }
@@ -258,27 +240,27 @@ public class ControllerService extends Service {
                                         Log.d("[GGG]", "Thread.sleep  time = " + time);
                                     }
                                     Thread.sleep(time*200);
-                                }catch (Exception exception){
+                                }catch (Exception exception) {
                                 }
                             }
                         }
                     }.start();
 
                 }
-            }else if("CLOSE_VIBRATOR_ACTION".equals(action)){
+            } else if("CLOSE_VIBRATOR_ACTION".equals(action)) {
                 mVibrateClose = true;
                 if (DEBUG) {
                     Log.d("[GGG]", "<<<CLOSE_VIBRATOR_ACTION mVibrateClose22:" + mVibrateClose);
                 }
                 controlJoystickVibrate(0, 0);
-            }else if (AIDLControllerService.ACTION_GET_HAND_DEVICE_VERSION_INFO.equals(action)){
+            } else if (AIDLControllerService.ACTION_GET_HAND_DEVICE_VERSION_INFO.equals(action)) {
                 getHandDeviceVersionInfo();
-            }else if (AIDLControllerService.ACTION_CONTROL_HAND_DEVICE.equals(action)){
+            } else if (AIDLControllerService.ACTION_CONTROL_HAND_DEVICE.equals(action)) {
                 int type = intent.getIntExtra(AIDLControllerService.CONTROL_HAND_DEVICE_TYPE, -1);
                 int data1 = intent.getIntExtra(AIDLControllerService.CONTROL_HAND_DEVICE_DATA1, -1);
                 int data2 = intent.getIntExtra(AIDLControllerService.CONTROL_HAND_DEVICE_DATA2, -1);
                 controlHandDevice(type, data1, data2);
-            }else if("ENABLE_HAND_DEVICES".equals(action)){
+            } else if("ENABLE_HAND_DEVICES".equals(action)) {
                 boolean status = intent.getBooleanExtra("enable", false);
                 mAirMouseState = status;
             }
@@ -314,35 +296,31 @@ public class ControllerService extends Service {
             }
             // we use broadcast to check if bt device is connected
             isBtInputDeviceConnected = true;
-            resetHandDeviceVersionInfo();// reset recorded hand version info.
-            startGetNodeDataThread();
-            //start read hidrawx node
+            resetHandDeviceVersionInfo();   // reset recorded hand version info.
+            startGetNodeDataThread();       //start read hidrawx node
         }else if(intent.getBooleanExtra(BLUETOOTH_DISCONNECTED,false)){
             //stop read node
             debug_log("onStartCommand intent BLUETOOTH_DISCONNECTED, set isCancel=false");
-            if (!runAsDaemonService) {
-                isCancel = true;
-            }
             device=null;
             device_name = null;
             device_address = null;
             isBtInputDeviceConnected = false;
 			//AIDLControllerUtil.mBatterLevel = "";
             batterLevelEvent(-1);
-        }else if(intent.getBooleanExtra("test_vibrate", false)){//for test vibrate
+        } else if(intent.getBooleanExtra("test_vibrate", false)){//for test vibrate
             controlJoystickVibrate(3, 5);
             stopSelf();
-        }else if(intent.getBooleanExtra(ControllerRec.TEST_GET_HAND_VERSION, false)){
+        } else if(intent.getBooleanExtra(ControllerRec.TEST_GET_HAND_VERSION, false)) {
             getHandDeviceVersionInfo();
-        }else if(intent.getBooleanExtra(ControllerRec.TEST_RESET_QUATERNION, false)){
+        } else if(intent.getBooleanExtra(ControllerRec.TEST_RESET_QUATERNION, false)) {
             requestHandDeviceResetQuternion();
-        }else if(intent.getBooleanExtra(ControllerRec.TEST_REQUEST_CALIBRATION, false)){
+        } else if(intent.getBooleanExtra(ControllerRec.TEST_REQUEST_CALIBRATION, false)) {
             int type = intent.getIntExtra(ControllerRec.REQUEST_CALIBRATION_TYPE, -1);
             int mode = intent.getIntExtra(ControllerRec.REQUEST_CALIBRATION_MODE, -1);
             requestHandDeviceCalibration(type, mode);
         } else if (intent.getBooleanExtra(ControllerRec.HAND_OTA_ACTION, false)) {
             hand_device_ota_status = intent.getIntExtra(ControllerRec.HAND_OTA_STATUS, -1);
-            if(hand_device_ota_status == ControllerRec.STATUS_HAND_OTA_STARTING){
+            if(hand_device_ota_status == ControllerRec.STATUS_HAND_OTA_STARTING) {
                 sendBroadcastToHandOTA(true);
             }
         }
@@ -455,8 +433,6 @@ public class ControllerService extends Service {
     /*
      * -1, is ok
      * 0 is hidraw0
-     * 1 is hidraw1
-     * 2 is hidraw2
      *
      * only getNodeDataThread use it .other thread can't use!!!!!!!
      */
@@ -464,10 +440,6 @@ public class ControllerService extends Service {
     public native Bt_node_data nativeReadFile();
     public native int nativeWriteFile(int type, int data1, int data2);
     public native int nativeCloseFile();
-
-//    private void scheduleNext(){
-//
-//    }
 
     private static void controllerServiceSleep(int flag, long ms){
 //        Log.d(TAG,"sleep "+ms+"s"+", flag:"+flag);;
@@ -543,9 +515,8 @@ public class ControllerService extends Service {
                 mLastBatterLevel = nodeData.bat_level;
                 batterLevelEvent(nodeData.bat_level);
             }
-
             // send broadcast to notify the hand shank's battery
-        }else if (nodeData.type == REPORT_TYPE_VERSION) {
+        } else if (nodeData.type == REPORT_TYPE_VERSION) {
             timeoutCount = 0;// timeout count reset to 0
             Log.d(TAG,"nodeData appVersion:" + nodeData.appVersion + ", deviceVersion:" + nodeData.deviceVersion + ", deviceType:" + nodeData.deviceType);
             if(channel == dataChannel){
@@ -553,7 +524,7 @@ public class ControllerService extends Service {
                 //record device version info
                 recordHandDeviceVersionInfo(nodeData.appVersion, nodeData.deviceVersion, nodeData.deviceType);
             }
-        }else if (nodeData.type == REPORT_TYPE_SHAKE){
+        } else if (nodeData.type == REPORT_TYPE_SHAKE){
             debug_log("nodeData.timeStamp :" + nodeData.timeStamp + ", nodeData.shakeEvent :" + nodeData.shakeEvent + ", nodeData.eventParameter:" + nodeData.eventParameter);
             if (channel == dataChannel) {
                 shakeEvent(nodeData.timeStamp, nodeData.shakeEvent, nodeData.eventParameter);
@@ -568,7 +539,7 @@ public class ControllerService extends Service {
                       last_quans_y,
                       last_quans_z,
                       last_quans_w, package_number, time_test);
-              Log.e(TAG, "send last data which timeout count is more than 5");
+//              Log.e(TAG, "send last data which timeout count is more than 5");
           }
       } else if(nodeData.type == GET_INVALID_DATA){
           Log.e(TAG, "get invalid data ");
@@ -577,6 +548,7 @@ public class ControllerService extends Service {
       }
       return timeoutCount;
     }
+
     private Runnable getNodeDataRunnable = new Runnable() {
         @Override
         public void run() {
@@ -588,7 +560,7 @@ public class ControllerService extends Service {
                 int timeoutCount = 0;
                 int getHandVersionCount = 0;
                 long timestampNanos = 0;
-                String FileName = Environment.getExternalStorageDirectory().getPath() + "/ServiceTimeElaps.txt";
+                String FileName = Environment.getExternalStorageDirectory().getPath() + "/ServiceTimeElapse.txt";
                 File file = new File(FileName);
                 if (file.exists()) {
                     file.delete();
@@ -601,18 +573,16 @@ public class ControllerService extends Service {
                             continue;
                         }
                         needOpenFile = false;
-//                        resetHandDeviceVersionInfo();// clean hand device version
-//                        needGetHandVersion = true;
                         Log.d(TAG, "natvie Open File Success");
                         android.util.Log.d("[POP]","[Success] waitForRecenter = "+waitForRecenter);
                         if (waitForRecenter) {
                             requestHandDeviceResetQuternion();
                         }
+                        //for svr app
+                        connectStateEvent(CONNECT_STATE_CONNECTED);
+                        //for draydream app
+                        setControllerListenerConnected();
                     }
-                    //for svr app
-                    connectStateEvent(CONNECT_STATE_CONNECTED);
-                    //for draydream app
-                    setControllerListenerConnected();
 
                     Bt_node_data nodeData = nativeReadFile();
                     if (nodeData == null) {
@@ -633,12 +603,12 @@ public class ControllerService extends Service {
                     timeoutCount = disposeNodeData(RAW_DATA_CHANNEL_JOYSTICK, nodeData, timeoutCount, nodeData.pkgnum, timestampNanos);
                     if(nodeData.type >= REPORT_TYPE_ORIENTATION) {
                         String Content = "[21]:TS:"+"\t"+df.format(timestampNanos*0.001d)+"\t"+"PN:"+"\t"+nodeData.pkgnum+"\t"+
-                            "["+nodeData.type + "]" + "\n" ;
+                            "["+nodeData.type + "]" + "\n";
                         appendToFile(FileName, Content);
                     }
 
                     //we use getHandVersionCount to record, if still need get hand version, we get once every 10 times
-                    if(needGetHandVersion){
+                    if(needGetHandVersion) {
                         if (getHandVersionCount == 0) {
                             //reset record data when get new version
                             nodeData.appVersion = 1;
@@ -651,10 +621,10 @@ public class ControllerService extends Service {
                             }
                         }
                         getHandVersionCount++;
-                        if(getHandVersionCount > 100){
+                        if(getHandVersionCount > 100) {
                             getHandVersionCount = 0;
                         }
-                    }else{
+                    } else {
                         getHandVersionCount = 0;
                     }
                 }
@@ -781,6 +751,7 @@ public class ControllerService extends Service {
         }
         return node_data;
     }
+
     private Runnable getRFCommDataRunnable = new Runnable(){
         @Override
         public void run() {
@@ -926,6 +897,7 @@ public class ControllerService extends Service {
         debug_log("controlJoystickVibrate defaultvalue res:"+res);
         return res;
     }
+
     public int controlJoystickVibrate(int powerLevel, int millisceonds){
         if(hand_device_ota_status == ControllerRec.STATUS_HAND_OTA_STARTING){
             Log.w(TAG,"hand device is still ota, can't control hand device");
@@ -954,7 +926,7 @@ public class ControllerService extends Service {
         Log.i(TAG,"sendBroadcastToHandOTA, ready:"+ready);
     }
 
-    private void sendBroadcastForHandDeviceOTA(int appVersion){
+    private void sendBroadcastForHandDeviceOTA(int appVersion) {
         Intent intent = new Intent();
         intent.setAction(ACTION_HAVE_GOT_HAND_VERSION_INFO);
         intent.putExtra(HAND_VERSION_INFO_NAME, device_name);
@@ -963,7 +935,8 @@ public class ControllerService extends Service {
         sendBroadcast(intent);
         Log.i(TAG,"sendBroadcastForHandDeviceOTA, name:"+device_name+", address:"+device_address);
     }
-    private void recordHandDeviceVersionInfo(final int appVersion, int deviceVersion, int deviceType){
+
+    private void recordHandDeviceVersionInfo(final int appVersion, int deviceVersion, int deviceType) {
         SystemProperties.set("sys.iqiyi.hand.appVersion", String.format("%06x", appVersion & 0xffffff));
         SystemProperties.set("sys.iqiyi.hand.deviceVersion", String.format("%04x", deviceVersion & 0xffff));
         SystemProperties.set("sys.iqiyi.hand.deviceType", String.format("%04x", deviceType & 0xffff));
@@ -1079,8 +1052,6 @@ public class ControllerService extends Service {
 
 //    private static final ControllerEventPacket cep = new ControllerEventPacket();
     private void sendPhoneEventControllerOrientationEvent(float x, float y, float z, float w, int package_number, long time_test){
-
-
         controllerOrientationEvent.qx = -x;
         controllerOrientationEvent.qy = -z;
         controllerOrientationEvent.qz = y;
@@ -1103,7 +1074,7 @@ public class ControllerService extends Service {
         try {
             if((controllerListener!=null)&&(!mAirMouseState)){
                 controllerListener.deprecatedOnControllerOrientationEvent(controllerOrientationEvent);
-                if(controllerListener.getApiVersion()>GVR_API_VERSION_DIVIDE){
+                if(controllerListener.getApiVersion() > GVR_API_VERSION_DIVIDE){
                     controllerListener.onControllerEventPacket(controllerEventPacket);
                 }
             } else {
@@ -1119,9 +1090,9 @@ public class ControllerService extends Service {
 
     private void sendButtonEvent(){
         try {
-            if((controllerListener!=null)&&(!mAirMouseState)){
+            if((controllerListener != null)&&(!mAirMouseState)) {
                 controllerListener.deprecatedOnControllerButtonEvent(controllerButtonEvent);
-                if(controllerListener.getApiVersion()>GVR_API_VERSION_DIVIDE){
+                if(controllerListener.getApiVersion() > GVR_API_VERSION_DIVIDE) {
                     controllerListener.onControllerEventPacket(controllerEventPacket);
                 }
             } else {
@@ -1195,6 +1166,7 @@ public class ControllerService extends Service {
         lastButton = button;
         lastButtonStatus = buttonActionDown;
     }
+
     private void sendPhoneEventControllerAccAndGyroEvent(float gyrpX, float gyrpY, float gyrpZ, float accX, float accY, float accZ){
         controllerGyroEvent.x = gyrpX;
         controllerGyroEvent.y = gyrpY;
@@ -1237,6 +1209,7 @@ public class ControllerService extends Service {
             e.printStackTrace();
         }
     }
+
     private float preTouchX = 0;
     private float preTouchY = 0;
     private void sendPhoneEventControllerTouchPadEvent(float touchX, float touchY){
@@ -1313,13 +1286,7 @@ public class ControllerService extends Service {
             controllerButtonEvent.down = false;
         }
         Log.d("myPhoneEvent","onPhoneEvent button:"+button+" buttonEvent:"+controllerButtonEvent.down);
-
-
-
 //        controllerListener.deprecatedOnControllerButtonEvent(controllerButtonEvent);
-
-
-
         controllerOrientationEvent.qx = (float)-0.000061068754;
         controllerOrientationEvent.qy = (float) 0.009013792;
         controllerOrientationEvent.qz = (float) 0.0042907377;
@@ -1331,7 +1298,6 @@ public class ControllerService extends Service {
             controllerListener.onControllerEventPacket(controllerEventPacket);
         }
     }
-
 
     //add by zhangyawen for system event
     private boolean isDone = false;
@@ -2324,7 +2290,6 @@ class Bt_node_data{
     public int timeStamp;
     public int shakeEvent;
     public int eventParameter;
-
 
     public Bt_node_data(){}
     public Bt_node_data(float x, float y, float z, float w){
