@@ -578,15 +578,11 @@ public class ControllerService extends Service {
                         if (waitForRecenter) {
                             requestHandDeviceResetQuternion();
                         }
-                        //for svr app
-                        connectStateEvent(CONNECT_STATE_CONNECTED);
-                        //for draydream app
-                        setControllerListenerConnected();
                     }
 
                     Bt_node_data nodeData = nativeReadFile();
                     if (nodeData == null) {
-                        Log.e(TAG, "do not get hidraw data from native, schedule next open data node");
+                        Log.e(TAG, "read hidraw error schedule next open data node");
                         if (dataChannel == RAW_DATA_CHANNEL_JOYSTICK) {
                             //for svr app
                             connectStateEvent(CONNECT_STATE_DISCONNECTED);
@@ -599,9 +595,15 @@ public class ControllerService extends Service {
                         continue;
                     }
                     timestampNanos = System.currentTimeMillis();
-                    //record timeoutCount
+
+                    //for svr app
+                    connectStateEvent(CONNECT_STATE_CONNECTED);
+                    //for draydream app
+                    setControllerListenerConnected();
+
                     timeoutCount = disposeNodeData(RAW_DATA_CHANNEL_JOYSTICK, nodeData, timeoutCount, nodeData.pkgnum, timestampNanos);
-                    if(nodeData.type >= REPORT_TYPE_ORIENTATION) {
+                    String prop = SystemProperties.get("sys.iqiyi.controller.logfile", "false");
+                    if(prop.equals("true") && nodeData.type >= REPORT_TYPE_ORIENTATION) {
                         String Content = "[21]:TS:"+"\t"+df.format(timestampNanos*0.001d)+"\t"+"PN:"+"\t"+nodeData.pkgnum+"\t"+
                             "["+nodeData.type + "]" + "\n";
                         appendToFile(FileName, Content);
@@ -2139,7 +2141,7 @@ public class ControllerService extends Service {
         return mDirection;
     }
 
-    private int matchEvent(float touchX, float touchY){
+    private int matchEvent(float touchX, float touchY) {
         if (DEBUG) {
             Log.d("[YYY]", "matchEvent touchX = " + touchX + " touchY = " + touchY);
         }
