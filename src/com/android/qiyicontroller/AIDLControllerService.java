@@ -13,6 +13,7 @@ import android.content.Context;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 
+import java.util.HashMap;
 import com.google.vr.vrcore.controller.ControllerService;
 //end
 
@@ -36,11 +37,14 @@ public class AIDLControllerService extends Service {
     //EventReceiver eventReceiver = new EventReceiver();
 
     RemoteCallbackList<AIDLListener> mListenerList = new RemoteCallbackList<AIDLListener>();
+    HashMap<Integer,AIDLListener> mListenerHashMap= new HashMap<Integer,AIDLListener>();
 
     private float[] quans = new float[]{0,0,0,1};
     //end
 
     private AIDLListener mAirMouseListener;
+    private int mAIDLListenerPid = 0;
+    private int mHTCListenerPid = 0;
     private boolean mAirMouseControllerState = false;
     private int mControllerConnectState = -1;
     public static final String KEY_CONTROLLER_CONNECT_STATE = "controller_state";
@@ -305,22 +309,40 @@ public class AIDLControllerService extends Service {
         }
         @Override
         public void registerListener(AIDLListener listener){
-            mListenerList.register(listener);
+            Log.d(TAG,"registerListener pid = "+Binder.getCallingPid());
+            //mListenerList.register(listener);
+            mAIDLListenerPid = Binder.getCallingPid();
+            mListenerHashMap.put(mAIDLListenerPid,listener);
         }
 
         @Override
         public void unRegisterListener(AIDLListener listener){
-            mListenerList.unregister(listener);
+            Log.d(TAG,"unRegisterListener pid = "+Binder.getCallingPid());
+            //mListenerList.unregister(listener);
+            mListenerHashMap.remove(Binder.getCallingPid());
         }
 	@Override
         public void registerAIDLListener(AIDLListener listener,String client){
-            Log.d(TAG,"registerAIDLListener"+" client = "+client);
-            mAirMouseListener = listener;
+            Log.d(TAG,"registerAIDLListener"+" client = "+client+" pid = "+Binder.getCallingPid());
+            if ("airmouse".equals(client)){
+                mAirMouseListener = listener;
+            }else if("HTC".equals(client)){
+                mHTCListenerPid = Binder.getCallingPid();
+                mListenerHashMap.put(mHTCListenerPid,listener);
+            }else{
+                Log.d(TAG,"registerAIDLListener client is not support: client = "+client);
+            }
         }
         @Override
         public void unRegisterAIDLListener(AIDLListener listener,String client){
-            Log.d(TAG,"unRegisterAIDLListener"+" client = "+client);
-            mAirMouseListener = null;
+            Log.d(TAG,"unRegisterAIDLListener"+" client = "+client+" pid = "+Binder.getCallingPid());
+            if ("airmouse".equals(client)){
+                mAirMouseListener = null;
+            }else if("HTC".equals(client)){
+                mListenerHashMap.remove(Binder.getCallingPid());
+            }else{
+                Log.d(TAG,"unRegisterAIDLListener client is not support: client = "+client);
+            }
         }
         @Override
         public void updateAirMouseControllerState(boolean enable){
@@ -344,6 +366,23 @@ public class AIDLControllerService extends Service {
     }
 
     private synchronized void shortClickBackEventService(int state){
+        AIDLListener aidlListener = mListenerHashMap.get(mAIDLListenerPid);
+        if(aidlListener != null){
+            try{
+                aidlListener.shortClickBackEvent(state);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        AIDLListener htcListener = mListenerHashMap.get(mHTCListenerPid);
+        if(htcListener != null){
+            try{
+                htcListener.shortClickBackEvent(state);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        /*
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -359,8 +398,26 @@ public class AIDLControllerService extends Service {
             }
         }
         mListenerList.finishBroadcast();
+        */
     }
     private synchronized void longClickHomeEventService(int state){
+        AIDLListener aidlListener = mListenerHashMap.get(mAIDLListenerPid);
+        if(aidlListener != null){
+            try{
+                aidlListener.longClickHomeEvent(state);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        AIDLListener htcListener = mListenerHashMap.get(mHTCListenerPid);
+        if(htcListener != null){
+            try{
+                htcListener.longClickHomeEvent(state);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        /*
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -376,9 +433,27 @@ public class AIDLControllerService extends Service {
             }
         }
         mListenerList.finishBroadcast();
+        */
     }
 
     private synchronized void batterLevelEventService(int level){
+        AIDLListener aidlListener = mListenerHashMap.get(mAIDLListenerPid);
+        if(aidlListener != null){
+            try{
+                aidlListener.batterLevelEvent(level);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        AIDLListener htcListener = mListenerHashMap.get(mHTCListenerPid);
+        if(htcListener != null){
+            try{
+                htcListener.batterLevelEvent(level);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        /*
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -394,9 +469,27 @@ public class AIDLControllerService extends Service {
             }
         }
         mListenerList.finishBroadcast();
+        */
     }
 
     private synchronized void clickAppButtEventService(int state){
+        AIDLListener aidlListener = mListenerHashMap.get(mAIDLListenerPid);
+        if(aidlListener != null){
+            try{
+                aidlListener.clickAppButtonEvent(state);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        AIDLListener htcListener = mListenerHashMap.get(mHTCListenerPid);
+        if(htcListener != null){
+            try{
+                htcListener.clickAppButtonEvent(state);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        /*
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -412,9 +505,28 @@ public class AIDLControllerService extends Service {
             }
         }
         mListenerList.finishBroadcast();
+        */
     }
 
     private synchronized void clickAndTriggerEventService(int state){
+        AIDLListener aidlListener = mListenerHashMap.get(mAIDLListenerPid);
+        Log.d(TAG,"clickAndTriggerEventService aidlListener = "+aidlListener+" mAIDLListenerPid = "+mAIDLListenerPid);
+        if(aidlListener != null){
+            try{
+                aidlListener.clickAndTriggerEvent(state);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        AIDLListener htcListener = mListenerHashMap.get(mHTCListenerPid);
+        if(htcListener != null){
+            try{
+                htcListener.clickAndTriggerEvent(state);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        /*
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -430,9 +542,27 @@ public class AIDLControllerService extends Service {
             }
         }
         mListenerList.finishBroadcast();
+        */
     }
 
     private synchronized void quansDataEventService(float x, float y, float z, float w, int packnum, long timestampnanos){
+        AIDLListener aidlListener = mListenerHashMap.get(mAIDLListenerPid);
+        if(aidlListener != null){
+            try{
+                aidlListener.quansDataEvent(x, y, z, w, packnum, timestampnanos);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        AIDLListener htcListener = mListenerHashMap.get(mHTCListenerPid);
+        if(htcListener != null){
+            try{
+                htcListener.quansDataEvent(x, y, z, w, packnum, timestampnanos);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        /*
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -447,8 +577,28 @@ public class AIDLControllerService extends Service {
             }
         }
         mListenerList.finishBroadcast();
+        */
     }
     private synchronized void connectStateService(int state){
+        AIDLListener aidlListener = mListenerHashMap.get(mAIDLListenerPid);
+        if(aidlListener != null){
+            try{
+                aidlListener.connectStateEvent(state);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+
+        }
+        AIDLListener htcListener = mListenerHashMap.get(mHTCListenerPid);
+        if(htcListener != null){
+            try{
+                htcListener.connectStateEvent(state);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+
+        }
+        /*
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -464,8 +614,26 @@ public class AIDLControllerService extends Service {
             }
         }
         mListenerList.finishBroadcast();
+        */
     }
     private synchronized void messageToClientService(String message){
+        AIDLListener aidlListener = mListenerHashMap.get(mAIDLListenerPid);
+        if(aidlListener != null){
+            try{
+                aidlListener.messageToClientEvent(message);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        AIDLListener htcListener = mListenerHashMap.get(mHTCListenerPid);
+        if(htcListener != null){
+            try{
+                htcListener.messageToClientEvent(message);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        /*
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -481,9 +649,27 @@ public class AIDLControllerService extends Service {
             }
         }
         mListenerList.finishBroadcast();
+        */
     }
     //add by zhangyawen
     private synchronized void gyroDataEventService(float x, float y, float z){
+        AIDLListener aidlListener = mListenerHashMap.get(mAIDLListenerPid);
+        if(aidlListener != null){
+            try{
+                aidlListener.gyroDataEvent(x, y, z);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        AIDLListener htcListener = mListenerHashMap.get(mHTCListenerPid);
+        if(htcListener != null){
+            try{
+                htcListener.gyroDataEvent(x, y, z);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        /*
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -499,9 +685,27 @@ public class AIDLControllerService extends Service {
             }
         }
         mListenerList.finishBroadcast();
+        */
     }
 
     private synchronized void accelDataEventService(float x, float y, float z){
+        AIDLListener aidlListener = mListenerHashMap.get(mAIDLListenerPid);
+        if(aidlListener != null){
+            try{
+                aidlListener.accelDataEvent(x, y, z);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        AIDLListener htcListener = mListenerHashMap.get(mHTCListenerPid);
+        if(htcListener != null){
+            try{
+                htcListener.accelDataEvent(x, y, z);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        /*
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -517,9 +721,27 @@ public class AIDLControllerService extends Service {
             }
         }
         mListenerList.finishBroadcast();
+        */
     }
 
     private synchronized void touchDataEventService(float x, float y){
+        AIDLListener aidlListener = mListenerHashMap.get(mAIDLListenerPid);
+        if(aidlListener != null){
+            try{
+                aidlListener.touchDataEvent(x, y);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        AIDLListener htcListener = mListenerHashMap.get(mHTCListenerPid);
+        if(htcListener != null){
+            try{
+                htcListener.touchDataEvent(x, y);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        /*
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -535,10 +757,28 @@ public class AIDLControllerService extends Service {
             }
         }
         mListenerList.finishBroadcast();
+        */
     }
     //end
 
     private synchronized void shakeEventService(int timeStamp,int event,int eventParameter){
+        AIDLListener aidlListener = mListenerHashMap.get(mAIDLListenerPid);
+        if(aidlListener != null){
+            try{
+                aidlListener.shakeEvent(timeStamp,event,eventParameter);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        AIDLListener htcListener = mListenerHashMap.get(mHTCListenerPid);
+        if(htcListener != null){
+            try{
+                htcListener.shakeEvent(timeStamp,event,eventParameter);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        /*
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -554,9 +794,27 @@ public class AIDLControllerService extends Service {
             }
         }
         mListenerList.finishBroadcast();
+        */
     }
 
     private synchronized void handDeviceVersionInfoEventService(int appVersion,int deviceVersion,int deviceType){
+        AIDLListener aidlListener = mListenerHashMap.get(mAIDLListenerPid);
+        if(aidlListener != null){
+            try{
+                aidlListener.handDeviceVersionInfoEvent(appVersion,deviceVersion,deviceType);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        AIDLListener htcListener = mListenerHashMap.get(mHTCListenerPid);
+        if(htcListener != null){
+            try{
+                htcListener.handDeviceVersionInfoEvent(appVersion,deviceVersion,deviceType);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        /*
         final int N = mListenerList.beginBroadcast();
         for (int i = 0; i < N; i++) {
             AIDLListener l = mListenerList.getBroadcastItem(i);
@@ -573,6 +831,7 @@ public class AIDLControllerService extends Service {
             }
         }
         mListenerList.finishBroadcast();
+        */
     }
 
 

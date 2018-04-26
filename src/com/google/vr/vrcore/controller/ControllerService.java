@@ -22,6 +22,7 @@ import android.util.Log;
 import com.android.qiyicontroller.AIDLControllerService;
 import com.android.qiyicontroller.EventInstance;
 import com.android.qiyicontroller.MessageEvent;
+import com.android.qiyicontroller.AIDLControllerUtil;
 import com.google.vr.vrcore.controller.api.ControllerEventPacket;
 import com.google.vr.vrcore.controller.api.ControllerAccelEvent;
 import com.google.vr.vrcore.controller.api.ControllerButtonEvent;
@@ -510,7 +511,7 @@ public class ControllerService extends Service {
                 debug_log("send acc button touch event finish");
             }
             debug_log("battery:" + nodeData.bat_level);
-            // AIDLControllerUtil.mBatterLevel = String.valueOf(nodeData.bat_level);
+            AIDLControllerUtil.mBatterLevel = String.valueOf(nodeData.bat_level);
             if (mLastBatterLevel != nodeData.bat_level) {
                 mLastBatterLevel = nodeData.bat_level;
                 batterLevelEvent(nodeData.bat_level);
