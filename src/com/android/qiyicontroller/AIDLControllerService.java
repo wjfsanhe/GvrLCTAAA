@@ -510,7 +510,6 @@ public class AIDLControllerService extends Service {
 
     private synchronized void clickAndTriggerEventService(int state){
         AIDLListener aidlListener = mListenerHashMap.get(mAIDLListenerPid);
-        Log.d(TAG,"clickAndTriggerEventService aidlListener = "+aidlListener+" mAIDLListenerPid = "+mAIDLListenerPid);
         if(aidlListener != null){
             try{
                 aidlListener.clickAndTriggerEvent(state);
