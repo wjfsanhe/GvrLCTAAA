@@ -1083,7 +1083,7 @@ public class ControllerService extends Service {
             } else {
                 debug_log("when send orientation event, controllerListener is null or 2D AirMouse is enabled");
             }
-        } catch (RemoteException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         debug_log("OrientationX:" + controllerOrientationEvent.qx + ", Y:"
