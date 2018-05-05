@@ -162,9 +162,9 @@ public class ControllerService extends Service {
     //add for daydream app adjust volume
     private AudioManager mAudioManager;
 
-    public static void debug_log(String log){
+    public static void debug_log(String log) {
         // setprop log.tag.TAG DEBUG ,we can print log
-        if(DEBUG || Log.isLoggable(TAG, Log.DEBUG)){
+        if(DEBUG || Log.isLoggable(TAG, Log.DEBUG)) {
             Log.d(TAG,log);
         }
     }
@@ -212,7 +212,7 @@ public class ControllerService extends Service {
                 long time = intent.getLongExtra("time", -1);
                 int mode = intent.getIntExtra("mode", -1);
                 int power = 0;
-                if(mode == 0){
+                if(mode == 0) {
                     power = 3;
                 } else if(mode == 1) {
                     power = 5;
@@ -282,24 +282,24 @@ public class ControllerService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(intent == null) return super.onStartCommand(intent,flags,startId);
-        if(intent.getBooleanExtra(BOOT_COMPLETE_FLAG, false)){
+        if(intent.getBooleanExtra(BOOT_COMPLETE_FLAG, false)) {
             isCancel = false;
             startGetNodeDataThread();
-        }else if(intent.getBooleanExtra(BLUETOOTH_CONNECTED_SUCCESS, false)){
+        } else if(intent.getBooleanExtra(BLUETOOTH_CONNECTED_SUCCESS, false)) {
             isCancel = false;
             device = intent.getParcelableExtra(ControllerService.BLUETOOTH_DEVICE_OBJECT);
-            if(device!=null){
+            if(device!=null) {
                 device_name = device.getName();
                 device_address = device.getAddress();
                 Log.i(TAG,"get device name is:"+device.getName() + ", address:"+device_address);
-            }else{
+            } else {
                 debug_log("get device is null");
             }
             // we use broadcast to check if bt device is connected
             isBtInputDeviceConnected = true;
             resetHandDeviceVersionInfo();   // reset recorded hand version info.
             startGetNodeDataThread();       //start read hidrawx node
-        }else if(intent.getBooleanExtra(BLUETOOTH_DISCONNECTED,false)){
+        } else if(intent.getBooleanExtra(BLUETOOTH_DISCONNECTED, false)) {
             //stop read node
             debug_log("onStartCommand intent BLUETOOTH_DISCONNECTED, set isCancel=false");
             device=null;
@@ -411,7 +411,7 @@ public class ControllerService extends Service {
             */
             if(mBtInputDeviceService != null){
                 List<BluetoothDevice> deviceList = mBtInputDeviceService.getConnectedDevices();
-                if(deviceList!=null && deviceList.size()>0){
+                if(deviceList!=null && deviceList.size() > 0) {
                     return;
                 }
             }
@@ -423,9 +423,9 @@ public class ControllerService extends Service {
     private boolean isCancel = false;
 
     static{
-        try{
+        try {
             System.loadLibrary("lctgetnode");
-        }catch(Exception e){
+        } catch(Exception e) {
             e.printStackTrace();
             Log.d(TAG,e.getMessage());
         }
@@ -574,7 +574,7 @@ public class ControllerService extends Service {
                             continue;
                         }
                         needOpenFile = false;
-                        Log.d(TAG, "natvie Open File Success");
+                        Log.d(TAG, "open hidraw success.");
                         android.util.Log.d("[POP]","[Success] waitForRecenter = "+waitForRecenter);
                         if (waitForRecenter) {
                             requestHandDeviceResetQuternion();
@@ -583,16 +583,17 @@ public class ControllerService extends Service {
 
                     Bt_node_data nodeData = nativeReadFile();
                     if (nodeData == null) {
-                        Log.e(TAG, "read hidraw error schedule next open data node");
                         if (dataChannel == RAW_DATA_CHANNEL_JOYSTICK) {
                             //for svr app
                             connectStateEvent(CONNECT_STATE_DISCONNECTED);
                             //for draydream app
                             setControllerListenerDisconnected();
-                            dataChannel = RAW_DATA_CHANNEL_NONE;//reset dataChannel
+                            dataChannel = RAW_DATA_CHANNEL_NONE;
+                            Log.e(TAG, "Update disconnected status.");
                         }
                         nativeCloseFile();
                         needOpenFile = true;
+                        Log.e(TAG, "close hidraw now.");
                         continue;
                     }
                     timestampNanos = System.currentTimeMillis();
@@ -1073,7 +1074,7 @@ public class ControllerService extends Service {
         //end
         //Log.d("[QQQ]","x= "+controllerOrientationEvent.qx+" y = "+controllerOrientationEvent.qy+" z = "+controllerOrientationEvent.qz+" w = "+controllerOrientationEvent.qw);
 
-        controllerOrientationEvent.timestampNanos = time_test;//SystemClock.elapsedRealtimeNanos();
+        controllerOrientationEvent.timestampNanos = SystemClock.elapsedRealtimeNanos();
         try {
             if((controllerListener!=null)&&(!mAirMouseState)){
                 controllerListener.deprecatedOnControllerOrientationEvent(controllerOrientationEvent);
