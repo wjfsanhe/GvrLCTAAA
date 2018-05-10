@@ -158,6 +158,10 @@ public class ControllerService extends Service {
     // add: Enable air mouse state
     boolean mAirMouseState = false;
 
+    // add: detect screen status, false for screen off, ture for screen on.
+    boolean mScreenOn = true;
+    ScreenStatusReceiver mScreenStatusReceiver;
+
     // end: multi key press screen shot
     //add for daydream app adjust volume
     private AudioManager mAudioManager;
@@ -193,8 +197,29 @@ public class ControllerService extends Service {
         Log.d(TAG,"registerReceiver");
         localBroadcastManager.registerReceiver(eventReceiver,filter);
 
+	//Register Receiver
+        ScreenStatusReceiver mScreenStatusReceiver = new ScreenStatusReceiver();
+        IntentFilter filterIF = new IntentFilter();
+        filterIF.addAction("android.intent.action.SCREEN_ON");
+        filterIF.addAction("android.intent.action.SCREEN_OFF");
+        registerReceiver(mScreenStatusReceiver, filterIF);
+
         startGetNodeDataThread();//begin to run thread
         Log.d("myControllerService", "onCreate");
+    }
+
+    //Screen receive class
+    private class ScreenStatusReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if("android.intent.action.SCREEN_ON".equals(intent.getAction())) {
+                Log.d(TAG, "Detect screen on and set mScreenOn true");
+                mScreenOn = true;
+            } else if("android.intent.action.SCREEN_OFF".equals(intent.getAction())) {
+                Log.d(TAG, "Detect screen off and set mScreenOn false");
+                mScreenOn = false;
+            }
+        }
     }
 
     public class EventReceiver extends BroadcastReceiver {
@@ -272,6 +297,8 @@ public class ControllerService extends Service {
     public void onDestroy() {
         Log.d("myControllerService", "onDestroy");
         localBroadcastManager.unregisterReceiver(eventReceiver);
+        unregisterReceiver(mScreenStatusReceiver);
+        mScreenStatusReceiver = null;
         if (mBtInputDeviceService != null) {
             mAdapter.closeProfileProxy(BluetoothProfile.INPUT_DEVICE, mBtInputDeviceService);
         }
@@ -1548,6 +1575,12 @@ public class ControllerService extends Service {
      *                "home":0x08; "app":0x10; "volume up":0x20; "volume down":0x40 }
      */
     private void ButtonEvent(final int keymask){
+        //Check if screen is on
+        if(!mScreenOn){
+            //Log.d(TAG,"Detect that screen is off, disable AirMouse ButtonEvent here!");
+            return;
+        }
+
         if (keymask != 0) {
             //add: multi key press screen shot
             if(!mMultiKeyPressFlag && ((keymask & 0x14) == 0x14)) {
@@ -1919,7 +1952,6 @@ public class ControllerService extends Service {
             }
             mLastKeyMask = keymask;
         }
-        //Log.d("[QQQ]","[After]mLastKeyMask = "+mLastKeyMask);
     }
 
     private void batterLevelEvent(int level){
