@@ -329,6 +329,13 @@ public class AIDLControllerService extends Service {
             }else if("HTC".equals(client)){
                 mHTCListenerPid = Binder.getCallingPid();
                 mListenerHashMap.put(mHTCListenerPid,listener);
+
+                HTCListenerRecord mHTCListenerRecord = new HTCListenerRecord();
+                try {
+                    listener.asBinder().linkToDeath(mHTCListenerRecord, 0);
+                } catch (RemoteException e) {
+                    Log.d(TAG, "HTCListener already died.", e);
+                }
             }else{
                 Log.d(TAG,"registerAIDLListener client is not support: client = "+client);
             }
@@ -354,6 +361,14 @@ public class AIDLControllerService extends Service {
            localBroadcastManager.sendBroadcast(intent);
         }
     };
+
+    private class HTCListenerRecord implements IBinder.DeathRecipient {
+        @Override
+        public void binderDied() {
+            Log.d(TAG, "BinderDied.");
+            mListenerHashMap.remove(mHTCListenerPid);
+        }
+    }
 
     //add by zhangyawen
     @Override
