@@ -9,14 +9,15 @@ import android.bluetooth.BluetoothProfile.ServiceListener;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.os.Environment;
+import android.os.UserHandle;
 
-//import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.android.qiyicontroller.AIDLControllerService;
@@ -319,6 +320,28 @@ public class ControllerService extends Service {
                 device_name = device.getName();
                 device_address = device.getAddress();
                 Log.i(TAG,"get device name is:"+device.getName() + ", address:"+device_address);
+
+                //Get hand devices new version
+                String newVersion = SystemProperties.get("ro.build.controller.version", "0").replace("AV", "").replace(".", "0");
+                Log.i(TAG,"get newVersion here :" + newVersion);
+                int n = Integer.parseInt(newVersion);
+                Log.i(TAG,"parse newVersion into int  here :" + newVersion);
+
+                //Get sys.iqiyi.hand.appVersion here
+                String sysVersion = SystemProperties.get("sys.iqiyi.hand.appVersion","0");
+                SystemProperties.set("sys.iqiyi.hand.tempVersion", "1");
+                int s = Integer.parseInt(sysVersion);
+                if((sysVersion !="1")&&(sysVersion!="0")){
+                    SystemProperties.set("sys.iqiyi.hand.tempVersion", sysVersion);
+                }
+
+
+                if((n <= s) || (s == 0) || (s == 1)){
+                    Log.i(TAG,"handdeviceversion is up to date.");
+                } else {
+                    Log.i(TAG,"try to send sendBroadcastToHandOTA(true);");
+                    sendBroadcastToHandOTA(true);
+                }
             } else {
                 debug_log("get device is null");
             }
@@ -347,10 +370,10 @@ public class ControllerService extends Service {
             int mode = intent.getIntExtra(ControllerRec.REQUEST_CALIBRATION_MODE, -1);
             requestHandDeviceCalibration(type, mode);
         } else if (intent.getBooleanExtra(ControllerRec.HAND_OTA_ACTION, false)) {
-            hand_device_ota_status = intent.getIntExtra(ControllerRec.HAND_OTA_STATUS, -1);
-            if(hand_device_ota_status == ControllerRec.STATUS_HAND_OTA_STARTING) {
                 sendBroadcastToHandOTA(true);
-            }
+        } else if (intent.getBooleanExtra(ControllerRec.HAND_OTA_STARTFLAG,true)){
+            Log.d("myControllerService", "change ota status flag");
+            hand_device_ota_status = intent.getIntExtra(ControllerRec.HAND_OTA_STATUS,-1);
         }
         return Service.START_REDELIVER_INTENT;
     }

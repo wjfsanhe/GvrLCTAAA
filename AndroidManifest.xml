@@ -43,6 +43,7 @@
                 <action android:name="com.longcheer.net.handota.stop" />
                 <action android:name="android.bluetooth.device.action.ACL_CONNECTED"/>
                 <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED"/>
+                <action android:name="com.qiyi.iqiyicontrollerota.startsignal" />
             </intent-filter>
         </receiver>
 
