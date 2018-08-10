@@ -1717,9 +1717,7 @@ public class ControllerService extends Service {
                     handler.postDelayed(runnableForMenu, DEFINE_LONG_TIME_FOR_HOME);
                     appButtonEvent(APP_BUTTON_DOWN);
                     mLastKeyMask = keymask;
-                    if (DEBUG) {
-                        Log.d("[AAA]", "appButtonEvent Buttondown");
-                    }
+                    Log.d("[AAA]", "appButtonEvent Buttondown");
                 } else {
                     if (isRecentering) {
                         // set Recentering state
@@ -1731,9 +1729,7 @@ public class ControllerService extends Service {
                             intent.setAction(ACTION_APP_BUTTON_LONG_CLICK);
                             sendBroadcast(intent);
                             //end
-                            if (DEBUG) {
-                                Log.d("[AAA]", "App longclick Recentering and send broadcast");
-                            }
+                            Log.d("[AAA]", "App longclick Recentering and send broadcast");
                         }
                     } else {
                         //do nothing
@@ -1925,9 +1921,7 @@ public class ControllerService extends Service {
                 if ((mLastKeyMask&0x10) != 0) {
                     handler.removeCallbacks(runnableForMenu);
                     appButtonEvent(APP_BUTTON_UP);
-                    if (DEBUG) {
-                        Log.d("[AAA]", "appButtonEvent ButtonUp");
-                    }
+                    Log.d("[AAA]", "appButtonEvent ButtonUp");
                 }
                 if ((mLastKeyMask&0x20) != 0 ) {
                     handler.removeCallbacks(runnableForVolume);
