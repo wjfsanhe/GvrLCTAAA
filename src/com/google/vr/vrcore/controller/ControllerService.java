@@ -329,12 +329,15 @@ public class ControllerService extends Service {
 
                 //Get sys.iqiyi.hand.appVersion here
                 String sysVersion = SystemProperties.get("sys.iqiyi.hand.appVersion","0");
+                Log.i(TAG,"get oldversion here :" + sysVersion);
                 SystemProperties.set("sys.iqiyi.hand.tempVersion", "1");
                 int s = Integer.parseInt(sysVersion);
                 if((sysVersion !="1")&&(sysVersion!="0")){
                     SystemProperties.set("sys.iqiyi.hand.tempVersion", sysVersion);
                 }
 
+                //Log.i(TAG,"hand_device_ota_status = 1 ota not start yet");
+                //hand_device_ota_status = 1;
 
                 if((n <= s) || (s == 0) || (s == 1)){
                     Log.i(TAG,"handdeviceversion is up to date.");
@@ -372,7 +375,10 @@ public class ControllerService extends Service {
         } else if (intent.getBooleanExtra(ControllerRec.HAND_OTA_ACTION, false)) {
                 sendBroadcastToHandOTA(true);
         } else if (intent.getBooleanExtra(ControllerRec.HAND_OTA_STARTFLAG,true)){
-            Log.d("myControllerService", "change ota status flag");
+            Log.d("myControllerService", "change ota status flag to 0");
+            hand_device_ota_status = intent.getIntExtra(ControllerRec.HAND_OTA_STATUS,-1);
+        } else if (intent.getBooleanExtra(ControllerRec.HAND_OTA_STOPFLAG,true)){
+            Log.d("myControllerService", "change ota status flag to 1");
             hand_device_ota_status = intent.getIntExtra(ControllerRec.HAND_OTA_STATUS,-1);
         }
         return Service.START_REDELIVER_INTENT;

@@ -24,6 +24,7 @@ public class ControllerRec extends BroadcastReceiver {
     public static final String ACTION_HAND_OTA_START        = "com.longcheer.net.handota.start";
     public static final String ACTION_HAND_OTA_STOP         = "com.longcheer.net.handota.stop";
     public static final String ACTION_HAND_OTA_STARTFLAG    = "com.qiyi.iqiyicontrollerota.startsignal";
+    public static final String ACTION_HAND_OTA_STOPFLAG     = "com.qiyi.iqiyicontrollerota.stopsignal";
 
     public static final String TEST_GET_HAND_VERSION        = "test_get_handDevice_version_info";
     public static final String TEST_RESET_QUATERNION        = "test_reset_handDevice_quaternion";
@@ -33,6 +34,7 @@ public class ControllerRec extends BroadcastReceiver {
     public static final String HAND_OTA_ACTION              = "hand_device_ota_action";
     public static final String HAND_OTA_STATUS              = "hand_device_ota_status";
     public static final String HAND_OTA_STARTFLAG           = "hand_device_ota_startflag";
+    public static final String HAND_OTA_STOPFLAG            = "hand_device_ota_stopflag";
 
     public static final int STATUS_HAND_OTA_STARTING        = 0;
     public static final int STATUS_HAND_OTA_STOPED          = 1;
@@ -140,6 +142,12 @@ public class ControllerRec extends BroadcastReceiver {
             Log.d(TAG,"change hand ota start flag to true(0)");
             i.putExtra(HAND_OTA_STARTFLAG, true);
             i.putExtra(HAND_OTA_STATUS, STATUS_HAND_OTA_STARTING);
+            i.setPackage(context.getPackageName());
+            context.startService(i);
+        }else if (ACTION_HAND_OTA_STOPFLAG.equals(action)){
+            Log.d(TAG,"change hand ota start flag to true(1)");
+            i.putExtra(HAND_OTA_STOPFLAG, true);
+            i.putExtra(HAND_OTA_STATUS, STATUS_HAND_OTA_STOPED);
             i.setPackage(context.getPackageName());
             context.startService(i);
         }
