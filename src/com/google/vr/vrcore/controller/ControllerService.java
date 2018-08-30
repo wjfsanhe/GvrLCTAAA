@@ -374,10 +374,10 @@ public class ControllerService extends Service {
             requestHandDeviceCalibration(type, mode);
         } else if (intent.getBooleanExtra(ControllerRec.HAND_OTA_ACTION, false)) {
                 sendBroadcastToHandOTA(true);
-        } else if (intent.getBooleanExtra(ControllerRec.HAND_OTA_STARTFLAG,true)){
+        } else if (intent.getBooleanExtra(ControllerRec.HAND_OTA_STARTFLAG,false)){
             Log.d("myControllerService", "change ota status flag to 0");
             hand_device_ota_status = intent.getIntExtra(ControllerRec.HAND_OTA_STATUS,-1);
-        } else if (intent.getBooleanExtra(ControllerRec.HAND_OTA_STOPFLAG,true)){
+        } else if (intent.getBooleanExtra(ControllerRec.HAND_OTA_STOPFLAG,false)){
             Log.d("myControllerService", "change ota status flag to 1");
             hand_device_ota_status = intent.getIntExtra(ControllerRec.HAND_OTA_STATUS,-1);
         }
